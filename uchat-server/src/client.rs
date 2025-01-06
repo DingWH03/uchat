@@ -40,13 +40,15 @@ impl Client {
         let user = self.user.lock().await;
         user.username.clone()
     }
-    pub async fn send_packet(&mut self, msg: &ServerResponse) -> Result<()> {
-        writer_packet(&mut self.writer, &msg).await
+    pub async fn send_packet(&self, msg: &ServerResponse) -> Result<()> {
+        let mut writer = self.writer.lock().await;
+        writer_packet(&mut writer, &msg).await
     }
-    pub async fn recv_packet(&mut self) -> Result<ClientRequest> {
-        reader_packet(&mut self.reader).await
+    pub async fn recv_packet(&self) -> Result<ClientRequest> {
+        let mut reader = self.reader.lock().await;
+        reader_packet(&mut reader).await
     }
-    pub async fn receive_message(&mut self, sender: u32, message: String) {
+    pub async fn receive_message(&self, sender: u32, message: String) {
         let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
         let response = ServerResponse::ReceiveMessage {
             sender,
@@ -91,7 +93,7 @@ impl Client {
     }
     
 
-    async fn handle_login(&mut self, id: u32, password: String) -> ServerResponse {
+    async fn handle_login(&self, id: u32, password: String) -> ServerResponse {
         let status = {
             let mut api = self.api.lock().await;
             api.login(id, &password, Arc::new(Mutex::new(self.clone()))).await
@@ -162,14 +164,14 @@ impl Client {
         }
     }
 
-    pub async fn send_error(&mut self, message: &str) {
+    pub async fn send_error(&self, message: &str) {
         let response = ServerResponse::Error {
             message: message.to_string(),
         };
         self.send_packet(&response).await.unwrap();
     }
 
-    pub async fn run(&mut self) -> Result<()> {
+    pub async fn run(&self) -> Result<()> {
         loop {
             let request = match self.recv_packet().await {
                 Ok(req) => req,

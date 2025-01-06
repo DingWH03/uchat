@@ -4,7 +4,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::protocol::{ServerResponse, ClientRequest};
 
 // 实现 writer_packet 函数
-pub async fn writer_packet(writer: &mut tokio::io::BufWriter<tokio::net::tcp::OwnedWriteHalf>, msg: &ServerResponse) -> Result<()> {
+pub async fn writer_packet(writer: &mut tokio::io::BufWriter<tokio::net::tcp::OwnedWriteHalf>, msg: &ClientRequest) -> Result<()> {
     // 将 ServerResponse 枚举序列化为 JSON 字符串
     let json = serde_json::to_string(msg)?;
     // println!("发送消息: {}", json);
@@ -22,7 +22,7 @@ pub async fn writer_packet(writer: &mut tokio::io::BufWriter<tokio::net::tcp::Ow
 }
 
 // 实现 reader_packet 函数
-pub async fn reader_packet(reader: &mut tokio::io::BufReader<tokio::net::tcp::OwnedReadHalf>) -> Result<ClientRequest> {
+pub async fn reader_packet(reader: &mut tokio::io::BufReader<tokio::net::tcp::OwnedReadHalf>) -> Result<ServerResponse> {
     // 读取数据长度（4 字节大端）
     let mut length_buf = [0u8; 4];
     reader.read_exact(&mut length_buf).await?;

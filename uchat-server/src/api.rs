@@ -35,7 +35,7 @@ impl Api {
                     Ok(valid) => {
                         if valid {
                             if let Some(client) = self.clients.get(&id) {
-                                let mut client = client.lock().await;
+                                let client = client.lock().await;
                                 client.send_error("用户重复登录").await;
                                 return Ok(false);
                             } else {
@@ -90,7 +90,7 @@ impl Api {
                     let client = client.clone(); // 克隆锁
 
                     tokio::spawn(async move {
-                        let mut client = client.lock().await;
+                        let client = client.lock().await;
                         client.receive_message(sender, message).await;
                     })
                 })
@@ -106,7 +106,7 @@ impl Api {
         } else {
             // 单个接收者处理逻辑
             if let Some(client) = self.clients.get(&receiver) {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client
                     .receive_message(sender, message.to_string())
                     .await;

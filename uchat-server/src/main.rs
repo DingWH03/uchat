@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
 
             // 处理每个客户端连接
             tokio::spawn(async move {
-                let mut client = Client::new(socket, api_clone, user_info, signed_in);
+                let client = Client::new(socket, api_clone, user_info, signed_in);
                 if let Err(e) = client.run().await {
                     eprintln!("客户端断开连接: {:?}", e);
                 }
