@@ -1,5 +1,5 @@
-mod core_api;
-mod protocol;
+pub mod core_api;
+pub mod protocol;
 mod utils;
 
 pub fn add(left: u64, right: u64) -> u64 {
