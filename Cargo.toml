@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "uchat-server",            # 服务端
+    "client/uchat-coreapi",       # 客户端核心库
+    "client/uchat-desktop",       # 桌面端客户端
+]
+
