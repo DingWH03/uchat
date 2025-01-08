@@ -1,52 +1,55 @@
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Window 2.12
 
-Rectangle {
-    width: 400
-    height: 300
-    color: "#ffffff"
+// This must match the uri and version
+// specified in the qml_module in the build.rs script.
+import com.kdab.cxx_qt.demo 1.0
+
+ApplicationWindow {
+    height: 480
+    title: qsTr("Hello World")
+    visible: true
+    width: 640
+    color: palette.window
+
+    MyObject {
+        id: myObject
+        number: 1
+        string: qsTr("My String with my number: %1").arg(myObject.number)
+    }
 
     Column {
-        anchors.centerIn: parent
+        anchors.fill: parent
+        anchors.margins: 10
         spacing: 10
 
-        TextField {
-            id: userIdField
-            placeholderText: "User ID (数字)"
+        Label {
+            text: qsTr("Number: %1").arg(myObject.number)
+            color: palette.text
         }
 
-        TextField {
-            id: passwordField
-            placeholderText: "Password"
-            echoMode: TextInput.Password
+        Label {
+            text: qsTr("String: %1").arg(myObject.string)
+            color: palette.text
         }
 
-        Row {
-            spacing: 10
-            Button {
-                text: "Login"
-                onClicked: {
-                    // 调用 Rust 端暴露的 doLogin 方法
-                    myGuiObject.doLogin(userIdField.text, passwordField.text)
-                }
-            }
+        Button {
+            text: qsTr("Increment Number")
 
-            Button {
-                text: "Online Users"
-                onClicked: {
-                    myGuiObject.getOnlineUsers()
-                }
-            }
+            onClicked: myObject.incrementNumber()
         }
 
-        TextArea {
-            id: messageArea
-            wrapMode: TextArea.Wrap
-            text: "等待服务器消息...\n"
-            readOnly: true
-            width: 360
-            height: 130
+        Button {
+            text: qsTr("Say Hi!")
+
+            onClicked: myObject.sayHi(myObject.string, myObject.number)
+        }
+
+        Button {
+            text: qsTr("Quit")
+
+            onClicked: Qt.quit()
         }
     }
 }

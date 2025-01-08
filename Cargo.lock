@@ -381,38 +381,40 @@ dependencies = [
 
 [[package]]
 name = "cxx-qt"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08aa6cda7588b6d17c563b0d2fadc060d4204d04908c0f359ae288857091218d"
+checksum = "80f050c8baa5e049664109c564061034c9aa2adfaf75545111e807edff5c55a7"
 dependencies = [
  "cxx",
+ "cxx-qt-build",
  "cxx-qt-macro",
+ "qt-build-utils",
  "static_assertions",
 ]
 
 [[package]]
 name = "cxx-qt-build"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e097b99f49792922a72a8ca35d9391762e48e63363d6998255be1f2ca1edf69"
+checksum = "6390fa09cf1552c3e1066fe6e9a1fd8a450bdc310736b6d2dd4648d3272a37a6"
 dependencies = [
  "cc",
  "codespan-reporting",
- "convert_case",
  "cxx-gen",
  "cxx-qt-gen",
- "cxx-qt-lib-headers",
  "proc-macro2",
  "qt-build-utils",
  "quote",
+ "serde",
+ "serde_json",
  "version_check",
 ]
 
 [[package]]
 name = "cxx-qt-gen"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ede7c73dbfbcc234d8826919e257830c1789db2cac586546a87d2a82e3cbe5d5"
+checksum = "ea8c8af7ca92109c49ac9c832c16e8ab9bb26db2343abbd7bf33ecabe23320f4"
 dependencies = [
  "clang-format",
  "convert_case",
@@ -423,16 +425,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxx-qt-lib-headers"
-version = "0.6.1"
+name = "cxx-qt-lib"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9abdeab6b77cfc5a53b724f3f62a37bcb5ac1423cccc2dba4c134f4273440b8c"
+checksum = "baf6eebd6c5d3b84d7e456675e45e588e479d58dd65d1b7a70109536b091d9e2"
+dependencies = [
+ "cxx",
+ "cxx-qt",
+ "cxx-qt-build",
+ "qt-build-utils",
+]
 
 [[package]]
 name = "cxx-qt-macro"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "699e8a668c03b03419b084960d72eed253632bb16349b33fd0a0c893b61b664c"
+checksum = "380e8dfd965061880eb07810c91941e97a8fd611863ea41c2de59f2dae528d26"
 dependencies = [
  "cxx-qt-gen",
  "proc-macro2",
@@ -889,9 +897,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.11.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
 dependencies = [
  "either",
 ]
@@ -1283,9 +1291,9 @@ dependencies = [
 
 [[package]]
 name = "qt-build-utils"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59c828fe2434dad34dd0c30a4ba037509b61dad92a55baf0dc42699e6aa2f10"
+checksum = "3f9bd6788f49a3c8c4389cb8ac1e99b6c7451e7ebbd50760bdd92e45c2e41f58"
 dependencies = [
  "cc",
  "thiserror",
@@ -1844,8 +1852,10 @@ name = "uchat-desktop"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cxx",
  "cxx-qt",
  "cxx-qt-build",
+ "cxx-qt-lib",
  "serde",
  "serde_json",
  "tokio",
@@ -1958,9 +1968,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "versions"
-version = "5.0.1"
+version = "6.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c73a36bc44e3039f51fbee93e39f41225f6b17b380eb70cc2aab942df06b34dd"
+checksum = "f25d498b63d1fdb376b4250f39ab3a5ee8d103957346abacd911e2d8b612c139"
 dependencies = [
  "itertools",
  "nom",
