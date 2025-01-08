@@ -1,12 +1,5 @@
-use std::sync::Arc;
+pub mod cxxqt_client;
 
-use anyhow::Result;
-use tokio::runtime::Runtime;
-
-use uchat_coreapi::core_api::CoreApi;
-use uchat_coreapi::protocol::ServerResponse;
-
-pub mod cxxqt_object;
 
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QUrl};
 

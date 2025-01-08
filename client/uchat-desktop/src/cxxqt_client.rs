@@ -1,3 +1,4 @@
+// use uchat_coreapi::core_api::CoreApi;
 
 /// The bridge definition for our QObject
 #[cxx_qt::bridge]
@@ -17,19 +18,19 @@ pub mod qobject {
         #[qml_element]
         #[qproperty(i32, number)]
         #[qproperty(QString, string)]
-        #[namespace = "my_object"]
-        type MyObject = super::MyObjectRust;
+        #[namespace = "client"]
+        type Client = super::ClientRust;
     }
 
     unsafe extern "RustQt" {
         // Declare the invokable methods we want to expose on the QObject
         #[qinvokable]
         #[cxx_name = "incrementNumber"]
-        fn increment_number(self: Pin<&mut MyObject>);
+        fn increment_number(self: Pin<&mut Client>);
 
         #[qinvokable]
         #[cxx_name = "sayHi"]
-        fn say_hi(self: &MyObject, string: &QString, number: i32);
+        fn say_hi(self: &Client, string: &QString, number: i32);
     }
 }
 
@@ -38,12 +39,12 @@ use cxx_qt_lib::QString;
 
 /// The Rust struct for the QObject
 #[derive(Default)]
-pub struct MyObjectRust {
+pub struct ClientRust {
     number: i32,
     string: QString,
 }
 
-impl qobject::MyObject {
+impl qobject::Client {
     /// Increment the number Q_PROPERTY
     pub fn increment_number(self: Pin<&mut Self>) {
         let previous = *self.number();

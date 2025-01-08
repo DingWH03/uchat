@@ -8,15 +8,15 @@ import com.kdab.cxx_qt.demo 1.0
 
 ApplicationWindow {
     height: 480
-    title: qsTr("Hello World")
+    title: qsTr("Client")
     visible: true
     width: 640
     color: palette.window
 
-    MyObject {
-        id: myObject
+    Client {
+        id: client
         number: 1
-        string: qsTr("My String with my number: %1").arg(myObject.number)
+        string: qsTr("My String with my number: %1").arg(client.number)
     }
 
     Column {
@@ -25,25 +25,25 @@ ApplicationWindow {
         spacing: 10
 
         Label {
-            text: qsTr("Number: %1").arg(myObject.number)
+            text: qsTr("Number: %1").arg(client.number)
             color: palette.text
         }
 
         Label {
-            text: qsTr("String: %1").arg(myObject.string)
+            text: qsTr("String: %1").arg(client.string)
             color: palette.text
         }
 
         Button {
             text: qsTr("Increment Number")
 
-            onClicked: myObject.incrementNumber()
+            onClicked: client.incrementNumber()
         }
 
         Button {
             text: qsTr("Say Hi!")
 
-            onClicked: myObject.sayHi(myObject.string, myObject.number)
+            onClicked: client.sayHi(client.string, client.number)
         }
 
         Button {
