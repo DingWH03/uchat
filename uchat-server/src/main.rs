@@ -7,7 +7,7 @@ mod client;
 
 use api::Api;
 use tokio::net::TcpListener;
-use std::sync::Arc;
+use std::sync::{atomic::AtomicBool, Arc};
 use tokio::sync::Mutex;
 use std::collections::HashMap;
 use anyhow::Result;
@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
     loop {
         if let Ok((socket, _)) = listener.accept().await {
             let api_clone = Arc::clone(&api);
-            let signed_in = Arc::new(Mutex::new(false));
+            let signed_in = Arc::new(AtomicBool::new(false));
             let user_info = Arc::new(Mutex::new(protocol::User{user_id:0,username:"".to_string()}));
 
             // 处理每个客户端连接

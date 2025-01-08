@@ -48,8 +48,8 @@ pub enum ClientRequest {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "action")]
 pub enum ServerResponse {
-    #[serde(rename = "auth_response")]
-    AuthResponse {
+    #[serde(rename = "generic_response")]
+    GenericResponse {
         status: String,
         message: String,
     },
