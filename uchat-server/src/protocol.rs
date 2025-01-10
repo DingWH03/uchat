@@ -24,6 +24,11 @@ pub enum ClientRequest {
     Request {
         request: String,
     },
+    #[serde(rename = "objrequest")]
+    ObjRequest {
+        request: String,
+        id: u32,
+    },
     #[serde(rename = "userinfo")]
     CheckUserInfo {
         user_id: u32,
@@ -72,5 +77,21 @@ pub enum ServerResponse {
     UserName {
         user_id: u32,
         username: String,
+    },
+    /// 响应objrequest->get_group_members
+    #[serde(rename = "group_members")]
+    GroupMembers {
+        group_id: u32,
+        member_ids: Vec<u32>,
+    },
+    /// 响应request->get_friends
+    #[serde(rename = "friend_list")]
+    FriendList {
+        friend_ids: Vec<u32>,
+    },
+    /// 响应request->get_groups
+    #[serde(rename = "group_list")]
+    GroupList {
+        friend_ids: Vec<u32>,
     },
 }

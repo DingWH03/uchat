@@ -122,7 +122,27 @@ impl Api {
     pub async fn online_users(&self) -> Vec<u32> {
         self.clients.keys().cloned().collect()
     }
+    /// 返回自己的用户名
     pub async fn get_username(&self, id: u32) -> Result<Option<String>, sqlx::Error> {
         self.db.get_username(id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 返回自己的好友列表
+    pub async fn get_friends(&self, id: u32) -> Result<Vec<u32>, sqlx::Error> {
+        self.db.get_friends(id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 返回自己的群聊列表
+    pub async fn get_groups(&self, id: u32) -> Result<Vec<u32>, sqlx::Error> {
+        self.db.get_groups(id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<u32>, sqlx::Error> {
+        self.db.get_group_members(group_id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 添加好友
+    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), sqlx::Error> {
+        self.db.add_friend(user_id, friend_id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 添加群聊
+    pub async fn add_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
+        self.db.add_group(user_id, group_id).await.map_err(|e| sqlx::Error::Decode(e.into()))
     }
 }

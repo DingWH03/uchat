@@ -66,6 +66,59 @@ impl Database {
     
         Ok(row.map(|r| r.username))
     }
+
+    pub async fn get_friends(&self, id: u32) -> Result<Vec<u32>> {
+        let rows = sqlx::query!(
+            "SELECT friend_id FROM friendships WHERE user_id = ?",
+            id
+        )
+        .fetch_all(&self.pool)
+        .await?;
     
+        Ok(rows.iter().map(|r| r.friend_id).collect())
+    }
+
+    pub async fn get_groups(&self, id: u32) -> Result<Vec<u32>> {
+        let rows = sqlx::query!(
+            "SELECT group_id FROM group_members WHERE user_id = ?",
+            id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+    
+        Ok(rows.iter().map(|r| r.group_id).collect())
+    }
+    pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<u32>> {
+        let rows = sqlx::query!(
+            "SELECT user_id FROM group_members WHERE group_id = ?",
+            group_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+    
+        Ok(rows.iter().map(|r| r.user_id).collect())
+    }
+    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<()> {
+        sqlx::query!(
+            "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)",
+            user_id,
+            friend_id
+        )
+        .execute(&self.pool)
+        .await?;
+    
+        Ok(())
+    }
+    pub async fn add_group(&self, user_id: u32, group_id: u32) -> Result<()> {
+        sqlx::query!(
+            "INSERT INTO group_members (user_id, group_id) VALUES (?, ?)",
+            user_id,
+            group_id
+        )
+        .execute(&self.pool)
+        .await?;
+    
+        Ok(())
+    }
 
 }

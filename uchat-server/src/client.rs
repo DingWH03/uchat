@@ -205,7 +205,60 @@ impl Client {
                         let user_id = self.user_id().await;
                         self.handle_send_message(user_id, receiver, message).await
                     }
+                    ClientRequest::ObjRequest { request, id } => match request.as_str() {
+                        "get_group_members" => {
+                            let api = self.api.lock().await;
+                            let members = api.get_group_members(id).await;
+                            ServerResponse::GroupMembers {
+                                group_id: id,
+                                member_ids: members?,
+                            }
+                        }
+                        "add_friend" => {
+                            let user_id = self.user_id().await;
+                            let api = self.api.lock().await;
+                            let status = api.add_friend(user_id, id).await;
+                            ServerResponse::GenericResponse {
+                                status: if status.is_ok() { "ok".to_string() } else { "error".to_string() },
+                                message: if status.is_ok() {
+                                    "添加好友成功".to_string()
+                                } else {
+                                    "添加好友失败".to_string()
+                                },
+                            }
+                        }
+                        "add_group" => {
+                            let user_id = self.user_id().await;
+                            let api = self.api.lock().await;
+                            let status = api.add_group(user_id, id).await;
+                            ServerResponse::GenericResponse {
+                                status: if status.is_ok() { "ok".to_string() } else { "error".to_string() },
+                                message: if status.is_ok() {
+                                    "加入群聊成功".to_string()
+                                } else {
+                                    "加入群聊失败".to_string()
+                                },
+                            }
+                        }
+                        _ => ServerResponse::Error {
+                            message: "未知请求".to_string(),
+                        },
+                    }
                     ClientRequest::Request { request } => match request.as_str() {
+                        "get_groups" => {
+                            let user_id = self.user_id().await;
+                            let api = self.api.lock().await;
+                            let groups = api.get_groups(user_id).await;
+                            ServerResponse::
+                            GroupList { friend_ids: groups? }
+                        }
+                        "get_friends" => {
+                            let user_id = self.user_id().await;
+                            let api = self.api.lock().await;
+                            let friends = api.get_friends(user_id).await;
+                            ServerResponse::
+                            FriendList { friend_ids: friends? }
+                        }
                         "online_users" => self.get_online_users().await,
                         "my_username" => {
                             let username = self.username().await;
