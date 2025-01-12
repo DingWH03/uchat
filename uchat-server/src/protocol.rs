@@ -58,6 +58,16 @@ pub enum ServerResponse {
         status: String,
         message: String,
     },
+    #[serde(rename = "login_response")]
+    LoginResponse {
+        status: bool,
+        message: String,
+    },
+    #[serde(rename = "register_response")]
+    RegisterResponse {
+        status: bool,
+        message: String,
+    },
     #[serde(rename = "receive_message")]
     ReceiveMessage {
         sender: u32,

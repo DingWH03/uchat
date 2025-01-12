@@ -40,6 +40,7 @@ impl Database {
         Ok(row.map(|r| r.password_hash))
     }
 
+    /// 创建新用户
     pub async fn new_user(&self, username: &str, password_hash: &str) -> Result<Option<u32>> {
         let result = sqlx::query!(
             "INSERT INTO users (username, password_hash) VALUES (?, ?)",
@@ -55,6 +56,7 @@ impl Database {
         Ok(Some(last_insert_id))
     }
 
+    /// 根据id查找username
     pub async fn get_username(&self, id: u32) -> Result<Option<String>> {
         let row = sqlx::query!(
             "SELECT username FROM users WHERE id = ?",
@@ -67,6 +69,7 @@ impl Database {
         Ok(row.map(|r| r.username))
     }
 
+    /// 根据user_id🔍好友列表，一般是自己查找自己的好友列表
     pub async fn get_friends(&self, id: u32) -> Result<Vec<u32>> {
         let rows = sqlx::query!(
             "SELECT friend_id FROM friendships WHERE user_id = ?",
@@ -78,6 +81,7 @@ impl Database {
         Ok(rows.iter().map(|r| r.friend_id).collect())
     }
 
+    /// 根据user_id🔍群组列表，一般是自己查找自己的群组列表
     pub async fn get_groups(&self, id: u32) -> Result<Vec<u32>> {
         let rows = sqlx::query!(
             "SELECT group_id FROM group_members WHERE user_id = ?",
@@ -88,6 +92,8 @@ impl Database {
     
         Ok(rows.iter().map(|r| r.group_id).collect())
     }
+
+    /// 根据group_id🔍群组成员列表
     pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<u32>> {
         let rows = sqlx::query!(
             "SELECT user_id FROM group_members WHERE group_id = ?",
@@ -98,6 +104,9 @@ impl Database {
     
         Ok(rows.iter().map(|r| r.user_id).collect())
     }
+
+    /// 添加好友，user_id是发送者的id，friend_id是接收者的id
+    /// 需要两个人互相添加好友后才能通信
     pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<()> {
         sqlx::query!(
             "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)",
@@ -109,6 +118,8 @@ impl Database {
     
         Ok(())
     }
+
+    /// 添加群组成员，user_id是发送者的id，group_id是接收者的id
     pub async fn add_group(&self, user_id: u32, group_id: u32) -> Result<()> {
         sqlx::query!(
             "INSERT INTO group_members (user_id, group_id) VALUES (?, ?)",
@@ -118,6 +129,19 @@ impl Database {
         .execute(&self.pool)
         .await?;
     
+        Ok(())
+    }
+
+    /// 添加私聊信息
+    pub async fn add_message(&self, sender: u32, receiver: u32, message: &str) -> Result<()> {
+        sqlx::query!(
+            "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
+            sender,
+            receiver,
+            message
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 

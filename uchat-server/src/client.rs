@@ -76,19 +76,19 @@ impl Client {
 
         match status {
             Ok(user_id) => match user_id {
-                Some(user_id) => ServerResponse::GenericResponse {
-                    status: "success".to_string(),
+                Some(user_id) => ServerResponse::RegisterResponse {
+                    status: true,
                     message: format!("注册成功，你的id为{}", user_id),
                 },
-                None => ServerResponse::GenericResponse {
-                    status: "error".to_string(),
+                None => ServerResponse::RegisterResponse {
+                    status: false,
                     message: "注册失败，请稍后重试".to_string(),
                 },
             },
             Err(err) => {
                 eprintln!("注册失败: {:?}", err);
-                ServerResponse::GenericResponse {
-                    status: "error".to_string(),
+                ServerResponse::RegisterResponse {
+                    status: false,
                     message: "注册失败，请稍后重试".to_string(),
                 }
             }
@@ -120,19 +120,19 @@ impl Client {
                         user.username = "未知用户".to_string();
                     }
                 }
-                ServerResponse::GenericResponse {
-                    status: "success".to_string(),
+                ServerResponse::LoginResponse {
+                    status: true,
                     message: "登录成功".to_string(),
                 }
             }
-            Ok(false) => ServerResponse::GenericResponse {
-                status: "error".to_string(),
+            Ok(false) => ServerResponse::LoginResponse {
+                status: false,
                 message: "账号或密码错误".to_string(),
             },
             Err(err) => {
                 eprintln!("登录失败: {:?}", err);
-                ServerResponse::GenericResponse {
-                    status: "error".to_string(),
+                ServerResponse::LoginResponse {
+                    status: false,
                     message: "登录失败，请稍后重试".to_string(),
                 }
             }
