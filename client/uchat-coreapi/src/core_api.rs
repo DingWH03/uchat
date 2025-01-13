@@ -126,8 +126,9 @@ impl CoreApi {
     }
 
     /// 发送消息
-    pub async fn send_message(&self, receiver: u32, message: &str) -> Result<()> {
+    pub async fn send_message(&self, group_id: u32, receiver: u32, message: &str) -> Result<()> {
         let request = ClientRequest::SendMessage {
+            group_id,
             receiver,
             message: message.to_string(),
         };

@@ -1,6 +1,6 @@
 // src/protocol.rs
 use serde::{Serialize, Deserialize};
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
@@ -10,10 +10,9 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Message {
-    pub sender: User,
-    pub receiver: User,
+    pub sender_id: u32,
     pub message: String,
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: NaiveDateTime,
 }
 
 
@@ -28,6 +27,12 @@ pub enum ClientRequest {
     ObjRequest {
         request: String,
         id: u32,
+    },
+    #[serde(rename = "messagesrequest")]
+    MessagesRequest {
+        group: bool,
+        id: u32,
+        offset: u32,
     },
     #[serde(rename = "userinfo")]
     CheckUserInfo {
@@ -45,6 +50,7 @@ pub enum ClientRequest {
     },
     #[serde(rename = "send_message")]
     SendMessage {
+        group_id: u32,
         receiver: u32,
         message: String,
     },
@@ -70,6 +76,7 @@ pub enum ServerResponse {
     },
     #[serde(rename = "receive_message")]
     ReceiveMessage {
+        group_id: u32,
         sender: u32,
         message: String,
         timestamp: String,
@@ -103,5 +110,16 @@ pub enum ServerResponse {
     #[serde(rename = "group_list")]
     GroupList {
         friend_ids: Vec<u32>,
+    },
+    /// 响应messagesrequest
+    #[serde(rename = "messages")]
+    Messages {
+        sender: u32,
+        messages: Vec<Message>,
+    },
+    #[serde(rename = "groupmessages")]
+    GroupMessages {
+        group_id: u32,
+        messages: Vec<Message>,
     },
 }

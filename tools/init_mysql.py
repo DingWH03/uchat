@@ -39,7 +39,7 @@ SQL_QUERIES = [
     """
     CREATE TABLE IF NOT EXISTS users (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-        username VARCHAR(255) NOT NULL UNIQUE,
+        username VARCHAR(255) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         bio VARCHAR(256) DEFAULT NULL, -- 个人简介，最多 256 字符
         avatar_url VARCHAR(255) DEFAULT NULL -- 头像 URL，存储头像在 MinIO 的链接
@@ -100,7 +100,7 @@ SQL_QUERIES = [
         group_id INT UNSIGNED NOT NULL,
         sender_id INT UNSIGNED NOT NULL,
         message TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        timestamp DATET IME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (group_id) REFERENCES ugroups(id),
         FOREIGN KEY (sender_id) REFERENCES users(id)
     );

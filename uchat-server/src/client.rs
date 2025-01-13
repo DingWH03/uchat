@@ -49,9 +49,10 @@ impl Client {
         let mut reader = self.reader.lock().await;
         reader_packet(&mut reader).await
     }
-    pub async fn receive_message(&self, sender: u32, message: String) {
+    pub async fn receive_message(&self, group_id: u32, sender: u32, message: String) {
         let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
         let response = ServerResponse::ReceiveMessage {
+            group_id,
             sender,
             message,
             timestamp,
@@ -141,26 +142,47 @@ impl Client {
 
     async fn handle_send_message(
         &self,
+        group_id: u32,
         sender: u32,
         receiver: u32,
         message: String,
     ) -> ServerResponse {
-        let status = {
-            let api = self.api.lock().await;
-            api.send_message(sender, receiver, &message).await
-        };
+        if group_id == 0 {
+            let status = {
+                let api = self.api.lock().await;
+                api.send_group_message(group_id, sender, &message).await
+            };
 
-        ServerResponse::GenericResponse {
-            status: if status {
-                "ok".to_string()
-            } else {
-                "error".to_string()
-            },
-            message: if status {
-                "消息发送成功".to_string()
-            } else {
-                "用户不存在".to_string()
-            },
+            ServerResponse::GenericResponse {
+                status: if status {
+                    "ok".to_string()
+                } else {
+                    "error".to_string()
+                },
+                message: if status {
+                    "消息发送成功".to_string()
+                } else {
+                    "群组不存在".to_string()
+                },
+            }
+        } else {
+            let status = {
+                let api = self.api.lock().await;
+                api.send_message(sender, receiver, &message).await
+            };
+
+            ServerResponse::GenericResponse {
+                status: if status {
+                    "ok".to_string()
+                } else {
+                    "error".to_string()
+                },
+                message: if status {
+                    "消息发送成功".to_string()
+                } else {
+                    "用户不存在".to_string()
+                },
+            }
         }
     }
 
@@ -201,9 +223,14 @@ impl Client {
 
             if self.is_signed() {
                 response = match request {
-                    ClientRequest::SendMessage { receiver, message } => {
+                    ClientRequest::SendMessage {
+                        group_id,
+                        receiver,
+                        message,
+                    } => {
                         let user_id = self.user_id().await;
-                        self.handle_send_message(user_id, receiver, message).await
+                        self.handle_send_message(group_id, user_id, receiver, message)
+                            .await
                     }
                     ClientRequest::ObjRequest { request, id } => match request.as_str() {
                         "get_group_members" => {
@@ -219,7 +246,11 @@ impl Client {
                             let api = self.api.lock().await;
                             let status = api.add_friend(user_id, id).await;
                             ServerResponse::GenericResponse {
-                                status: if status.is_ok() { "ok".to_string() } else { "error".to_string() },
+                                status: if status.is_ok() {
+                                    "ok".to_string()
+                                } else {
+                                    "error".to_string()
+                                },
                                 message: if status.is_ok() {
                                     "添加好友成功".to_string()
                                 } else {
@@ -232,7 +263,11 @@ impl Client {
                             let api = self.api.lock().await;
                             let status = api.add_group(user_id, id).await;
                             ServerResponse::GenericResponse {
-                                status: if status.is_ok() { "ok".to_string() } else { "error".to_string() },
+                                status: if status.is_ok() {
+                                    "ok".to_string()
+                                } else {
+                                    "error".to_string()
+                                },
                                 message: if status.is_ok() {
                                     "加入群聊成功".to_string()
                                 } else {
@@ -243,21 +278,41 @@ impl Client {
                         _ => ServerResponse::Error {
                             message: "未知请求".to_string(),
                         },
+                    },
+                    ClientRequest::MessagesRequest { group, id, offset } => {
+                        if group {
+                            let api = self.api.lock().await;
+                            let messages = api.get_group_messages(id, offset).await;
+                            ServerResponse::GroupMessages {
+                                group_id: id,
+                                messages: messages?,
+                            }
+                        } else {
+                            let user_id = self.user_id().await;
+                            let api = self.api.lock().await;
+                            let messages = api.get_messages(user_id, id, offset).await;
+                            ServerResponse::Messages {
+                                sender: id,
+                                messages: messages?,
+                            }
+                        }
                     }
                     ClientRequest::Request { request } => match request.as_str() {
                         "get_groups" => {
                             let user_id = self.user_id().await;
                             let api = self.api.lock().await;
                             let groups = api.get_groups(user_id).await;
-                            ServerResponse::
-                            GroupList { friend_ids: groups? }
+                            ServerResponse::GroupList {
+                                friend_ids: groups?,
+                            }
                         }
                         "get_friends" => {
                             let user_id = self.user_id().await;
                             let api = self.api.lock().await;
                             let friends = api.get_friends(user_id).await;
-                            ServerResponse::
-                            FriendList { friend_ids: friends? }
+                            ServerResponse::FriendList {
+                                friend_ids: friends?,
+                            }
                         }
                         "online_users" => self.get_online_users().await,
                         "my_username" => {

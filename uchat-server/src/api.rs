@@ -1,9 +1,10 @@
 use crate::client::Client;
+use crate::db::Database as DB;
+use crate::protocol::Message;
 use bcrypt::hash;
 use bcrypt::BcryptError;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex; // 引入 bcrypt 库
-use crate::db::Database as DB;
 
 pub struct Api {
     db: DB,
@@ -11,10 +12,7 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new(
-        db: DB,
-        clients: HashMap<u32, Arc<Mutex<Client>>>,
-    ) -> Self {
+    pub fn new(db: DB, clients: HashMap<u32, Arc<Mutex<Client>>>) -> Self {
         Self { db, clients }
     }
 
@@ -54,11 +52,14 @@ impl Api {
             Ok(None) => Ok(false),
             Err(_) => Ok(false),
         }
-        
     }
 
     /// 处理用户注册请求
-    pub async fn register(&self, username: &str, password: &str) -> Result<Option<u32>, BcryptError> {
+    pub async fn register(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> Result<Option<u32>, BcryptError> {
         let hashed = hash(&password, 4)?;
         let user_id = self.db.new_user(username, &hashed).await;
         match user_id {
@@ -75,46 +76,38 @@ impl Api {
 
     /// 处理用户发送私聊消息请求
     pub async fn send_message(&self, sender: u32, receiver: u32, message: &str) -> bool {
-        
-        if receiver == 0 {
-            // 创建一个异步任务集合
-            let clients = self.clients.clone(); // 克隆 Arc 引用
-
-            // 创建一个异步任务集合
-            let tasks: Vec<_> = clients
-                .iter()
-                .map(|(client_id, client)| {
-                    let sender = sender;
-                    let message = message.to_string();
-                    let _client_id = client_id.clone(); // 克隆 client_id
-                    let client = client.clone(); // 克隆锁
-
-                    tokio::spawn(async move {
-                        let client = client.lock().await;
-                        client.receive_message(sender, message).await;
-                    })
-                })
-                .collect();
-
-            // 等待所有任务完成
-            for task in tasks {
-                if let Err(err) = task.await {
-                    println!("并发任务失败: {}", err);
-                }
+        if let Ok(()) = self.db.add_message(sender, receiver, message).await {
+            if let Some(client) = self.clients.get(&receiver) {
+                let client = client.lock().await;
+                client.receive_message(0, sender, message.to_string()).await;
             }
             true
         } else {
-            // 单个接收者处理逻辑
-            if let Some(client) = self.clients.get(&receiver) {
-                let client = client.lock().await;
-                client
-                    .receive_message(sender, message.to_string())
-                    .await;
+            println!("接收者 {} 不存在", receiver);
+            false
+        }
+    }
+
+    /// 处理用户发送群聊消息请求
+    pub async fn send_group_message(&self, group_id: u32, sender: u32, message: &str) -> bool {
+        if let Ok(()) = self.db.add_group_message(group_id, sender, message).await {
+            if let Ok(group_members) = self.get_group_members(group_id).await {
+                for member_id in group_members {
+                    if let Some(client) = self.clients.get(&member_id) {
+                        let client = client.lock().await;
+                        client
+                            .receive_message(group_id, sender, message.to_string())
+                            .await;
+                    }
+                }
                 true
             } else {
-                println!("接收者 {} 不在线或不存在", receiver);
+                println!("Group {} does not have any members.", group_id);
                 false
             }
+        } else {
+            println!("Group {} does not exist.", group_id);
+            false
         }
     }
 
@@ -124,25 +117,55 @@ impl Api {
     }
     /// 返回自己的用户名
     pub async fn get_username(&self, id: u32) -> Result<Option<String>, sqlx::Error> {
-        self.db.get_username(id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+        self.db
+            .get_username(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回自己的好友列表
     pub async fn get_friends(&self, id: u32) -> Result<Vec<u32>, sqlx::Error> {
-        self.db.get_friends(id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+        self.db
+            .get_friends(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回自己的群聊列表
     pub async fn get_groups(&self, id: u32) -> Result<Vec<u32>, sqlx::Error> {
-        self.db.get_groups(id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+        self.db
+            .get_groups(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<u32>, sqlx::Error> {
-        self.db.get_group_members(group_id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+        self.db
+            .get_group_members(group_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 添加好友
     pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), sqlx::Error> {
-        self.db.add_friend(user_id, friend_id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+        self.db
+            .add_friend(user_id, friend_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 添加群聊
     pub async fn add_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
-        self.db.add_group(user_id, group_id).await.map_err(|e| sqlx::Error::Decode(e.into()))
+        self.db
+            .add_group(user_id, group_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    pub async fn get_group_messages(&self, group_id: u32, offset: u32) -> Result<Vec<Message>, sqlx::Error> {
+        self.db
+            .get_group_messages(group_id, offset)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    pub async fn get_messages(&self, sender: u32, receiver: u32, offset: u32) -> Result<Vec<Message>, sqlx::Error> {
+        self.db
+            .get_messages(sender, receiver, offset)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
 }
