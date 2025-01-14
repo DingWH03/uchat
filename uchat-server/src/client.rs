@@ -344,7 +344,7 @@ impl Client {
                             let api = self.api.lock().await;
                             let groups = api.get_groups(user_id).await;
                             ServerResponse::GroupList {
-                                friend_ids: groups?,
+                                groups: groups?,
                             }
                         }
                         "get_friends" => {
@@ -352,7 +352,7 @@ impl Client {
                             let api = self.api.lock().await;
                             let friends = api.get_friends(user_id).await;
                             ServerResponse::FriendList {
-                                friend_ids: friends?,
+                                friends: friends?,
                             }
                         }
                         "online_users" => self.get_online_users().await,

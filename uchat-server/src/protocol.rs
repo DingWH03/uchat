@@ -128,12 +128,12 @@ pub enum ServerResponse {
     /// 响应request->get_friends
     #[serde(rename = "friend_list")]
     FriendList {
-        friend_ids: Vec<UserSimpleInfo>,
+        friends: Vec<UserSimpleInfo>,
     },
     /// 响应request->get_groups
     #[serde(rename = "group_list")]
     GroupList {
-        friend_ids: Vec<GroupSimpleInfo>,
+        groups: Vec<GroupSimpleInfo>,
     },
     /// 响应messagesrequest
     #[serde(rename = "messages")]
