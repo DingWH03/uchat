@@ -76,8 +76,11 @@ SQL_QUERIES = [
     CREATE TABLE IF NOT EXISTS ugroups (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(255) NOT NULL UNIQUE,
+        creator_id INT UNSIGNED NOT NULL,  -- 创建者id
         description VARCHAR(256) DEFAULT NULL, -- 群聊简介，最多 256 字符
-        avatar_url VARCHAR(255) DEFAULT NULL -- 群聊头像 URL
+        avatar_url VARCHAR(255) DEFAULT NULL, -- 群聊头像 URL
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
     );
     """,
 
@@ -100,7 +103,7 @@ SQL_QUERIES = [
         group_id INT UNSIGNED NOT NULL,
         sender_id INT UNSIGNED NOT NULL,
         message TEXT NOT NULL,
-        timestamp DATET IME DEFAULT CURRENT_TIMESTAMP,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (group_id) REFERENCES ugroups(id),
         FOREIGN KEY (sender_id) REFERENCES users(id)
     );

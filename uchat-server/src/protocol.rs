@@ -3,9 +3,27 @@ use serde::{Serialize, Deserialize};
 use chrono::NaiveDateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct User {
+pub struct UserSimpleInfo {
     pub user_id: u32,
     pub username: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserDetailedInfo {
+    pub user_id: u32,
+    pub username: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GroupSimpleInfo {
+    pub group_id: u32,
+    pub title: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GroupDetailedInfo {
+    pub group_id: u32,
+    pub title: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,15 +46,16 @@ pub enum ClientRequest {
         request: String,
         id: u32,
     },
+    #[serde(rename = "namerequest")]
+    NameRequest {
+        request: String,
+        name: String,
+    },
     #[serde(rename = "messagesrequest")]
     MessagesRequest {
         group: bool,
         id: u32,
         offset: u32,
-    },
-    #[serde(rename = "userinfo")]
-    CheckUserInfo {
-        user_id: u32,
     },
     #[serde(rename = "register")]
     Register {
@@ -90,26 +109,31 @@ pub enum ServerResponse {
         flag: String,
         user_ids: Vec<u32>,
     },
-    #[serde(rename = "username")]
-    UserName {
+    #[serde(rename = "userinfo")]
+    UserInfo {
         user_id: u32,
-        username: String,
+        userinfo: UserDetailedInfo,
+    },
+    #[serde(rename = "groupinfo")]
+    GroupInfo {
+        group_id: u32,
+        groupinfo: GroupDetailedInfo,
     },
     /// 响应objrequest->get_group_members
     #[serde(rename = "group_members")]
     GroupMembers {
         group_id: u32,
-        member_ids: Vec<u32>,
+        member_ids: Vec<UserSimpleInfo>,
     },
     /// 响应request->get_friends
     #[serde(rename = "friend_list")]
     FriendList {
-        friend_ids: Vec<u32>,
+        friend_ids: Vec<UserSimpleInfo>,
     },
     /// 响应request->get_groups
     #[serde(rename = "group_list")]
     GroupList {
-        friend_ids: Vec<u32>,
+        friend_ids: Vec<GroupSimpleInfo>,
     },
     /// 响应messagesrequest
     #[serde(rename = "messages")]

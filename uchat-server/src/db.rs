@@ -1,6 +1,6 @@
 // src/db.rs
 
-use crate::protocol::Message;
+use crate::protocol::{GroupSimpleInfo, Message, UserDetailedInfo, UserSimpleInfo, GroupDetailedInfo};
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use dotenv::dotenv;
@@ -55,44 +55,150 @@ impl Database {
         Ok(Some(last_insert_id))
     }
 
-    /// 根据id查找username
-    pub async fn get_username(&self, id: u32) -> Result<Option<String>> {
-        let row = sqlx::query!("SELECT username FROM users WHERE id = ?", id)
-            .fetch_optional(&self.pool)
-            .await?;
-        // println!("{:?}",row);
+    /// 根据id查找用户详细信息
+    pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>> {
+        let row = sqlx::query!(
+            "SELECT id AS user_id, username FROM users WHERE id = ?",
+            id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
 
-        Ok(row.map(|r| r.username))
+        Ok(row.map(|r| UserDetailedInfo {
+            user_id: r.user_id,
+            username: r.username,
+        }))
+    }
+
+    /// 设置UserDetailedInfo用户信息，当前用户信息较少，以后会考虑单独设置某一部分，例如个性签名，头像等
+    // pub async fn set_userinfo(&self, id: u32, userinfo: UserDetailedInfo) -> Result<()> {
+
+    // }
+
+    /// 根据group_id获取群聊详细信息
+    pub async fn get_groupinfo(&self, group_id: u32) -> Result<Option<GroupDetailedInfo>> {
+        let row = sqlx::query!(
+            "SELECT id AS group_id, name AS title FROM ugroups WHERE id = ?",
+            group_id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(row.map(|r| GroupDetailedInfo {
+            group_id: r.group_id,
+            title: r.title,
+        }))
     }
 
     /// 根据user_id🔍好友列表，一般是自己查找自己的好友列表
-    pub async fn get_friends(&self, id: u32) -> Result<Vec<u32>> {
-        let rows = sqlx::query!("SELECT friend_id FROM friendships WHERE user_id = ?", id)
-            .fetch_all(&self.pool)
-            .await?;
-
-        Ok(rows.iter().map(|r| r.friend_id).collect())
+    pub async fn get_friends(&self, user_id: u32) -> Result<Vec<UserSimpleInfo>> {
+        let rows = sqlx::query!(
+            "
+            SELECT 
+                f.friend_id, 
+                u.username 
+            FROM 
+                friendships f
+            JOIN 
+                users u 
+            ON 
+                f.friend_id = u.id
+            WHERE 
+                f.user_id = ?
+            ",
+            user_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+    
+        // 将查询结果映射到 UserSimpleInfo 结构体
+        Ok(rows.into_iter().map(|r| UserSimpleInfo {
+            user_id: r.friend_id,
+            username: r.username,
+        }).collect())
     }
 
     /// 根据user_id🔍群组列表，一般是自己查找自己的群组列表
-    pub async fn get_groups(&self, id: u32) -> Result<Vec<u32>> {
-        let rows = sqlx::query!("SELECT group_id FROM group_members WHERE user_id = ?", id)
-            .fetch_all(&self.pool)
-            .await?;
-
-        Ok(rows.iter().map(|r| r.group_id).collect())
+    pub async fn get_groups(&self, user_id: u32) -> Result<Vec<GroupSimpleInfo>> {
+        let rows = sqlx::query!(
+            "
+            SELECT 
+                gm.group_id, 
+                g.name AS title 
+            FROM 
+                group_members gm
+            JOIN 
+                ugroups g 
+            ON 
+                gm.group_id = g.id
+            WHERE 
+                gm.user_id = ?
+            ",
+            user_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+    
+        // 将查询结果映射到 GroupSimpleInfo 结构体
+        Ok(rows.into_iter().map(|r| GroupSimpleInfo {
+            group_id: r.group_id,
+            title: r.title,
+        }).collect())
     }
 
     /// 根据group_id🔍群组成员列表
-    pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<u32>> {
+    pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<UserSimpleInfo>> {
         let rows = sqlx::query!(
-            "SELECT user_id FROM group_members WHERE group_id = ?",
+            "
+            SELECT 
+                gm.user_id, 
+                u.username 
+            FROM 
+                group_members gm
+            JOIN 
+                users u 
+            ON 
+                gm.user_id = u.id
+            WHERE 
+                gm.group_id = ?
+            ",
             group_id
         )
         .fetch_all(&self.pool)
         .await?;
+    
+        // 将查询结果映射到 GroupMemberInfo 结构体
+        Ok(rows.into_iter().map(|r| UserSimpleInfo {
+            user_id: r.user_id,
+            username: r.username,
+        }).collect())
+    }
+    
 
-        Ok(rows.iter().map(|r| r.user_id).collect())
+    /// 创建群组，默认将创建者加入群聊
+    pub async fn create_group(&self, user_id: u32, group_name: &str) -> Result<u32> {
+        // 插入新的群组，包含名称和创建者ID
+        let result = sqlx::query!(
+            "INSERT INTO ugroups (name, creator_id) VALUES (?, ?)",
+            group_name,
+            user_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        // 获取新插入的群组ID
+        let group_id = result.last_insert_id() as u32;
+
+        // 将创建者加入群聊成员表
+        sqlx::query!(
+            "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)",
+            group_id,
+            user_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(group_id)
     }
 
     /// 添加好友，user_id是发送者的id，friend_id是接收者的id

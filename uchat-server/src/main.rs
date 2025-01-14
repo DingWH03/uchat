@@ -36,11 +36,11 @@ async fn main() -> Result<()> {
         if let Ok((socket, _)) = listener.accept().await {
             let api_clone = Arc::clone(&api);
             let signed_in = Arc::new(AtomicBool::new(false));
-            let user_info = Arc::new(Mutex::new(protocol::User{user_id:0,username:"".to_string()}));
+            let user_id: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
 
             // 处理每个客户端连接
             tokio::spawn(async move {
-                let client = Client::new(socket, api_clone, user_info, signed_in);
+                let client = Client::new(socket, api_clone, user_id, signed_in);
                 if let Err(e) = client.run().await {
                     eprintln!("客户端断开连接: {:?}", e);
                 }

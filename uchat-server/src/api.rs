@@ -1,6 +1,6 @@
 use crate::client::Client;
 use crate::db::Database as DB;
-use crate::protocol::Message;
+use crate::protocol::{GroupSimpleInfo, Message, UserDetailedInfo, UserSimpleInfo, GroupDetailedInfo};
 use bcrypt::hash;
 use bcrypt::BcryptError;
 use std::{collections::HashMap, sync::Arc};
@@ -88,12 +88,12 @@ impl Api {
         }
     }
 
-    /// 处理用户发送群聊消息请求
+    /// 处理用户发送群聊消息请求 可能还需要改进
     pub async fn send_group_message(&self, group_id: u32, sender: u32, message: &str) -> bool {
         if let Ok(()) = self.db.add_group_message(group_id, sender, message).await {
             if let Ok(group_members) = self.get_group_members(group_id).await {
                 for member_id in group_members {
-                    if let Some(client) = self.clients.get(&member_id) {
+                    if let Some(client) = self.clients.get(&member_id.user_id) {
                         let client = client.lock().await;
                         client
                             .receive_message(group_id, sender, message.to_string())
@@ -115,28 +115,36 @@ impl Api {
     pub async fn online_users(&self) -> Vec<u32> {
         self.clients.keys().cloned().collect()
     }
-    /// 返回自己的用户名
-    pub async fn get_username(&self, id: u32) -> Result<Option<String>, sqlx::Error> {
+    /// 返回用户详细信息
+    pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, sqlx::Error> {
         self.db
-            .get_username(id)
+            .get_userinfo(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 返回群组详细信息
+    pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, sqlx::Error> {
+        self.db
+            .get_groupinfo(id)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回自己的好友列表
-    pub async fn get_friends(&self, id: u32) -> Result<Vec<u32>, sqlx::Error> {
+    pub async fn get_friends(&self, id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
         self.db
             .get_friends(id)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回自己的群聊列表
-    pub async fn get_groups(&self, id: u32) -> Result<Vec<u32>, sqlx::Error> {
+    pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, sqlx::Error> {
         self.db
             .get_groups(id)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
-    pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<u32>, sqlx::Error> {
+    /// 获取群组成员
+    pub async fn get_group_members(&self, group_id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
         self.db
             .get_group_members(group_id)
             .await
@@ -149,6 +157,13 @@ impl Api {
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
+    /// 创建群聊
+    pub async fn create_group(&self, user_id: u32, group_name: &str) -> Result<u32, sqlx::Error> {
+        self.db
+            .create_group(user_id, group_name)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
     /// 添加群聊
     pub async fn add_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
         self.db
@@ -156,12 +171,14 @@ impl Api {
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
+    /// 获取群聊聊天记录
     pub async fn get_group_messages(&self, group_id: u32, offset: u32) -> Result<Vec<Message>, sqlx::Error> {
         self.db
             .get_group_messages(group_id, offset)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
+    /// 获取私聊聊天记录
     pub async fn get_messages(&self, sender: u32, receiver: u32, offset: u32) -> Result<Vec<Message>, sqlx::Error> {
         self.db
             .get_messages(sender, receiver, offset)

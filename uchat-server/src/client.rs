@@ -1,6 +1,6 @@
 // src/client.rs
 use crate::api::Api;
-use crate::protocol::{ClientRequest, ServerResponse, User};
+use crate::protocol::{ClientRequest, ServerResponse, UserDetailedInfo, GroupDetailedInfo};
 use crate::utils::{reader_packet, writer_packet};
 use anyhow::Result;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 #[derive(Clone)]
 pub struct Client {
     api: Arc<Mutex<Api>>,
-    user: Arc<Mutex<User>>,
+    user_id: Arc<Mutex<u32>>,
     writer: Arc<Mutex<tokio::io::BufWriter<tokio::net::tcp::OwnedWriteHalf>>>,
     reader: Arc<Mutex<tokio::io::BufReader<tokio::net::tcp::OwnedReadHalf>>>,
     signed_in: Arc<AtomicBool>,
@@ -21,25 +21,25 @@ impl Client {
     pub fn new(
         socket: TcpStream,
         api: Arc<Mutex<Api>>,
-        user: Arc<Mutex<User>>,
+        user_id: Arc<Mutex<u32>>,
         signed_in: Arc<AtomicBool>,
     ) -> Self {
         let (reader, writer) = socket.into_split();
         Self {
             api,
-            user,
+            user_id,
             writer: Arc::new(Mutex::new(tokio::io::BufWriter::new(writer))),
             reader: Arc::new(Mutex::new(tokio::io::BufReader::new(reader))),
             signed_in,
         }
     }
     pub async fn user_id(&self) -> u32 {
-        let user = self.user.lock().await;
-        user.user_id.clone()
+        let user_id = self.user_id.lock().await;
+        user_id.clone()
     }
-    pub async fn username(&self) -> String {
-        let user = self.user.lock().await;
-        user.username.clone()
+    pub async fn set_user_id(&self, new_user_id: u32) {
+        let mut user_id = self.user_id.lock().await;
+        *user_id = new_user_id;
     }
     pub async fn send_packet(&self, msg: &ServerResponse) -> Result<()> {
         let mut writer = self.writer.lock().await;
@@ -107,20 +107,7 @@ impl Client {
             Ok(true) => {
                 // 登录成功，更新用户状态
                 self.set_signed(true);
-                let api = self.api.lock().await;
-                match api.get_username(id).await {
-                    // 获取用户名，且成功或失败后都需要修改用户名
-                    Ok(Some(name)) => {
-                        let mut user = self.user.lock().await;
-                        user.user_id = id;
-                        user.username = name;
-                    }
-                    _ => {
-                        let mut user = self.user.lock().await;
-                        user.user_id = id;
-                        user.username = "未知用户".to_string();
-                    }
-                }
+                self.set_user_id(id).await;
                 ServerResponse::LoginResponse {
                     status: true,
                     message: "登录成功".to_string(),
@@ -211,9 +198,9 @@ impl Client {
                     eprintln!("客户端连接断开，错误: {:?}", e);
                     // 调用 Api.down 方法处理账号下线逻辑
                     let mut api = self.api.lock().await;
-                    let user = self.user.lock().await;
+                    let user_id = self.user_id.lock().await;
                     if self.is_signed() {
-                        api.down(user.user_id).await;
+                        api.down(*user_id).await;
                     } // 未登陆的情况下无需处理
                     break; // 跳出循环，停止处理客户端
                 }
@@ -239,6 +226,36 @@ impl Client {
                             ServerResponse::GroupMembers {
                                 group_id: id,
                                 member_ids: members?,
+                            }
+                        }
+                        "user_info" => {
+                            let api = self.api.lock().await;
+                            match api.get_userinfo(id).await {
+                                Ok(Some(userinfo)) => ServerResponse::UserInfo {
+                                    user_id: id,
+                                    userinfo: UserDetailedInfo {
+                                        user_id: id,
+                                        username: userinfo.username,
+                                    },
+                                },
+                                _ => ServerResponse::Error {
+                                    message: "用户不存在".to_string(),
+                                },
+                            }
+                        }
+                        "group_info" => {
+                            let api = self.api.lock().await;
+                            match api.get_groupinfo(id).await {
+                                Ok(Some(groupinfo)) => ServerResponse::GroupInfo {
+                                    group_id: id,
+                                    groupinfo: GroupDetailedInfo {
+                                        group_id: id,
+                                        title: groupinfo.title,
+                                    },
+                                },
+                                _ => ServerResponse::Error {
+                                    message: "用户不存在".to_string(),
+                                },
                             }
                         }
                         "add_friend" => {
@@ -279,6 +296,30 @@ impl Client {
                             message: "未知请求".to_string(),
                         },
                     },
+                    ClientRequest::NameRequest { request, name } => match request.as_str() {
+                        "newgroup" => {
+                            let api = self.api.lock().await;
+                            let creator_id = self.user_id().await;
+                            let result = api.create_group(creator_id, &name).await;
+                            match result {
+                                Ok(group_id) => ServerResponse::GenericResponse {
+                                        status: "ok".to_string(),
+                                        message: format!("创建成功，群聊id为{}", group_id),
+                                    
+                                },
+                                Err(err) => {
+                                    eprintln!("创建群聊失败: {:?}", err);
+                                    ServerResponse::GenericResponse {
+                                        status: "failed".to_string(),
+                                        message: "创建群聊失败，请稍后重试".to_string(),
+                                    }
+                                }
+                            }
+                        }
+                        _ => ServerResponse::Error {
+                            message: "未知请求".to_string(),
+                        },
+                    }
                     ClientRequest::MessagesRequest { group, id, offset } => {
                         if group {
                             let api = self.api.lock().await;
@@ -315,13 +356,6 @@ impl Client {
                             }
                         }
                         "online_users" => self.get_online_users().await,
-                        "my_username" => {
-                            let username = self.username().await;
-                            ServerResponse::UserName {
-                                user_id: self.user_id().await,
-                                username,
-                            }
-                        }
                         "ping" => ServerResponse::GenericResponse {
                             status: "ok".to_string(),
                             message: "pong".to_string(),
@@ -330,15 +364,6 @@ impl Client {
                             message: "未知请求".to_string(),
                         },
                     },
-                    ClientRequest::CheckUserInfo { user_id } => {
-                        let api = self.api.lock().await;
-                        match api.get_username(user_id).await {
-                            Ok(Some(username)) => ServerResponse::UserName { user_id, username },
-                            _ => ServerResponse::Error {
-                                message: "用户不存在".to_string(),
-                            },
-                        }
-                    }
                     ClientRequest::Register {
                         username: _,
                         password: _,

@@ -90,10 +90,10 @@ pub enum ServerResponse {
         flag: String,
         user_ids: Vec<u32>,
     },
-    #[serde(rename = "username")]
-    UserName {
+    #[serde(rename = "userinfo")]
+    UserInfo {
         user_id: u32,
-        username: String,
+        userinfo: User,
     },
     /// 响应objrequest->get_group_members
     #[serde(rename = "group_members")]
