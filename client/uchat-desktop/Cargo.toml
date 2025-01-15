@@ -4,14 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-uchat-coreapi = { path = "../uchat-coreapi" }
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-anyhow = "1.0"
-cxx = "1.0.95"
-cxx-qt = "0.7"
-cxx-qt-lib = { version="0.7", features = ["qt_full"] }
+iced = "0.13.1"
+# uchat-coreapi = { path = "../uchat-coreapi" }
+# tokio = { version = "1", features = ["full"] }
+# serde = { version = "1.0", features = ["derive"] }
+# serde_json = "1.0"
+# anyhow = "1.0"
 
 [build-dependencies]
-cxx-qt-build = { version = "0.7", features = [ "link_qt_object_files" ] }
