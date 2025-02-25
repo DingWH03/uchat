@@ -4,13 +4,12 @@
   "version": "0.1.0",
   "identifier": "com.dingvero.uchat.desktop",
   "build": {
-    "beforeDevCommand": "trunk serve",
-    "devUrl": "http://localhost:8081",
-    "beforeBuildCommand": "trunk build",
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
     "windows": [
       {
         "title": "uchat-desktop",

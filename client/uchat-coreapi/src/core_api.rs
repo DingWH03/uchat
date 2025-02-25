@@ -7,6 +7,20 @@ use anyhow::{Result, Context};
 use crate::protocol::{ClientRequest, ServerResponse};
 use crate::utils::{reader_packet, writer_packet};
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConnectionState {
+    /// 未连接
+    Disconnected,
+    /// 已连接但未登录
+    ConnectedNotLoggedIn,
+    /// 已登录
+    LoggedIn,
+    /// 已登录但连接中断
+    LoggedInButDisconnected,
+    /// 有未处理的消息
+    HasUnprocessedMessages,
+}
+
 #[derive(Clone)]
 pub struct CoreApi {
     /// 通道：用于发送客户端请求给服务器
@@ -17,6 +31,9 @@ pub struct CoreApi {
 
     /// 通道：用于从读取任务发送服务器响应到响应处理器
     server_response_sender: mpsc::Sender<ServerResponse>,
+
+    /// 当前连接状态
+    state: Arc<Mutex<ConnectionState>>,
 }
 
 impl CoreApi {
@@ -41,6 +58,7 @@ impl CoreApi {
             client_request_sender,
             server_response_receiver,
             server_response_sender,
+            state: Arc::new(Mutex::new(ConnectionState::Disconnected)),
         };
 
         // 启动后台任务
@@ -50,14 +68,23 @@ impl CoreApi {
         Ok(core_api)
     }
 
+    pub async fn get_state(&self) -> ConnectionState {
+        let state_guard = self.state.lock().await;
+        state_guard.clone()
+    }
+
     /// 启动后台任务：从服务器读取响应
     fn spawn_read_task(&self, reader: Arc<Mutex<BufReader<OwnedReadHalf>>>) {
         let server_response_sender = self.server_response_sender.clone();
-
+        let state = self.state.clone();
+    
         tokio::spawn(async move {
             loop {
                 match reader_packet(&mut *reader.lock().await).await {
                     Ok(response) => {
+                        // 处理状态更新
+                        Self::update_state(&state, &response).await;
+    
                         if let Err(e) = server_response_sender.send(response).await {
                             eprintln!("消息发送失败，队列已关闭: {:?}", e);
                             break;
@@ -72,7 +99,32 @@ impl CoreApi {
             eprintln!("读取任务已结束");
         });
     }
-
+    
+    /// 根据 ServerResponse 更新状态
+    async fn update_state(state: &Arc<Mutex<ConnectionState>>, response: &ServerResponse) {
+        let mut state_guard = state.lock().await;
+        match response {
+            ServerResponse::LoginResponse { status, .. } => {
+                if *status {
+                    *state_guard = ConnectionState::LoggedIn;
+                } else {
+                    *state_guard = ConnectionState::ConnectedNotLoggedIn;
+                }
+            }
+            ServerResponse::RegisterResponse { status, .. } => {
+                if *status {
+                    *state_guard = ConnectionState::ConnectedNotLoggedIn;
+                }
+            }
+            ServerResponse::Error { .. } => {
+                *state_guard = ConnectionState::LoggedInButDisconnected;
+            }
+            ServerResponse::ReceiveMessage { .. } => {
+                *state_guard = ConnectionState::HasUnprocessedMessages;
+            }
+            _ => {}
+        }
+    }
     /// 启动后台任务：将客户端请求发送到服务器
     fn spawn_write_task(
         &self,

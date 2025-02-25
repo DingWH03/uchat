@@ -1,10 +1,8 @@
 [workspace]
+resolver = "2" 
 members = [
     "uchat-server",            # 服务端
     "client/uchat-coreapi",       # 客户端核心库
-    "client/uchat-desktop",       # 桌面端客户端
     "client/uchat-desktop/src-tauri", 
-    "client/uchat-android",       # 安卓端客户端
-    "client/uchat-android/src-tauri", 
 ]
 

@@ -1,0 +1,46 @@
+.home-page {
+    display: flex;
+  }
+  
+  .sidebar {
+    width: 250px;
+    background-color: #f4f4f4;
+    padding: 20px;
+  }
+  
+  .sidebar h2 {
+    margin-top: 0;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sidebar li {
+    margin-bottom: 10px;
+  }
+  
+  .content {
+    flex-grow: 1;
+    padding: 20px;
+  }
+  
+  .friend-list, .message-list, .chat-window {
+    padding: 20px;
+    border: 1px solid #ccc;
+    margin-top: 20px;
+  }
+  
+  .chat-window .messages {
+    max-height: 300px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+  }
+  
+  textarea {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 10px;
+  }
+  

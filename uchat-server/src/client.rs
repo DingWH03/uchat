@@ -134,7 +134,7 @@ impl Client {
         receiver: u32,
         message: String,
     ) -> ServerResponse {
-        if group_id == 0 {
+        if group_id != 0 {
             let status = {
                 let api = self.api.lock().await;
                 api.send_group_message(group_id, sender, &message).await
