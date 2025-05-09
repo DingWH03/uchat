@@ -1,29 +1,13 @@
 .home-page {
-    display: flex;
-  }
-  
-  .sidebar {
-    width: 250px;
-    background-color: #f4f4f4;
-    padding: 20px;
-  }
-  
-  .sidebar h2 {
-    margin-top: 0;
-  }
-  
-  .sidebar ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .sidebar li {
-    margin-bottom: 10px;
+  display: flex;
+  height: 100vh;
   }
   
   .content {
-    flex-grow: 1;
+    flex: 1;
+    margin-left: 60px;
     padding: 20px;
+    overflow-y: auto; /* 内容区域可以滚动 */
   }
   
   .friend-list, .message-list, .chat-window {
@@ -43,4 +27,3 @@
     height: 80px;
     margin-bottom: 10px;
   }
-  

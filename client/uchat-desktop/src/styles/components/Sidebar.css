@@ -1,0 +1,23 @@
+.sidebar {
+    width: 50px; /* 减小宽度 */
+    /* background-color: #f4f4f4; */
+    padding: 20px;
+    position: fixed; 
+    height: 100%; /* 使侧边栏延伸到屏幕最下方 */
+    top: 0;
+    left: 0;
+  }
+  
+  .sidebar h2 {
+    margin-top: 0;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sidebar li {
+    margin-bottom: 10px;
+  }
+  
