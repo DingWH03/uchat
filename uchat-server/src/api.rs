@@ -4,7 +4,7 @@ use crate::protocol::{GroupSimpleInfo, Message, UserDetailedInfo, UserSimpleInfo
 use bcrypt::hash;
 use bcrypt::BcryptError;
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::Mutex; // 引入 bcrypt 库
+use tokio::sync::Mutex; 
 
 pub struct Api {
     db: DB,
@@ -76,10 +76,15 @@ impl Api {
 
     /// 处理用户发送私聊消息请求
     pub async fn send_message(&self, sender: u32, receiver: u32, message: &str) -> bool {
-        if let Ok(()) = self.db.add_message(sender, receiver, message).await {
+        if let Ok(message_id) = self.db.add_message(sender, receiver, message).await {
             if let Some(client) = self.clients.get(&receiver) {
                 let client = client.lock().await;
                 client.receive_message(0, sender, message.to_string()).await;
+            } else {
+                // Step 3: 接收者不在线，写入离线消息表
+                if let Err(e) = self.db.add_offline_message(receiver, false, Some(message_id), None).await {
+                    eprintln!("离线消息写入失败：{}", e);
+                }
             }
             true
         } else {
@@ -90,26 +95,51 @@ impl Api {
 
     /// 处理用户发送群聊消息请求 可能还需要改进
     pub async fn send_group_message(&self, group_id: u32, sender: u32, message: &str) -> bool {
-        if let Ok(()) = self.db.add_group_message(group_id, sender, message).await {
-            if let Ok(group_members) = self.get_group_members(group_id).await {
-                for member_id in group_members {
-                    if let Some(client) = self.clients.get(&member_id.user_id) {
-                        let client = client.lock().await;
-                        client
-                            .receive_message(group_id, sender, message.to_string())
-                            .await;
-                    }
-                }
-                true
-            } else {
-                println!("Group {} does not have any members.", group_id);
-                false
-            }
+    // 1. 添加群聊消息，并获取其 message_id
+    let group_message_id = match self.db.add_group_message(group_id, sender, message).await {
+        Ok(id) => id,
+        Err(e) => {
+            println!("Group {} does not exist or DB error: {:?}", group_id, e);
+            return false;
+        }
+    };
+
+    // 2. 获取群成员
+    let group_members = match self.get_group_members(group_id).await {
+        Ok(members) => members,
+        Err(e) => {
+            println!("Group {} does not have any members: {:?}", group_id, e);
+            return false;
+        }
+    };
+
+    // 3. 遍历群成员
+    for member_id in group_members {
+        // 可选：跳过自己
+        if member_id.user_id == sender {
+            continue;
+        }
+
+        if let Some(client) = self.clients.get(&member_id.user_id) {
+            let client = client.lock().await;
+            client
+                .receive_message(group_id, sender, message.to_string())
+                .await;
         } else {
-            println!("Group {} does not exist.", group_id);
-            false
+            // 用户不在线，插入离线消息
+            if let Err(err) = self
+                .db
+                .add_offline_message(member_id.user_id, true, None, Some(group_message_id))
+                .await
+            {
+                println!("Failed to add offline message for user {}: {:?}", member_id.user_id, err);
+            }
         }
     }
+
+    true
+}
+
 
     /// 返回在线id列表
     pub async fn online_users(&self) -> Vec<u32> {

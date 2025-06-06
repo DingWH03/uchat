@@ -202,18 +202,32 @@ impl Database {
     }
 
     /// 添加好友，user_id是发送者的id，friend_id是接收者的id
-    /// 需要两个人互相添加好友后才能通信
+    /// 直接双向成为好友，暂不支持请求与同意机制
     pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        // 插入 (user_id, friend_id)
         sqlx::query!(
-            "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)",
+            "INSERT IGNORE INTO friendships (user_id, friend_id) VALUES (?, ?)",
             user_id,
             friend_id
         )
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?;
 
+        // 插入 (friend_id, user_id)
+        sqlx::query!(
+            "INSERT IGNORE INTO friendships (user_id, friend_id) VALUES (?, ?)",
+            friend_id,
+            user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
         Ok(())
     }
+
 
     /// 添加群组成员，user_id是发送者的id，group_id是接收者的id
     pub async fn add_group(&self, user_id: u32, group_id: u32) -> Result<()> {
@@ -228,9 +242,9 @@ impl Database {
         Ok(())
     }
 
-    /// 添加私聊信息聊天记录
-    pub async fn add_message(&self, sender: u32, receiver: u32, message: &str) -> Result<()> {
-        sqlx::query!(
+    /// 添加私聊信息聊天记录，返回消息的自增 ID
+    pub async fn add_message(&self, sender: u32, receiver: u32, message: &str) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
             "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
             sender,
             receiver,
@@ -238,21 +252,52 @@ impl Database {
         )
         .execute(&self.pool)
         .await?;
+
+        Ok(result.last_insert_id())
+    }
+
+    /// 添加离线消息记录
+    pub async fn add_offline_message(
+        &self,
+        receiver_id: u32,
+        is_group: bool,
+        message_id: Option<u64>,
+        group_message_id: Option<u64>,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "INSERT INTO offline_messages (receiver_id, is_group, message_id, group_message_id)
+            VALUES (?, ?, ?, ?)",
+            receiver_id,
+            is_group,
+            message_id,
+            group_message_id
+        )
+        .execute(&self.pool)
+        .await?;
+
         Ok(())
     }
 
     /// 添加群聊信息聊天记录
-    pub async fn add_group_message(&self, group_id: u32, sender: u32, message: &str) -> Result<()> {
-        sqlx::query!(
-            "INSERT INTO ugroup_messages (group_id, sender_id, message) VALUES (?, ?, ?)",
+    pub async fn add_group_message(
+        &self,
+        group_id: u32,
+        sender: u32,
+        message: &str,
+    ) -> Result<u64> {
+        let result = sqlx::query!(
+            "INSERT INTO ugroup_messages (group_id, sender_id, message)
+            VALUES (?, ?, ?)",
             group_id,
             sender,
             message
         )
         .execute(&self.pool)
         .await?;
-        Ok(())
+
+        Ok(result.last_insert_id())
     }
+
 
     /// 获取私聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
