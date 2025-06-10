@@ -1,0 +1,447 @@
+use super::error::UserError;
+use crate::api::session_manager::SessionManager;
+use crate::db::Database as DB;
+use crate::protocol::{
+    GroupDetailedInfo, GroupSimpleInfo, ServerMessage, SessionMessage, UserDetailedInfo,
+    UserSimpleInfo,
+};
+use axum::extract::ws::Message;
+use bcrypt::{BcryptError, hash};
+use futures::StreamExt;
+use futures::stream::FuturesUnordered;
+use log::{error, info, debug, warn};
+use std::sync::Arc;
+use tokio::sync::RwLock; // Use RwLock for session management
+use uuid::Uuid;
+
+// use tokio::sync::Mutex;
+
+pub struct Request {
+    db: DB,
+    sessions: Arc<RwLock<SessionManager>>,
+}
+
+impl Request {
+    pub fn new(db: DB) -> Self {
+        Self {
+            db,
+            sessions: Arc::new(RwLock::new(SessionManager::new())), // Initialize an empty HashMap for sessions
+        }
+    }
+
+    /// 处理用户通过http请求登录
+    /// 返回 'Ok(Some(session_cookie))' 如果登陆成功
+    /// 返回 'Ok(None)' 如果用户不存在或密码错误
+    /// 可以重复登陆，会分发不同的cookie
+    pub async fn login(
+        &mut self,
+        id: u32,
+        password: &str,
+    ) -> Result<Option<String>, anyhow::Error> {
+        // 通过数据库获取用户的密码哈希
+        let password_hash = self.db.get_password_hash(id).await;
+
+        match password_hash {
+            Ok(Some(password_hash)) => {
+                // 使用 bcrypt 验证密码是否一致
+                match bcrypt::verify(password, &password_hash) {
+                    Ok(valid) => {
+                        if valid {
+                            // 密码验证成功，生成一个新的会话 cookie
+                            let session_cookie = Uuid::now_v7().to_string(); // 使用uuid v7版本基于时间戳和随机数生成的唯一标识符
+
+                            let mut sessions_write_guard = self.sessions.write().await;
+                            // 将会话 cookie 插入到 sessions 中
+                            // ip当前不使用，后续可以添加
+                            sessions_write_guard.insert_session(id, session_cookie.clone(), None);
+
+                            info!("用户 {} 登录成功", id);
+                            Ok(Some(session_cookie)) // Return the generated session cookie
+                        } else {
+                            warn!("用户 {} 密码不正确", id);
+                            Ok(None) // Password not valid
+                        }
+                    }
+                    Err(_) => {
+                        warn!("用户 {} 密码验证失败或 bcrypt 错误", id);
+                        Ok(None) // Bcrypt verification failed
+                    }
+                }
+            }
+            Ok(None) => {
+                warn!("用户 {} 不存在", id);
+                Ok(None) // User not found
+            }
+            Err(e) => {
+                error!("数据库查询密码哈希失败: {:?}", e);
+                Err(e) // Database error
+            }
+        }
+    }
+
+    /// 退出该会话
+    pub async fn logout(&self, session_id: &str) -> Result<(), anyhow::Error> {
+        let mut sessions_write_guard = self.sessions.write().await;
+        if sessions_write_guard.check_session(session_id).is_some() {
+            sessions_write_guard.delete_session(session_id);
+            info!("会话 {} 已注销", session_id);
+            Ok(())
+        } else {
+            warn!("会话 {} 不存在或已过期", session_id);
+            Err(UserError::SessionNotFound.into())
+        }
+    }
+
+    /// 检查session_id是否存在
+    pub async fn check_session(&self, session_id: &str) -> Option<u32> {
+        let sessions_read_guard = self.sessions.read().await;
+        sessions_read_guard.check_session(session_id)
+    }
+
+    /// 登陆session sender
+    pub async fn register_session(
+        &self,
+        session_id: &str,
+        sender: tokio::sync::mpsc::UnboundedSender<Message>,
+    ) {
+        let mut sessions_write_guard = self.sessions.write().await;
+        sessions_write_guard.register_sender(session_id, sender);
+    }
+
+    /// 撤销sender
+    pub async fn unregister_session(&self, session_id: &str) {
+        let mut sessions_write_guard = self.sessions.write().await;
+        sessions_write_guard.unregister_sender(session_id);
+    }
+
+    /// 根据session_id发送消息
+    pub async fn send_to_session(&self, session_id: &str, msg: Message) {
+        let sessions_read_guard = self.sessions.read().await;
+        sessions_read_guard.send_to_session(session_id, msg)
+    }
+
+    /// 发送给用户的所有 WebSocket 连接
+    pub async fn send_to_user(&self, user_id: u32, msg: Message) {
+        let sessions_read_guard = self.sessions.read().await;
+        sessions_read_guard.send_to_user(user_id, msg)
+    }
+
+    /// 发送给用户所有的 WebSocket 连接（v2版）
+    /// 发送给用户所有的 WebSocket 连接（v2版，支持二进制消息以提升效率）
+    pub async fn send_to_user_v2(&self, sender_session_id: &str, receiver_id: u32, msg: &str) {
+        let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
+            warn!(
+                "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
+                sender_session_id
+            );
+            return;
+        };
+        // 存储到数据库中
+        match self.db.add_message(sender_id, receiver_id, msg).await {
+            Ok(message_id) => {
+                debug!(
+                    "用户 {} 发送私聊消息给用户 {} 成功，消息ID: {}",
+                    sender_id, receiver_id, message_id
+                );
+            }
+            Err(e) => {
+                error!(
+                    "用户 {} 发送私聊消息给用户 {} 失败: {:?}",
+                    sender_id, receiver_id, e
+                );
+                return; // 如果数据库操作失败，直接返回
+            }
+        }
+        let server_message = ServerMessage::SendMessage {
+            sender: sender_id,
+            message: msg.to_string(),
+        };
+        // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
+        // let bin = match serde_json::to_vec(&server_message) {
+        //     Ok(data) => data,
+        //     Err(e) => {
+        //         error!("序列化消息为二进制失败: {:?}", e);
+        //         return;
+        //     }
+        // };
+        // self
+        //     .send_to_user(
+        //         receiver_id,
+        //         Message::Binary(bin.into()),
+        //     )
+        //     .await;
+        let json = match serde_json::to_string(&server_message) {
+            Ok(data) => data,
+            Err(e) => {
+                error!("序列化消息为JSON失败: {:?}", e);
+                return;
+            }
+        };
+        self.send_to_user(
+            receiver_id,
+            Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
+        )
+        .await;
+    }
+
+    /// 根据群号发送群消息
+    /// 如果群组不存在或发送失败，返回 false
+    /// 先读取群聊成员列表，然后发送消息给每个成员
+    pub async fn send_to_group(&self, group_id: u32, msg: Message) {
+        // 获取群成员列表
+        let members = match self.get_group_members(group_id).await {
+            Err(e) => {
+                error!("获取群组 {} 成员失败: {:?}", group_id, e);
+                return;
+            }
+            Ok(members) => members,
+        };
+
+        let sessions = Arc::clone(&self.sessions);
+        let msg = Arc::new(msg); // 共享消息，避免多次 clone
+        let mut tasks = FuturesUnordered::new();
+
+        for member in members {
+            let msg = Arc::clone(&msg); // 引用共享消息
+            let sessions = Arc::clone(&sessions);
+            tasks.push(tokio::spawn(async move {
+                sessions
+                    .read()
+                    .await
+                    .send_to_user(member.user_id, (*msg).clone());
+            }));
+        }
+
+        // 等待所有发送任务完成
+        while let Some(res) = tasks.next().await {
+            if let Err(e) = res {
+                error!("发送群聊消息部分或全部任务失败: {:?}", e);
+            }
+        }
+    }
+
+    /// 根据群号发送群消息
+    /// 如果群组不存在或发送失败，返回 false
+    /// 先读取群聊成员列表，然后发送消息给每个成员
+    pub async fn send_to_group_v2(&self, sender_session_id: &str, group_id: u32, msg: &str) {
+        let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
+            warn!(
+                "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
+                sender_session_id
+            );
+            return;
+        };
+        // 存储到数据库中
+        match self.db.add_group_message(group_id, sender_id, msg).await {
+            Ok(message_id) => {
+                debug!(
+                    "用户 {} 发送群消息给 {} 成功，消息ID: {}",
+                    sender_id, group_id, message_id
+                );
+            }
+            Err(e) => {
+                error!("用户 {} 发送群消息给 {} 失败: {:?}", sender_id, group_id, e);
+                return; // 如果数据库操作失败，直接返回
+            }
+        }
+        let server_message = ServerMessage::SendGroupMessage {
+            sender: sender_id,
+            group_id,
+            message: msg.to_string(),
+        };
+        // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
+        // let bin = match serde_json::to_vec(&server_message) {
+        //     Ok(data) => data,
+        //     Err(e) => {
+        //         error!("序列化消息为二进制失败: {:?}", e);
+        //         return;
+        //     }
+        // };
+        // self.send_to_group(group_id, Message::Binary(bin.into()))
+        //     .await;
+        let json = match serde_json::to_string(&server_message) {
+            Ok(data) => data,
+            Err(e) => {
+                error!("序列化消息为JSON失败: {:?}", e);
+                return;
+            }
+        };
+        // let json =
+        //     serde_json::to_string(&server_message).unwrap_or_else(|_| String::from("{}"));
+        self.send_to_group(
+            group_id,
+            Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
+        )
+        .await;
+    }
+
+    /// 通过session_id查询用户ID
+    pub async fn get_user_id_by_session(&self, session_id: &str) -> Option<u32> {
+        let sessions_read_guard = self.sessions.read().await;
+        sessions_read_guard.get_user_id_by_session(session_id)
+    }
+
+    /// 处理用户注册请求
+    /// 用户名允许重复，会自动生成唯一的userid
+    /// 返回 'Ok(Some(user_id))' 如果注册成功
+    pub async fn register(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> Result<Option<u32>, BcryptError> {
+        let hashed_password = hash(password, 4)?; // Hash the password
+        let user_id = self.db.new_user(username, &hashed_password).await;
+        match user_id {
+            Ok(Some(id)) => {
+                info!("用户 {} 注册成功", id);
+                Ok(Some(id))
+            }
+            Ok(None) => {
+                warn!("用户注册失败 (可能用户名已存在或数据库操作未返回ID)");
+                Ok(None)
+            }
+            Err(e) => {
+                error!("数据库用户注册失败: {:?}", e);
+                // Convert sqlx::Error to BcryptError if needed, or define a custom error type.
+                // For simplicity, returning None on sqlx error for now.
+                Ok(None)
+            }
+        }
+    }
+
+    /// 更改用户的密码(需验证原密码)
+    pub async fn change_user_password(
+        &self,
+        user_id: u32,
+        old_password_hashed: &str,
+        new_password: &str,
+    ) -> Result<(), anyhow::Error> {
+        // 通过数据库获取用户的密码哈希
+        let password_hash = self.db.get_password_hash(user_id).await;
+        match password_hash {
+            Ok(Some(password_hash)) => {
+                // 使用 bcrypt 验证密码是否一致
+                if bcrypt::verify(old_password_hashed, &password_hash)? {
+                    // 密码验证成功，生成一个新的哈希并更新数据库
+                    let new_hashed_password = hash(new_password, 4)?;
+                    self.db
+                        .update_password(user_id, &new_hashed_password)
+                        .await?;
+                    info!("用户 {} 密码更改成功", user_id);
+                    Ok(())
+                } else {
+                    warn!("用户 {} 原密码不正确", user_id);
+                    Err(UserError::InvalidPassword.into())
+                }
+            }
+            Ok(None) => {
+                warn!("用户 {} 不存在", user_id);
+                Err(UserError::UserNotFound.into())
+            }
+            Err(e) => {
+                error!("数据库查询密码哈希失败: {:?}", e);
+                Err(e)
+            }
+        }
+    }
+
+    /// Returns user detailed information.
+    pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, sqlx::Error> {
+        self.db
+            .get_userinfo(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// Returns group detailed information.
+    pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, sqlx::Error> {
+        self.db
+            .get_groupinfo(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// Returns a user's friend list.
+    pub async fn get_friends(&self, id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
+        self.db
+            .get_friends(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// Returns a user's group list.
+    pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, sqlx::Error> {
+        self.db
+            .get_groups(id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// Returns members of a specific group.
+    pub async fn get_group_members(
+        &self,
+        group_id: u32,
+    ) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
+        self.db
+            .get_group_members(group_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 通过user_id添加好友
+    /// 当前版本无需确认直接通过
+    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), sqlx::Error> {
+        self.db
+            .add_friend(user_id, friend_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 创建一个新的群聊，在创建时附带群成员列表
+    pub async fn create_group(
+        &self,
+        user_id: u32,
+        group_name: &str,
+        members: Vec<u32>,
+    ) -> Result<u32, sqlx::Error> {
+        self.db
+            .create_group(user_id, group_name, members)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 用户申请加入群聊
+    pub async fn join_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
+        self.db
+            .join_group(user_id, group_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 用户退出群聊
+    pub async fn leave_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
+        self.db
+            .leave_group(user_id, group_id)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// Gets group chat history.
+    pub async fn get_group_messages(
+        &self,
+        group_id: u32,
+        offset: u32,
+    ) -> Result<Vec<SessionMessage>, sqlx::Error> {
+        self.db
+            .get_group_messages(group_id, offset)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// Gets private chat history.
+    pub async fn get_messages(
+        &self,
+        sender: u32,
+        receiver: u32,
+        offset: u32,
+    ) -> Result<Vec<SessionMessage>, sqlx::Error> {
+        self.db
+            .get_messages(sender, receiver, offset)
+            .await
+            .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 对ping请求的响应
+    pub async fn ping(&self) -> String {
+        "pong".to_string()
+    }
+}
