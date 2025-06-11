@@ -31,7 +31,7 @@ impl Database {
     }
 
     /// 查询用户密码哈希
-    pub async fn get_password_hash(&self, id: u32) -> Result<Option<String>> {
+    pub async fn get_password_hash(&self, id: u32) -> Result<Option<String>, sqlx::Error> {
         let row = sqlx::query!("SELECT password_hash FROM users WHERE id = ?", id)
             .fetch_optional(&self.pool)
             .await?;
@@ -40,7 +40,7 @@ impl Database {
     }
 
     /// 更新用户密码
-    pub async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<()> {
+    pub async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), sqlx::Error> {
         sqlx::query!("UPDATE users SET password_hash = ? WHERE id = ?", new_password_hash, id)
             .execute(&self.pool)
             .await?;

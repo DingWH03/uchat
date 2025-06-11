@@ -24,6 +24,7 @@ pub async fn handle_register(Extension(state): Extension<AppState>, Json(payload
             }
         }
     };
-    debug!("注册响应: {:?}", response);
+    let json = serde_json::to_string_pretty(&response).unwrap();
+    debug!("注册响应: {}", json);
     axum::Json(response)
 }

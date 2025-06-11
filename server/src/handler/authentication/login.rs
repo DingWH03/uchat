@@ -8,11 +8,11 @@ pub async fn handle_login(Extension(state): Extension<AppState>, Json(payload): 
     let mut request = state.request.lock().await;
     let login_result = request.login(payload.userid, &payload.password).await;
     let response = match login_result {
-        Ok(user_id) => ServerResponse::LoginResponse {
+        Ok(session_id) => ServerResponse::LoginResponse {
             status: true,
             message: format!(
-                "登录成功，你的cookie为{}",
-                user_id.map_or("出错".to_string(), |id| id.to_string())
+                "{}",
+                session_id
             ),
         },
         Err(e) => {

@@ -9,7 +9,7 @@ use axum::extract::ws::Message;
 use bcrypt::{BcryptError, hash};
 use futures::StreamExt;
 use futures::stream::FuturesUnordered;
-use log::{error, info, debug, warn};
+use log::{debug, error, info, warn};
 use std::sync::Arc;
 use tokio::sync::RwLock; // Use RwLock for session management
 use uuid::Uuid;
@@ -33,50 +33,25 @@ impl Request {
     /// 返回 'Ok(Some(session_cookie))' 如果登陆成功
     /// 返回 'Ok(None)' 如果用户不存在或密码错误
     /// 可以重复登陆，会分发不同的cookie
-    pub async fn login(
-        &mut self,
-        id: u32,
-        password: &str,
-    ) -> Result<Option<String>, anyhow::Error> {
-        // 通过数据库获取用户的密码哈希
-        let password_hash = self.db.get_password_hash(id).await;
+    pub async fn login(&mut self, id: u32, password: &str) -> Result<String, UserError> {
+        let password_hash = self.db.get_password_hash(id).await?; // sqlx::Error => UserError::Database
 
-        match password_hash {
-            Ok(Some(password_hash)) => {
-                // 使用 bcrypt 验证密码是否一致
-                match bcrypt::verify(password, &password_hash) {
-                    Ok(valid) => {
-                        if valid {
-                            // 密码验证成功，生成一个新的会话 cookie
-                            let session_cookie = Uuid::now_v7().to_string(); // 使用uuid v7版本基于时间戳和随机数生成的唯一标识符
+        let password_hash = password_hash.ok_or(UserError::UserNotFound)?;
 
-                            let mut sessions_write_guard = self.sessions.write().await;
-                            // 将会话 cookie 插入到 sessions 中
-                            // ip当前不使用，后续可以添加
-                            sessions_write_guard.insert_session(id, session_cookie.clone(), None);
+        let valid = bcrypt::verify(password, &password_hash)?; // BcryptError => UserError::Bcrypt
 
-                            info!("用户 {} 登录成功", id);
-                            Ok(Some(session_cookie)) // Return the generated session cookie
-                        } else {
-                            warn!("用户 {} 密码不正确", id);
-                            Ok(None) // Password not valid
-                        }
-                    }
-                    Err(_) => {
-                        warn!("用户 {} 密码验证失败或 bcrypt 错误", id);
-                        Ok(None) // Bcrypt verification failed
-                    }
-                }
-            }
-            Ok(None) => {
-                warn!("用户 {} 不存在", id);
-                Ok(None) // User not found
-            }
-            Err(e) => {
-                error!("数据库查询密码哈希失败: {:?}", e);
-                Err(e) // Database error
-            }
+        if !valid {
+            return Err(UserError::InvalidPassword);
         }
+
+        let session_cookie = Uuid::now_v7().to_string();
+        self.sessions
+            .write()
+            .await
+            .insert_session(id, session_cookie.clone(), None);
+
+        info!("用户 {} 登录成功", id);
+        Ok(session_cookie)
     }
 
     /// 退出该会话
@@ -283,12 +258,18 @@ impl Request {
 
     /// 处理用户注册请求
     /// 用户名允许重复，会自动生成唯一的userid
+    /// 用户名和密码不可为空
     /// 返回 'Ok(Some(user_id))' 如果注册成功
     pub async fn register(
         &self,
         username: &str,
         password: &str,
     ) -> Result<Option<u32>, BcryptError> {
+        // 检查用户名和密码是否为空
+        if username.is_empty() || password.is_empty() {
+            warn!("用户名或密码不能为空");
+            return Ok(None);
+        }
         let hashed_password = hash(password, 4)?; // Hash the password
         let user_id = self.db.new_user(username, &hashed_password).await;
         match user_id {
@@ -315,14 +296,12 @@ impl Request {
         user_id: u32,
         old_password_hashed: &str,
         new_password: &str,
-    ) -> Result<(), anyhow::Error> {
-        // 通过数据库获取用户的密码哈希
-        let password_hash = self.db.get_password_hash(user_id).await;
+    ) -> Result<(), UserError> {
+        let password_hash = self.db.get_password_hash(user_id).await?;
+
         match password_hash {
-            Ok(Some(password_hash)) => {
-                // 使用 bcrypt 验证密码是否一致
+            Some(password_hash) => {
                 if bcrypt::verify(old_password_hashed, &password_hash)? {
-                    // 密码验证成功，生成一个新的哈希并更新数据库
                     let new_hashed_password = hash(new_password, 4)?;
                     self.db
                         .update_password(user_id, &new_hashed_password)
@@ -331,16 +310,12 @@ impl Request {
                     Ok(())
                 } else {
                     warn!("用户 {} 原密码不正确", user_id);
-                    Err(UserError::InvalidPassword.into())
+                    Err(UserError::InvalidPassword)
                 }
             }
-            Ok(None) => {
+            None => {
                 warn!("用户 {} 不存在", user_id);
-                Err(UserError::UserNotFound.into())
-            }
-            Err(e) => {
-                error!("数据库查询密码哈希失败: {:?}", e);
-                Err(e)
+                Err(UserError::UserNotFound)
             }
         }
     }

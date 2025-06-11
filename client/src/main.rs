@@ -43,7 +43,7 @@ async fn async_main() {
     println!("登录响应: {}", text);
 
     let session_id = text
-        .split("你的cookie为")
+        .split("\"message\":\"")
         .nth(1)
         .unwrap()
         .replace("\"", "")

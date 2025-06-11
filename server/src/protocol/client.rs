@@ -1,30 +1,4 @@
-use serde::{Deserialize, Serialize};
-use crate::protocol::model::{UserSimpleInfo, GroupSimpleInfo, SessionMessage};
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "action")]
-pub enum ClientRequest {
-    #[serde(rename = "request")]
-    Request {
-        request: String,
-    },
-    #[serde(rename = "objrequest")]
-    ObjRequest {
-        request: String,
-        id: u32,
-    },
-    #[serde(rename = "namerequest")]
-    NameRequest {
-        request: String,
-        name: String,
-    },
-    #[serde(rename = "messagesrequest")]
-    MessagesRequest {
-        group: bool,
-        id: u32,
-        offset: u32,
-    },
-}
+use serde::{Deserialize};
 
 #[derive(Deserialize, Debug)]
 pub struct RegisterRequest {
@@ -48,9 +22,8 @@ pub struct LoginRequest {
 /// 好友请求具体枚举
 #[derive(Deserialize, Debug)]
 pub enum FriendRequestType {
-    Add,
-    Info,
-
+    Add = 1,
+    Info = 2,
 }
 
 #[derive(Deserialize, Debug)]
@@ -62,10 +35,10 @@ pub struct FriendRequest {
 /// 群聊请求具体枚举
 #[derive(Deserialize, Debug)]
 pub enum GroupRequestType {
-    Join,
-    Info,
-    Creat,
-    Leave,
+    Join = 1,
+    Info = 2,
+    Creat = 3,
+    Leave = 4,
 }
 
 #[derive(Deserialize, Debug)]
@@ -80,6 +53,13 @@ pub struct CreateGroupRequest {
     pub members: Vec<u32>, // 成员ID列表
 }
 
+/// 获取聊天记录的请求
+#[derive(Deserialize, Debug)]
+pub struct MessageRequest {
+    pub id: u32, // 用户ID或群组ID
+    pub offset: u32, // 偏移量，用于分页
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
@@ -91,19 +71,4 @@ pub enum ClientMessage {
         group_id: u32,
         message: String,
     },
-}
-
-/// 聊天记录类型
-#[derive(Deserialize, Debug)]
-pub enum ChatRecordType {
-    UserMessage,
-    GroupMessage,
-}
-
-/// 获取聊天记录的请求
-#[derive(Deserialize, Debug)]
-pub struct MessageRequest {
-    pub record_type: ChatRecordType,
-    pub id: u32, // 用户ID或群组ID
-    pub offset: u32, // 偏移量，用于分页
 }
