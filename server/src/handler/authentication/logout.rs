@@ -9,9 +9,8 @@ use crate::{protocol::{FriendRequest, ServerResponse}, server::AppState};
 pub async fn handle_logout(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
-    Json(payload): Json<FriendRequest>,
 ) -> impl IntoResponse {
-    debug!("处理退出登录请求: {:?}", payload);
+    debug!("处理退出登录请求");
     
     // 尝试从 Cookie 中获取 "session_id"
     let session_id = if let Some(session_id_cookie) = cookies.get("session_id") {

@@ -25,17 +25,17 @@ pub async fn handle_socket(socket: WebSocket, session_id: String, state: AppStat
     drop(req_lock); // 及时释放 Mutex 锁
 
     // 通知客户端连接成功
-    if let Err(e) = ws_sender
-        .send(Message::Text(axum::extract::ws::Utf8Bytes::from(format!(
-            "连接成功，会话ID: {}",
-            session_id
-        ))))
-        .await
-    {
-        warn!("无法发送连接成功消息到会话ID {}: {}", session_id, e);
-        // 连接可能已经断开，直接返回
-        return;
-    }
+    // if let Err(e) = ws_sender
+    //     .send(Message::Text(axum::extract::ws::Utf8Bytes::from(format!(
+    //         "连接成功，会话ID: {}",
+    //         session_id
+    //     ))))
+    //     .await
+    // {
+    //     warn!("无法发送连接成功消息到会话ID {}: {}", session_id, e);
+    //     // 连接可能已经断开，直接返回
+    //     return;
+    // }
 
     debug!("开始监听会话 {} 的后续消息...", session_id);
 
