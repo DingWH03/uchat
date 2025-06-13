@@ -379,7 +379,7 @@ impl Database {
                 (sender_id = ? AND receiver_id = ?)
                 OR 
                 (sender_id = ? AND receiver_id = ?)
-            ORDER BY `timestamp` DESC
+            ORDER BY `timestamp` ASC
             LIMIT ?
             OFFSET ?
             "#,
@@ -413,7 +413,7 @@ impl Database {
                 message     as `message!`
             FROM ugroup_messages
             WHERE group_id = ?
-            ORDER BY `timestamp` DESC
+            ORDER BY `timestamp` ASC
             LIMIT ?
             OFFSET ?
             "#,
