@@ -14,6 +14,12 @@ pub struct UserDetailedInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UserSimpleInfoWithStatus {
+    pub base: UserSimpleInfo,
+    pub online: bool
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GroupSimpleInfo {
     pub group_id: u32,
     pub title: String,

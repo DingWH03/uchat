@@ -1,9 +1,9 @@
 use super::error::UserError;
-use crate::api::session_manager::SessionManager;
+use crate::api::session_manager::{self, SessionManager};
 use crate::db::Database as DB;
 use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, ServerMessage, SessionMessage, UserDetailedInfo,
-    UserSimpleInfo,
+    UserSimpleInfo, UserSimpleInfoWithStatus,
 };
 use axum::extract::ws::Message;
 use bcrypt::{BcryptError, hash};
@@ -341,6 +341,30 @@ impl Request {
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
+    /// 返回一个带有在线信息的好友列表
+    pub async fn get_friends_with_status(
+        &self,
+        id: u32,
+    ) -> Result<Vec<UserSimpleInfoWithStatus>, sqlx::Error> {
+        let friends = self.get_friends(id).await?;
+        let session_manager = self.sessions.read().await;
+        let result = friends
+            .into_iter()
+            .map(|friend| {
+                let online = session_manager
+                    .get_sessions_by_user(friend.user_id)
+                    .map_or(false, |sessions| !sessions.is_empty());
+
+                UserSimpleInfoWithStatus {
+                    base: friend,
+                    online: online,
+                }
+            })
+            .collect();
+
+        Ok(result)
+    }
+
     /// Returns a user's group list.
     pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, sqlx::Error> {
         self.db

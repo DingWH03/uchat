@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::protocol::model::{UserSimpleInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, GroupDetailedInfo};
+use crate::protocol::model::{UserSimpleInfo, GroupSimpleInfo, UserSimpleInfoWithStatus, SessionMessage, UserDetailedInfo, GroupDetailedInfo};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "action")]
@@ -55,6 +55,11 @@ pub enum ServerResponse {
     #[serde(rename = "friend_list")]
     FriendList {
         friends: Vec<UserSimpleInfo>,
+    },
+    /// 响应request->get_friends_with_status
+    #[serde(rename = "friend_list_with_status")]
+    FriendListWithStatus {
+        friends: Vec<UserSimpleInfoWithStatus>,
     },
     /// 响应request->get_groups
     #[serde(rename = "group_list")]
