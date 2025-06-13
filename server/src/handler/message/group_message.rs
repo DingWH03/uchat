@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, Extension, Json};
+use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use log::{debug, warn};
 
 use axum_extra::extract::TypedHeader;
@@ -9,7 +9,7 @@ use crate::{protocol::{MessageRequest, ServerResponse}, server::AppState};
 pub async fn handle_get_group_message(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
-    Json(payload): Json<MessageRequest>,
+    Query(payload): Query<MessageRequest>,
 ) -> impl IntoResponse {
     debug!("处理获取群聊聊天记录请求: {:?}", payload);
     

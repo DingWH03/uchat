@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, Extension, Json};
+use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use log::{debug, warn};
 
 use axum_extra::extract::TypedHeader;
@@ -9,7 +9,7 @@ use crate::{protocol::{FriendRequest, ServerResponse}, server::AppState};
 pub async fn handle_info_friend(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
-    Json(payload): Json<FriendRequest>,
+    Query(payload): Query<FriendRequest>,
 ) -> impl IntoResponse {
     debug!("处理查看好友信息请求: {:?}", payload);
     
