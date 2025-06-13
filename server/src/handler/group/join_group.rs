@@ -39,8 +39,8 @@ pub async fn handle_join_group(
     }
 };
 
-    let register_result = request_lock.join_group(user_id, payload.id).await;
-    let response = match register_result {
+    let result = request_lock.join_group(user_id, payload.id).await;
+    let response = match result {
         Ok(_) => ServerResponse::GenericResponse { status: "Ok".to_string(), message: "添加成功".to_string() } ,
         Err(e) => {
             warn!("用户{}加入群聊出现错误: {}", user_id, e);

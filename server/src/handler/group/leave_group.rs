@@ -39,8 +39,8 @@ pub async fn handle_leave_group(
     }
 };
 
-    let register_result = request_lock.leave_group(user_id, payload.id).await;
-    let response = match register_result {
+    let result = request_lock.leave_group(user_id, payload.id).await;
+    let response = match result {
         Ok(_) => ServerResponse::GenericResponse { status: "Ok".to_string(), message: "退出成功".to_string() } ,
         Err(e) => {
             warn!("用户{}退出群聊出现错误: {}", user_id, e);

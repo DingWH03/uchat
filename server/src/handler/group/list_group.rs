@@ -38,8 +38,8 @@ pub async fn handle_list_group(
     }
 };
 
-    let register_result = request_lock.get_groups(user_id).await;
-    let response = match register_result {
+    let result = request_lock.get_groups(user_id).await;
+    let response = match result {
         Ok(list) => ServerResponse::GroupList { groups: list },
         Err(e) => {
             warn!("用户{}获取群组列表出现错误: {}", user_id, e);

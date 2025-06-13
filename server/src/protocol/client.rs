@@ -39,6 +39,7 @@ pub enum GroupRequestType {
     Info = 2,
     Creat = 3,
     Leave = 4,
+    Member = 5
 }
 
 #[derive(Deserialize, Debug)]

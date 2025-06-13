@@ -8,5 +8,6 @@ pub fn router() -> Router {
         .route("/new", post(handler::group::creat_group::handle_creat_group))
         .route("/join", post(handler::group::join_group::handle_join_group))
         .route("/leave", post(handler::group::leave_group::handle_leave_group))
+        .route("/members", get(handler::group::members_group::handle_members_group))
         
 }
