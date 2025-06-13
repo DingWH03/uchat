@@ -1,6 +1,8 @@
 // src/db.rs
 
-use crate::protocol::{GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo, GroupDetailedInfo};
+use crate::protocol::{
+    GroupDetailedInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo,
+};
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use dotenv::dotenv;
@@ -40,10 +42,18 @@ impl Database {
     }
 
     /// 更新用户密码
-    pub async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), sqlx::Error> {
-        sqlx::query!("UPDATE users SET password_hash = ? WHERE id = ?", new_password_hash, id)
-            .execute(&self.pool)
-            .await?;
+    pub async fn update_password(
+        &self,
+        id: u32,
+        new_password_hash: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            new_password_hash,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -66,12 +76,9 @@ impl Database {
 
     /// 根据id查找用户详细信息
     pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>> {
-        let row = sqlx::query!(
-            "SELECT id AS user_id, username FROM users WHERE id = ?",
-            id
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+        let row = sqlx::query!("SELECT id AS user_id, username FROM users WHERE id = ?", id)
+            .fetch_optional(&self.pool)
+            .await?;
 
         Ok(row.map(|r| UserDetailedInfo {
             user_id: r.user_id,
@@ -119,12 +126,15 @@ impl Database {
         )
         .fetch_all(&self.pool)
         .await?;
-    
+
         // 将查询结果映射到 UserSimpleInfo 结构体
-        Ok(rows.into_iter().map(|r| UserSimpleInfo {
-            user_id: r.friend_id,
-            username: r.username,
-        }).collect())
+        Ok(rows
+            .into_iter()
+            .map(|r| UserSimpleInfo {
+                user_id: r.friend_id,
+                username: r.username,
+            })
+            .collect())
     }
 
     /// 根据user_id🔍群组列表，一般是自己查找自己的群组列表
@@ -147,12 +157,15 @@ impl Database {
         )
         .fetch_all(&self.pool)
         .await?;
-    
+
         // 将查询结果映射到 GroupSimpleInfo 结构体
-        Ok(rows.into_iter().map(|r| GroupSimpleInfo {
-            group_id: r.group_id,
-            title: r.title,
-        }).collect())
+        Ok(rows
+            .into_iter()
+            .map(|r| GroupSimpleInfo {
+                group_id: r.group_id,
+                title: r.title,
+            })
+            .collect())
     }
 
     /// 根据group_id🔍群组成员列表
@@ -175,16 +188,23 @@ impl Database {
         )
         .fetch_all(&self.pool)
         .await?;
-    
-        // 将查询结果映射到 GroupMemberInfo 结构体
-        Ok(rows.into_iter().map(|r| UserSimpleInfo {
-            user_id: r.user_id,
-            username: r.username,
-        }).collect())
-    }
-    
 
-    pub async fn create_group(&self, user_id: u32, group_name: &str, members: Vec<u32>) -> Result<u32> {
+        // 将查询结果映射到 GroupMemberInfo 结构体
+        Ok(rows
+            .into_iter()
+            .map(|r| UserSimpleInfo {
+                user_id: r.user_id,
+                username: r.username,
+            })
+            .collect())
+    }
+
+    pub async fn create_group(
+        &self,
+        user_id: u32,
+        group_name: &str,
+        members: Vec<u32>,
+    ) -> Result<u32> {
         // 创建群组
         let result = sqlx::query!(
             "INSERT INTO ugroups (name, creator_id) VALUES (?, ?)",
@@ -223,14 +243,18 @@ impl Database {
 
         // 批量插入成员
         if !members_to_add.is_empty() {
-            let mut builder = sqlx::QueryBuilder::new(
-                "INSERT INTO group_members (group_id, user_id) "
-            );
+            let mut builder =
+                sqlx::QueryBuilder::new("INSERT INTO group_members (group_id, user_id) ");
             builder.push("VALUES ");
 
             let mut separated = builder.separated(", ");
             for member_id in members_to_add {
-                separated.push_bind(group_id).push_bind(member_id);
+                separated
+                    .push("(")
+                    .push_bind(group_id)
+                    .push(", ")
+                    .push_bind(member_id)
+                    .push(")");
             }
 
             let query = builder.build();
@@ -239,7 +263,6 @@ impl Database {
 
         Ok(group_id)
     }
-
 
     /// 添加好友，user_id是发送者的id，friend_id是接收者的id
     /// 直接双向成为好友，暂不支持请求与同意机制
@@ -268,7 +291,6 @@ impl Database {
         Ok(())
     }
 
-
     /// 添加群组成员，user_id是发送者的id，group_id是接收者的id
     pub async fn join_group(&self, user_id: u32, group_id: u32) -> Result<()> {
         sqlx::query!(
@@ -296,7 +318,12 @@ impl Database {
     }
 
     /// 添加私聊信息聊天记录，返回消息的自增 ID
-    pub async fn add_message(&self, sender: u32, receiver: u32, message: &str) -> Result<u64, sqlx::Error> {
+    pub async fn add_message(
+        &self,
+        sender: u32,
+        receiver: u32,
+        message: &str,
+    ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query!(
             "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
             sender,
@@ -351,7 +378,6 @@ impl Database {
         Ok(result.last_insert_id())
     }
 
-
     /// 获取私聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
@@ -399,7 +425,11 @@ impl Database {
     /// 获取群聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
-    pub async fn get_group_messages(&self, group_id: u32, offset: u32) -> Result<Vec<SessionMessage>> {
+    pub async fn get_group_messages(
+        &self,
+        group_id: u32,
+        offset: u32,
+    ) -> Result<Vec<SessionMessage>> {
         let limit = 30;
         let offset_rows = offset * limit;
 
