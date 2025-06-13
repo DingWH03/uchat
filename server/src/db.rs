@@ -238,27 +238,18 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
-        // 排除创建者，避免重复
+        // 排除创建者
         let members_to_add: Vec<u32> = members.into_iter().filter(|&id| id != user_id).collect();
 
-        // 批量插入成员
         if !members_to_add.is_empty() {
             let mut builder =
-                sqlx::QueryBuilder::new("INSERT INTO group_members (group_id, user_id) ");
-            builder.push("VALUES ");
+                sqlx::QueryBuilder::new("INSERT INTO group_members (group_id, user_id)");
 
-            let mut separated = builder.separated(", ");
-            for member_id in members_to_add {
-                separated
-                    .push("(")
-                    .push_bind(group_id)
-                    .push(", ")
-                    .push_bind(member_id)
-                    .push(")");
-            }
+            builder.push_values(members_to_add.iter(), |mut b, member_id| {
+                b.push_bind(group_id).push_bind(*member_id);
+            });
 
-            let query = builder.build();
-            query.execute(&self.pool).await?;
+            builder.build().execute(&self.pool).await?;
         }
 
         Ok(group_id)

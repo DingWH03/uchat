@@ -22,7 +22,7 @@ async fn main() {
 
 
 async fn start() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "127.0.0.1:8080".parse::<SocketAddr>()?;
+    let addr = "0.0.0.0:25597".parse::<SocketAddr>()?;
 
     let server = server::Server::new(addr).await;
 
