@@ -18,6 +18,9 @@ pub enum UserError {
 
     #[error("Session找不到")]
     SessionNotFound,
+
+    #[error("Json序列化失败")]
+    JsonError(#[from] serde_json::Error),
 }
 
 #[derive(Debug, Error)]

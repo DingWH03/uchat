@@ -91,4 +91,10 @@ pub enum ServerMessage {
         group_id: u32,
         message: String,
     },
+    OnlineMessage {
+        friend_id: u32
+    },
+    OfflineMessage {
+        friend_id: u32
+    }
 }

@@ -107,7 +107,7 @@ impl Database {
     }
 
     /// 根据user_id🔍好友列表，一般是自己查找自己的好友列表
-    pub async fn get_friends(&self, user_id: u32) -> Result<Vec<UserSimpleInfo>> {
+    pub async fn get_friends(&self, user_id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
         let rows = sqlx::query!(
             "
             SELECT 
