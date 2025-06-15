@@ -3,10 +3,11 @@
 mod route;
 
 use axum::{Extension, Router};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 use std::net::SocketAddr;
-use crate::api::request::Request;
+use crate::api::{request::Request, session_manager::SessionManager};
 use crate::db::Database;
+use crate::api::manager::Manager;
 use route::router;
 use log::{info, error};
 use std::sync::Arc;
@@ -14,7 +15,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct AppState {
     pub request: Arc<Mutex<Request>>,
-    // pub session: Arc<SessionManager>,
+    pub manager: Arc<Mutex<Manager>>,
 }
 
 pub struct Server {
@@ -27,17 +28,19 @@ impl Server {
         let dbmysql = match Database::new().await {
             Ok(db) => {
                 info!("数据库连接成功");
-                db
+                Arc::new(db)
             },
             Err(e) => {
                 error!("数据库连接失败: {}", e);
                 std::process::exit(1);
             }
         };
-        let request = Arc::new(Mutex::new(Request::new(dbmysql)));
+        let sessions = Arc::new(RwLock::new(SessionManager::new()));
+        let request = Arc::new(Mutex::new(Request::new(dbmysql.clone(), sessions.clone())));
+        let manager = Arc::new(Mutex::new(Manager::new(dbmysql, sessions)));
         let state = AppState {
             request,
-            // session: Arc::new(SessionManager::new()),
+            manager,
         };
         // 构建路由
         let app = router()

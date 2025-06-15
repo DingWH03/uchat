@@ -1,5 +1,5 @@
 use axum::{routing::{get}, Router};
-use crate::handler;
+use crate::api::handler;
 
 pub fn router() -> Router {
     Router::new()

@@ -3,9 +3,10 @@ mod authentication;
 mod friend;
 mod group;
 mod message;
+mod manager;
 
 use axum::{routing::get, Router};
-use crate::handler;
+use crate::api::handler;
 
 
 pub fn router() -> Router {
@@ -16,4 +17,5 @@ pub fn router() -> Router {
         .nest("/friend", friend::router())
         .nest("/group", group::router())
         .nest("/message", message::router())
+        .nest("/manager", manager::router())
 }

@@ -3,6 +3,7 @@ pub mod friend;
 pub mod group;
 pub mod ws;
 pub mod message;
+pub mod manager;
 
 use axum::response::IntoResponse;
 use axum::Extension;

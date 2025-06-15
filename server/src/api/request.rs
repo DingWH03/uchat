@@ -1,5 +1,5 @@
 use super::error::UserError;
-use crate::api::session_manager::{self, SessionManager};
+use crate::api::session_manager::{SessionManager};
 use crate::db::Database as DB;
 use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, ServerMessage, SessionMessage, UserDetailedInfo,
@@ -11,21 +11,21 @@ use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
-use tokio::sync::RwLock; // Use RwLock for session management
+use tokio::sync::RwLock; // 为sessions高效率共享使用Rwlock
 use uuid::Uuid;
 
 // use tokio::sync::Mutex;
 
 pub struct Request {
-    db: DB,
+    db: Arc<DB>,
     sessions: Arc<RwLock<SessionManager>>,
 }
 
 impl Request {
-    pub fn new(db: DB) -> Self {
+    pub fn new(db: Arc<DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
         Self {
             db,
-            sessions: Arc::new(RwLock::new(SessionManager::new())), // Initialize an empty HashMap for sessions
+            sessions, 
         }
     }
 

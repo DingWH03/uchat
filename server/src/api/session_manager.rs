@@ -1,13 +1,14 @@
-use std::collections::{HashMap, HashSet};
 use axum::extract::ws::Message;
-use tokio::sync::mpsc::UnboundedSender;
 use chrono::NaiveDateTime;
+use std::collections::{HashMap, HashSet};
+use tokio::sync::mpsc::UnboundedSender;
 
-struct SessionInfo {
-    user_id: u32,
+#[derive(Debug, Clone)]
+pub struct SessionInfo {
+    pub user_id: u32,
     sender: Option<UnboundedSender<Message>>, // 初始为 None
-    created_at: NaiveDateTime,
-    ip: Option<String>,
+    pub created_at: NaiveDateTime,
+    pub ip: Option<String>,
 }
 
 pub struct SessionManager {
@@ -28,14 +29,20 @@ impl SessionManager {
     pub fn insert_session(&mut self, user_id: u32, session_id: String, ip: Option<String>) {
         let now = chrono::Utc::now().naive_utc();
 
-        self.sessions.insert(session_id.clone(), SessionInfo {
-            user_id,
-            sender: None,
-            created_at: now,
-            ip,
-        });
+        self.sessions.insert(
+            session_id.clone(),
+            SessionInfo {
+                user_id,
+                sender: None,
+                created_at: now,
+                ip,
+            },
+        );
 
-        self.user_index.entry(user_id).or_default().insert(session_id);
+        self.user_index
+            .entry(user_id)
+            .or_default()
+            .insert(session_id);
     }
 
     /// 检查某个 session 是否存在
@@ -43,8 +50,7 @@ impl SessionManager {
         if let Some(session_info) = self.sessions.get(session_id) {
             // session只要存在即可，暂时无需判断时间
             Some(session_info.user_id)
-        }
-        else {
+        } else {
             None
         }
     }
@@ -101,6 +107,7 @@ impl SessionManager {
         }
     }
 
+    /// 发送消息到某个特定的会话
     pub fn send_to_session(&self, session_id: &str, msg: Message) {
         if let Some(info) = self.sessions.get(session_id) {
             if let Some(sender) = &info.sender {
@@ -112,5 +119,31 @@ impl SessionManager {
     /// 根据session_id获取用户ID
     pub fn get_user_id_by_session(&self, session_id: &str) -> Option<u32> {
         self.sessions.get(session_id).map(|s| s.user_id)
+    }
+
+    /// 清除所有的会话
+    pub fn clear_all_sessions(&mut self) {
+        // 主动关闭每个 session 的 WebSocket
+        for (_session_id, session) in self.sessions.drain() {
+            if let Some(sender) = session.sender {
+                let _ = sender.send(Message::Close(None)); // 忽略发送错误
+            }
+        }
+
+        // 清空 user_index 映射
+        self.user_index.clear();
+    }
+
+    /// 获取所有在线用户的树形结构（不进行 clone，返回引用）
+    pub fn get_all_online_users_tree(&self) -> HashMap<u32, Vec<(String, SessionInfo)>> {
+        let mut map: HashMap<u32, Vec<(String, SessionInfo)>> = HashMap::new();
+
+        for (session_id, info) in &self.sessions {
+            map.entry(info.user_id)
+                .or_default()
+                .push((session_id.clone(), info.clone()));
+        }
+
+        map
     }
 }

@@ -1,7 +1,6 @@
 mod db;
 mod protocol;
 mod server;
-mod handler;
 mod api;
 mod error;
 
