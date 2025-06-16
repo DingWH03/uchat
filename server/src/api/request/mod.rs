@@ -1,8 +1,11 @@
+mod user;
+mod messages;
+
 use super::error::UserError;
 use crate::api::session_manager::{SessionManager};
 use crate::db::Database as DB;
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, PatchUserRequest, ServerMessage, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
+    GroupDetailedInfo, GroupSimpleInfo, ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
 };
 use axum::extract::ws::Message;
 use bcrypt::{BcryptError, hash};
@@ -11,7 +14,6 @@ use futures::stream::FuturesUnordered;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 use tokio::sync::RwLock; // 为sessions高效率共享使用Rwlock
-use uuid::Uuid;
 
 // use tokio::sync::Mutex;
 
@@ -25,93 +27,6 @@ impl Request {
         Self {
             db,
             sessions, 
-        }
-    }
-
-    /// 处理用户通过http请求登录
-    /// 返回 'Ok(Some(session_cookie))' 如果登陆成功
-    /// 返回 'Ok(None)' 如果用户不存在或密码错误
-    /// 可以重复登陆，会分发不同的cookie
-    pub async fn login(&mut self, id: u32, password: &str) -> Result<String, UserError> {
-        let password_hash = self.db.get_password_hash(id).await?;
-        let password_hash = password_hash.ok_or(UserError::UserNotFound)?;
-
-        let valid = bcrypt::verify(password, &password_hash)?;
-        if !valid {
-            return Err(UserError::InvalidPassword);
-        }
-
-        let session_cookie = Uuid::now_v7().to_string();
-
-        // 检查是否是首次登录（无任何活跃 session）
-        let is_first_login = {
-            let sessions_read_guard = self.sessions.read().await;
-            sessions_read_guard
-                .get_sessions_by_user(id)
-                .map_or(true, |set| set.is_empty())
-        };
-
-        // 插入会话
-        self.sessions
-            .write()
-            .await
-            .insert_session(id, session_cookie.clone(), None);
-
-        info!("用户 {} 登录成功", id);
-
-        // 仅首次登录广播上线消息
-        if is_first_login {
-            let online_friends = self.get_online_friends(id).await.unwrap_or_default();
-            let server_message = ServerMessage::OnlineMessage { friend_id: id };
-            let json = serde_json::to_string(&server_message)?;
-
-            for friend in online_friends {
-                self.send_to_user(
-                    friend.user_id,
-                    Message::Text(axum::extract::ws::Utf8Bytes::from(&json)),
-                )
-                .await;
-            }
-        }
-
-        Ok(session_cookie)
-    }
-
-    /// 退出该会话
-    pub async fn logout(&self, session_id: &str) -> Result<(), anyhow::Error> {
-        let mut sessions_write_guard = self.sessions.write().await;
-
-        // 获取当前用户 ID（用于广播）
-        if let Some(user_id) = sessions_write_guard.get_user_id_by_session(session_id) {
-            // 删除会话
-            sessions_write_guard.delete_session(session_id);
-
-            // 判断是否是该用户的最后一个 session
-            let still_online = sessions_write_guard
-                .get_sessions_by_user(user_id)
-                .map_or(false, |s| !s.is_empty());
-
-            if !still_online {
-                // 如果该用户彻底下线，则广播 OfflineMessage
-                drop(sessions_write_guard); // 提前释放锁，避免死锁
-
-                let online_friends = self.get_online_friends(user_id).await.unwrap_or_default();
-                let server_message = ServerMessage::OfflineMessage { friend_id: user_id };
-                let json = serde_json::to_string(&server_message)?;
-                for friend in online_friends {
-                    self.send_to_user(
-                        friend.user_id,
-                        Message::Text(axum::extract::ws::Utf8Bytes::from(&json)),
-                    )
-                    .await;
-                }
-            }
-
-            info!("会话 {} 已注销", session_id);
-            Ok(())
-        } else {
-            warn!("会话 {} 不存在或已过期", session_id);
-            Err(UserError::SessionNotFound.into())
         }
     }
 
@@ -389,21 +304,21 @@ impl Request {
         }
     }
 
-    /// Returns user detailed information.
+    /// 返回用户的详细信息
     pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, sqlx::Error> {
         self.db
             .get_userinfo(id)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
-    /// Returns group detailed information.
+    /// 返回群组的详细信息
     pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, sqlx::Error> {
         self.db
             .get_groupinfo(id)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
-    /// Returns a user's friend list.
+    /// 返回一个用户的好友列表
     pub async fn get_friends(&self, id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
         self.db
             .get_friends(id)
@@ -434,14 +349,14 @@ impl Request {
         Ok(result)
     }
 
-    /// Returns a user's group list.
+    /// 获取一个用户的所有群聊
     pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, sqlx::Error> {
         self.db
             .get_groups(id)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
-    /// Returns members of a specific group.
+    /// 获取某个群聊的群聊成员
     pub async fn get_group_members(
         &self,
         group_id: u32,
@@ -485,49 +400,7 @@ impl Request {
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
     }
-    /// Gets group chat history.
-    pub async fn get_group_messages(
-        &self,
-        group_id: u32,
-        offset: u32,
-    ) -> Result<Vec<SessionMessage>, sqlx::Error> {
-        self.db
-            .get_group_messages(group_id, offset)
-            .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
-    }
-    /// Gets private chat history.
-    pub async fn get_messages(
-        &self,
-        sender: u32,
-        receiver: u32,
-        offset: u32,
-    ) -> Result<Vec<SessionMessage>, sqlx::Error> {
-        self.db
-            .get_messages(sender, receiver, offset)
-            .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
-    }
-    /// 删除用户，注销账号
-    pub async fn delete_user(&self, id: u32) -> Result<(), sqlx::Error> {
-        self.db.delete_user(id).await
-    }
-    /// 更新用户信息
-    pub async fn update_user_info_full(
-        &self, 
-        id: u32,
-        update: UpdateUserRequest,
-    ) -> Result<(), sqlx::Error> {
-        self.db.update_user_info_full(id, update).await
-    }
-    /// 更新用户部分信息
-    pub async fn update_user_info_partial(
-        &self, 
-        id: u32,
-        update: PatchUserRequest,
-    ) -> Result<(), sqlx::Error> {
-        self.db.update_user_info_partial(id, update).await
-    }
+    
     /// 对ping请求的响应
     pub async fn ping(&self) -> String {
         "pong".to_string()

@@ -126,7 +126,7 @@ impl Database {
 
         sql.push_str(&sets.join(", "));
         sql.push_str(" WHERE id = ?");
-        args.add(id);
+        let _ = args.add(id);
 
         sqlx::query_with(&sql, args)
             .execute(&self.pool)
