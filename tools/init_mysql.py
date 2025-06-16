@@ -75,7 +75,7 @@ SQL_QUERIES = [
     """
     CREATE TABLE IF NOT EXISTS ugroups (
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-        name VARCHAR(255) NOT NULL UNIQUE,
+        name VARCHAR(255) NOT NULL,
         creator_id INT UNSIGNED NOT NULL,  -- 创建者id
         description VARCHAR(256) DEFAULT NULL, -- 群聊简介，最多 256 字符
         avatar_url VARCHAR(255) DEFAULT NULL, -- 群聊头像 URL
@@ -159,6 +159,10 @@ def create_tables():
             for query in SQL_QUERIES:
                 cursor.execute(query)
                 print(f"执行成功：{query.splitlines()[1].strip()}")  # 打印 SQL 的第一行
+            # 设置 users 和 ugroups 的自增起始值
+            cursor.execute("ALTER TABLE users AUTO_INCREMENT = 10000000;")
+            cursor.execute("ALTER TABLE ugroups AUTO_INCREMENT = 10000000;")
+
             connection.commit()
         print("所有表已成功创建")
     except Exception as e:
