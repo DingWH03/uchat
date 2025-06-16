@@ -1,4 +1,4 @@
-use axum::{extract::Query, response::IntoResponse, Extension, Json};
+use axum::{extract::Query, response::IntoResponse, Extension};
 use log::{debug, warn};
 
 use axum_extra::extract::TypedHeader;

@@ -2,8 +2,7 @@ use super::error::UserError;
 use crate::api::session_manager::{SessionManager};
 use crate::db::Database as DB;
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, ServerMessage, SessionMessage, UserDetailedInfo,
-    UserSimpleInfo, UserSimpleInfoWithStatus,
+    GroupDetailedInfo, GroupSimpleInfo, PatchUserRequest, ServerMessage, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
 };
 use axum::extract::ws::Message;
 use bcrypt::{BcryptError, hash};
@@ -508,6 +507,26 @@ impl Request {
             .get_messages(sender, receiver, offset)
             .await
             .map_err(|e| sqlx::Error::Decode(e.into()))
+    }
+    /// 删除用户，注销账号
+    pub async fn delete_user(&self, id: u32) -> Result<(), sqlx::Error> {
+        self.db.delete_user(id).await
+    }
+    /// 更新用户信息
+    pub async fn update_user_info_full(
+        &self, 
+        id: u32,
+        update: UpdateUserRequest,
+    ) -> Result<(), sqlx::Error> {
+        self.db.update_user_info_full(id, update).await
+    }
+    /// 更新用户部分信息
+    pub async fn update_user_info_partial(
+        &self, 
+        id: u32,
+        update: PatchUserRequest,
+    ) -> Result<(), sqlx::Error> {
+        self.db.update_user_info_partial(id, update).await
     }
     /// 对ping请求的响应
     pub async fn ping(&self) -> String {

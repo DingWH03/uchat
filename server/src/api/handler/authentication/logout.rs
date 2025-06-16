@@ -1,10 +1,10 @@
-use axum::{response::IntoResponse, Extension, Json};
+use axum::{response::IntoResponse, Extension};
 use log::{debug, warn};
 
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{FriendRequest, ServerResponse}, server::AppState};
+use crate::{protocol::{ServerResponse}, server::AppState};
 
 pub async fn handle_logout(
     Extension(state): Extension<AppState>,

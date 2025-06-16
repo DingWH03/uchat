@@ -1,12 +1,13 @@
 // src/db.rs
 
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo,
+    GroupDetailedInfo, GroupSimpleInfo, PatchUserRequest, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo
 };
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use dotenv::dotenv;
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
+use sqlx::Arguments;
 use std::env;
 
 /// 结构体 `Database` 用于封装 MySQL 连接池
@@ -72,6 +73,66 @@ impl Database {
         let last_insert_id = result.last_insert_id() as u32;
 
         Ok(Some(last_insert_id))
+    }
+
+    /// 删除用户
+    pub async fn delete_user(&self, id: u32) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "DELETE FROM users WHERE id = ?",
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// 完整更新用户信息
+    pub async fn update_user_info_full(
+        &self,
+        id: u32,
+        update: UpdateUserRequest,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "UPDATE users SET username = ? WHERE id = ?",
+            update.username,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// 部分更新用户信息
+    pub async fn update_user_info_partial(
+        &self,
+        id: u32,
+        patch: PatchUserRequest,
+    ) -> Result<(), sqlx::Error> {
+        let mut sql = String::from("UPDATE users SET ");
+        let mut sets = Vec::new();
+        let mut args = sqlx::mysql::MySqlArguments::default();
+
+        if let Some(username) = patch.username {
+            sets.push("username = ?");
+            let _ = args.add(username);
+        }
+
+        if sets.is_empty() {
+            // 没有要更新的字段
+            return Ok(());
+        }
+
+        sql.push_str(&sets.join(", "));
+        sql.push_str(" WHERE id = ?");
+        args.add(id);
+
+        sqlx::query_with(&sql, args)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
     }
 
     /// 根据id查找用户详细信息

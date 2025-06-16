@@ -73,3 +73,13 @@ pub enum ClientMessage {
         message: String,
     },
 }
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateUserRequest {
+    pub username: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PatchUserRequest {
+    pub username: Option<String>,
+}

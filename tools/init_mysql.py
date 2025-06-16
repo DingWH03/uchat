@@ -54,8 +54,8 @@ SQL_QUERIES = [
         receiver_id INT UNSIGNED NOT NULL,
         message TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (sender_id) REFERENCES users(id),
-        FOREIGN KEY (receiver_id) REFERENCES users(id)
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
     );
     """,
 
@@ -104,8 +104,8 @@ SQL_QUERIES = [
         sender_id INT UNSIGNED NOT NULL,
         message TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (group_id) REFERENCES ugroups(id),
-        FOREIGN KEY (sender_id) REFERENCES users(id)
+        FOREIGN KEY (group_id) REFERENCES ugroups(id) ON DELETE CASCADE,
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
     );
     """,
 

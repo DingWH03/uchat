@@ -1,4 +1,4 @@
-use axum::{routing::{get, post}, Router};
+use axum::{routing::{get}, Router};
 use crate::api::handler;
 
 pub fn router() -> Router {
