@@ -1,7 +1,7 @@
 // src/db.rs
 
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, PatchUserRequest, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo
+    GroupDetailedInfo, GroupSimpleInfo, MessageType, PatchUserRequest, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo
 };
 use anyhow::Result;
 use chrono::NaiveDateTime;
@@ -374,12 +374,17 @@ impl Database {
         &self,
         sender: u32,
         receiver: u32,
+        message_type: MessageType,
         message: &str,
     ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query!(
-            "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
+            r#"
+            INSERT INTO messages (sender_id, receiver_id, message_type, message)
+            VALUES (?, ?, ?, ?)
+            "#,
             sender,
             receiver,
+            message_type as MessageType,
             message
         )
         .execute(&self.pool)

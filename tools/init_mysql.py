@@ -52,6 +52,7 @@ SQL_QUERIES = [
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         sender_id INT UNSIGNED NOT NULL,
         receiver_id INT UNSIGNED NOT NULL,
+        message_type ENUM('text', 'image', 'file', 'video', 'audio') NOT NULL,
         message TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,

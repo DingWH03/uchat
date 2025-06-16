@@ -5,7 +5,7 @@ use super::error::UserError;
 use crate::api::session_manager::{SessionManager};
 use crate::db::Database as DB;
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
+    GroupDetailedInfo, GroupSimpleInfo, MessageType, ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
 };
 use axum::extract::ws::Message;
 use bcrypt::{BcryptError, hash};
@@ -96,7 +96,7 @@ impl Request {
             return;
         };
         // 存储到数据库中
-        match self.db.add_message(sender_id, receiver_id, msg).await {
+        match self.db.add_message(sender_id, receiver_id, MessageType::Text, msg).await { // 新增了消息类型枚举，先在这挖一个坑
             Ok(message_id) => {
                 debug!(
                     "用户 {} 发送私聊消息给用户 {} 成功，消息ID: {}",
