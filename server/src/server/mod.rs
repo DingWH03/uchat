@@ -2,15 +2,16 @@
 
 mod route;
 
-use axum::{Extension, Router};
-use tokio::sync::{Mutex, RwLock};
-use std::net::SocketAddr;
-use crate::api::{request::Request, session_manager::SessionManager};
-use crate::db::Database;
 use crate::api::manager::Manager;
+use crate::api::{request::Request, session_manager::SessionManager};
+use crate::db::factory::{DbType, create_database};
+use axum::{Extension, Router};
+use log::{error, info};
 use route::router;
-use log::{info, error};
+use std::env;
+use std::net::SocketAddr;
 use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -25,27 +26,33 @@ pub struct Server {
 
 impl Server {
     pub async fn new(addr: SocketAddr) -> Self {
-        let dbmysql = match Database::new().await {
-            Ok(db) => {
-                info!("数据库连接成功");
-                Arc::new(db)
-            },
+        // 从环境变量中获取数据库连接字符串
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL 环境变量未设置");
+        let db_type = match env::var("DB_TYPE")
+            .unwrap_or_else(|_| "mysql".to_string())
+            .parse::<DbType>()
+        {
+            Ok(db_type) => db_type,
             Err(e) => {
-                error!("数据库连接失败: {}", e);
-                std::process::exit(1);
+                error!("未识别的数据库类型: {}", e);
+                panic!("未识别的数据库类型: {}", e);
             }
         };
-        let sessions = Arc::new(RwLock::new(SessionManager::new()));
-        let request = Arc::new(Mutex::new(Request::new(dbmysql.clone(), sessions.clone())));
-        let manager = Arc::new(Mutex::new(Manager::new(dbmysql, sessions)));
-        let state = AppState {
-            request,
-            manager,
+        let db = match create_database(db_type, &database_url).await {
+            Ok(db) => db,
+            Err(e) => {
+                error!("数据库连接失败: {}", e);
+                panic!("数据库连接失败: {}", e);
+            }
         };
+
+        let sessions = Arc::new(RwLock::new(SessionManager::new()));
+        let request = Arc::new(Mutex::new(Request::new(db.clone(), sessions.clone())));
+        let manager = Arc::new(Mutex::new(Manager::new(db, sessions)));
+        let state = AppState { request, manager };
         // 构建路由
-        let app = router()
-            .layer(Extension(state));
-        
+        let app = router().layer(Extension(state));
+
         Server { addr, app }
     }
 

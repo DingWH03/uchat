@@ -3,7 +3,7 @@ mod messages;
 
 use super::error::UserError;
 use crate::api::session_manager::{SessionManager};
-use crate::db::Database as DB;
+use crate::db::DB;
 use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, MessageType, ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
 };
@@ -18,12 +18,12 @@ use tokio::sync::RwLock; // 为sessions高效率共享使用Rwlock
 // use tokio::sync::Mutex;
 
 pub struct Request {
-    db: Arc<DB>,
+    db: Arc<dyn DB>,
     sessions: Arc<RwLock<SessionManager>>,
 }
 
 impl Request {
-    pub fn new(db: Arc<DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
+    pub fn new(db: Arc<dyn DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
         Self {
             db,
             sessions, 

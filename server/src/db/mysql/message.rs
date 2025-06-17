@@ -1,16 +1,84 @@
 use std::collections::HashMap;
 
-use crate::protocol::{GroupSessionMessage, SessionMessage};
-use super::Database;
+use crate::{db::MessageDB, protocol::{GroupSessionMessage, MessageType, SessionMessage}};
+use super::MysqlDB;
 use anyhow::Result;
+use async_trait::async_trait;
 use chrono::NaiveDateTime;
 
-impl Database{
+#[async_trait]
+impl MessageDB for MysqlDB{
+
+    /// 添加私聊信息聊天记录，返回消息的自增 ID
+    async fn add_message(
+        &self,
+        sender: u32,
+        receiver: u32,
+        message_type: MessageType,
+        message: &str,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO messages (sender_id, receiver_id, message_type, message)
+            VALUES (?, ?, ?, ?)
+            "#,
+            sender,
+            receiver,
+            message_type as MessageType,
+            message
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.last_insert_id())
+    }
+
+    /// 添加离线消息记录
+    async fn add_offline_message(
+        &self,
+        receiver_id: u32,
+        is_group: bool,
+        message_id: Option<u64>,
+        group_message_id: Option<u64>,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "INSERT INTO offline_messages (receiver_id, is_group, message_id, group_message_id)
+            VALUES (?, ?, ?, ?)",
+            receiver_id,
+            is_group,
+            message_id,
+            group_message_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// 添加群聊信息聊天记录
+    async fn add_group_message(
+        &self,
+        group_id: u32,
+        sender: u32,
+        message: &str,
+    ) -> Result<u64> {
+        let result = sqlx::query!(
+            "INSERT INTO ugroup_messages (group_id, sender_id, message)
+            VALUES (?, ?, ?)",
+            group_id,
+            sender,
+            message
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.last_insert_id())
+    }
 
     /// 获取私聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
-    pub async fn get_messages(
+    async fn get_messages(
         &self,
         sender: u32,
         receiver: u32,
@@ -54,7 +122,7 @@ impl Database{
     /// 获取群聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
-    pub async fn get_group_messages(
+    async fn get_group_messages(
         &self,
         group_id: u32,
         offset: u32,
@@ -86,7 +154,7 @@ impl Database{
         Ok(messages)
     }
     /// 获取某群聊最新一条消息时间戳
-    pub async fn get_latest_timestamp_of_group(
+    async fn get_latest_timestamp_of_group(
         &self,
         group_id: u32,
     ) -> Result<Option<NaiveDateTime>> {
@@ -107,7 +175,7 @@ impl Database{
         Ok(ts)
     }
     /// 用户加入群聊的所有的群消息最后的时间戳
-    pub async fn get_latest_timestamps_of_all_groups(
+    async fn get_latest_timestamps_of_all_groups(
         &self,
         user_id: u32,
     ) -> Result<HashMap<u32, NaiveDateTime>> {
@@ -132,7 +200,7 @@ impl Database{
             .collect())
     }
     /// 当前用户所有群聊中最新的一条消息的时间戳（全局最大）
-    pub async fn get_latest_timestamp_of_all_group_messages(
+    async fn get_latest_timestamp_of_all_group_messages(
         &self,
         user_id: u32,
     ) -> Result<Option<NaiveDateTime>> {
@@ -152,7 +220,7 @@ impl Database{
         Ok(ts)
     }
     /// 某个群某时间之后的消息
-    pub async fn get_group_messages_after_timestamp(
+    async fn get_group_messages_after_timestamp(
         &self,
         group_id: u32,
         after: NaiveDateTime,
@@ -178,7 +246,7 @@ impl Database{
         Ok(msgs)
     }
     // 当前用户所有群某时间之后的消息
-    pub async fn get_all_group_messages_after_timestamp(
+    async fn get_all_group_messages_after_timestamp(
         &self,
         user_id: u32,
         after: NaiveDateTime,
@@ -218,7 +286,7 @@ impl Database{
             .collect())
     }
     /// 获取与某个用户的最后一条私聊消息时间戳
-    pub async fn get_latest_timestamp_with_user(
+    async fn get_latest_timestamp_with_user(
         &self,
         user1_id: u32,
         user2_id: u32,
@@ -242,7 +310,7 @@ impl Database{
         Ok(ts)
     }
     /// 获取当前用户所有私聊会话的最后时间戳（按对方用户 ID 映射）
-    pub async fn get_latest_timestamps_of_all_private_chats(
+    async fn get_latest_timestamps_of_all_private_chats(
         &self,
         user_id: u32,
     ) -> Result<HashMap<u32, NaiveDateTime>> {
@@ -271,7 +339,7 @@ impl Database{
             .collect())
     }
     /// 获取当前用户所有私聊中最新的一条消息时间戳（全局最大）
-    pub async fn get_latest_timestamp_of_all_private_messages(
+    async fn get_latest_timestamp_of_all_private_messages(
         &self,
         user_id: u32,
     ) -> Result<Option<NaiveDateTime>> {
@@ -291,7 +359,7 @@ impl Database{
         Ok(ts)
     }
     /// 获取与某个用户某时间之后的聊天记录（时间递增）
-    pub async fn get_private_messages_after_timestamp(
+    async fn get_private_messages_after_timestamp(
         &self,
         user1_id: u32,
         user2_id: u32,
@@ -321,7 +389,7 @@ impl Database{
         Ok(rows)
     }
     /// 获取所有私聊消息中某时间之后的所有聊天记录（带对方 ID）
-    pub async fn get_all_private_messages_after_timestamp(
+    async fn get_all_private_messages_after_timestamp(
         &self,
         user_id: u32,
         after: NaiveDateTime,

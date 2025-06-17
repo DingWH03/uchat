@@ -2,16 +2,16 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use crate::api::session_manager::{SessionInfo, SessionManager};
-use crate::db::Database as DB;
+use crate::db::DB;
 use log::info;
 
 pub struct Manager {
-    db: Arc<DB>,
+    db: Arc<dyn DB>,
     sessions: Arc<RwLock<SessionManager>>,
 }
 
 impl Manager {
-    pub fn new(db: Arc<DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
+    pub fn new(db: Arc<dyn DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
         Self { db, sessions }
     }
 
