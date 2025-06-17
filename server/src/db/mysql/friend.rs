@@ -1,3 +1,4 @@
+use crate::db::error::DBError;
 use crate::db::FriendDB;
 use crate::db::mysql::MysqlDB;
 use crate::protocol::UserSimpleInfo;
@@ -8,7 +9,7 @@ use async_trait::async_trait;
 #[async_trait]
 impl FriendDB for MysqlDB {
     /// 根据user_id🔍好友列表，一般是自己查找自己的好友列表
-    async fn get_friends(&self, user_id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
+    async fn get_friends(&self, user_id: u32) -> Result<Vec<UserSimpleInfo>, DBError> {
         let rows = sqlx::query!(
             "
             SELECT 
@@ -39,7 +40,7 @@ impl FriendDB for MysqlDB {
     }
     /// 添加好友，user_id是发送者的id，friend_id是接收者的id
     /// 直接双向成为好友，暂不支持请求与同意机制
-    async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<()> {
+    async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), DBError> {
         let mut tx = self.pool.begin().await?;
 
         // 插入 (user_id, friend_id)

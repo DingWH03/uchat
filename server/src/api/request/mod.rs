@@ -1,7 +1,7 @@
 mod user;
 mod messages;
 
-use super::error::UserError;
+use crate::api::error::RequestError;
 use crate::api::session_manager::{SessionManager};
 use crate::db::DB;
 use crate::protocol::{
@@ -34,7 +34,7 @@ impl Request {
     pub async fn get_online_friends(
         &self,
         user_id: u32,
-    ) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
+    ) -> Result<Vec<UserSimpleInfo>, RequestError> {
         // 获取所有好友（从数据库）
         let all_friends = self.db.get_friends(user_id).await?;
         let session_manager = self.sessions.write().await;
@@ -280,7 +280,7 @@ impl Request {
         user_id: u32,
         old_password_hashed: &str,
         new_password: &str,
-    ) -> Result<(), UserError> {
+    ) -> Result<(), RequestError> {
         let password_hash = self.db.get_password_hash(user_id).await?;
 
         match password_hash {
@@ -294,12 +294,12 @@ impl Request {
                     Ok(())
                 } else {
                     warn!("用户 {} 原密码不正确", user_id);
-                    Err(UserError::InvalidPassword)
+                    Err(RequestError::InvalidPassword)
                 }
             }
             None => {
                 warn!("用户 {} 不存在", user_id);
-                Err(UserError::UserNotFound)
+                Err(RequestError::UserNotFound)
             }
         }
     }

@@ -1,8 +1,8 @@
-use crate::api::error::UserError;
+use crate::{api::error::RequestError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ServerError {
-    #[error("用户模块错误: {0}")]
-    UserError(#[from] UserError),
+    #[error("api请求错误: {0}")]
+    RequestError(#[from] RequestError),
 }

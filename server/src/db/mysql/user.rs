@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use super::MysqlDB;
 use anyhow::Result;
-use crate::{db::UserDB, protocol::{PatchUserRequest, UpdateUserRequest, UserDetailedInfo}};
+use crate::{db::{error::DBError, UserDB}, protocol::{PatchUserRequest, UpdateUserRequest, UserDetailedInfo}};
 use sqlx::Arguments;
 
 #[async_trait]
@@ -11,7 +11,7 @@ impl UserDB for MysqlDB {
 
     // }
     /// 查询用户密码哈希
-    async fn get_password_hash(&self, id: u32) -> Result<Option<String>, sqlx::Error> {
+    async fn get_password_hash(&self, id: u32) -> Result<Option<String>, DBError> {
         let row = sqlx::query!("SELECT password_hash FROM users WHERE id = ?", id)
             .fetch_optional(&self.pool)
             .await?;
@@ -24,7 +24,7 @@ impl UserDB for MysqlDB {
         &self,
         id: u32,
         new_password_hash: &str,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), DBError> {
         sqlx::query!(
             "UPDATE users SET password_hash = ? WHERE id = ?",
             new_password_hash,
@@ -37,7 +37,7 @@ impl UserDB for MysqlDB {
     }
 
     /// 创建新用户
-    async fn new_user(&self, username: &str, password_hash: &str) -> Result<Option<u32>> {
+    async fn new_user(&self, username: &str, password_hash: &str) -> Result<Option<u32>, DBError> {
         let result = sqlx::query!(
             "INSERT INTO users (username, password_hash) VALUES (?, ?)",
             username,
@@ -53,7 +53,7 @@ impl UserDB for MysqlDB {
     }
 
     /// 删除用户
-    async fn delete_user(&self, id: u32) -> Result<(), sqlx::Error> {
+    async fn delete_user(&self, id: u32) -> Result<(), DBError> {
         sqlx::query!("DELETE FROM users WHERE id = ?", id)
             .execute(&self.pool)
             .await?;
@@ -66,7 +66,7 @@ impl UserDB for MysqlDB {
         &self,
         id: u32,
         update: UpdateUserRequest,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), DBError> {
         sqlx::query!(
             "UPDATE users SET username = ? WHERE id = ?",
             update.username,
@@ -83,7 +83,7 @@ impl UserDB for MysqlDB {
         &self,
         id: u32,
         patch: PatchUserRequest,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), DBError> {
         let mut sql = String::from("UPDATE users SET ");
         let mut sets = Vec::new();
         let mut args = sqlx::mysql::MySqlArguments::default();
@@ -108,7 +108,7 @@ impl UserDB for MysqlDB {
     }
 
     /// 根据id查找用户详细信息
-    async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>> {
+    async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError> {
         let row = sqlx::query!("SELECT id AS user_id, username FROM users WHERE id = ?", id)
             .fetch_optional(&self.pool)
             .await?;

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{db::MessageDB, protocol::{GroupSessionMessage, MessageType, SessionMessage}};
+use crate::{db::{error::DBError, MessageDB}, protocol::{GroupSessionMessage, MessageType, SessionMessage}};
 use super::MysqlDB;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -16,7 +16,7 @@ impl MessageDB for MysqlDB{
         receiver: u32,
         message_type: MessageType,
         message: &str,
-    ) -> Result<u64, sqlx::Error> {
+    ) -> Result<u64, DBError> {
         let result = sqlx::query!(
             r#"
             INSERT INTO messages (sender_id, receiver_id, message_type, message)
@@ -40,7 +40,7 @@ impl MessageDB for MysqlDB{
         is_group: bool,
         message_id: Option<u64>,
         group_message_id: Option<u64>,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), DBError> {
         sqlx::query!(
             "INSERT INTO offline_messages (receiver_id, is_group, message_id, group_message_id)
             VALUES (?, ?, ?, ?)",
@@ -61,7 +61,7 @@ impl MessageDB for MysqlDB{
         group_id: u32,
         sender: u32,
         message: &str,
-    ) -> Result<u64> {
+    ) -> Result<u64, DBError> {
         let result = sqlx::query!(
             "INSERT INTO ugroup_messages (group_id, sender_id, message)
             VALUES (?, ?, ?)",
@@ -83,7 +83,7 @@ impl MessageDB for MysqlDB{
         sender: u32,
         receiver: u32,
         offset: u32,
-    ) -> Result<Vec<SessionMessage>> {
+    ) -> Result<Vec<SessionMessage>, DBError> {
         // 每页显示的消息数
         let limit = 30;
         // 计算要偏移的数量
@@ -126,7 +126,7 @@ impl MessageDB for MysqlDB{
         &self,
         group_id: u32,
         offset: u32,
-    ) -> Result<Vec<SessionMessage>> {
+    ) -> Result<Vec<SessionMessage>, DBError> {
         let limit = 30;
         let offset_rows = offset * limit;
 
@@ -157,7 +157,7 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamp_of_group(
         &self,
         group_id: u32,
-    ) -> Result<Option<NaiveDateTime>> {
+    ) -> Result<Option<NaiveDateTime>, DBError> {
         let ts: Option<NaiveDateTime> = sqlx::query_scalar!(
             r#"
             SELECT `timestamp` as "timestamp: NaiveDateTime"
@@ -178,7 +178,7 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamps_of_all_groups(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>> {
+    ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
         let result = sqlx::query!(
             r#"
             SELECT
@@ -203,7 +203,7 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamp_of_all_group_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>> {
+    ) -> Result<Option<NaiveDateTime>, DBError> {
         let ts = sqlx::query_scalar!(
             r#"
             SELECT MAX(m.`timestamp`) as "timestamp: NaiveDateTime"
@@ -224,7 +224,7 @@ impl MessageDB for MysqlDB{
         &self,
         group_id: u32,
         after: NaiveDateTime,
-    ) -> Result<Vec<SessionMessage>> {
+    ) -> Result<Vec<SessionMessage>, DBError> {
         let msgs = sqlx::query_as!(
             SessionMessage,
             r#"
@@ -250,7 +250,7 @@ impl MessageDB for MysqlDB{
         &self,
         user_id: u32,
         after: NaiveDateTime,
-    ) -> Result<Vec<(u32, SessionMessage)>> {
+    ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
         let rows = sqlx::query_as!(
             GroupSessionMessage,
             r#"
@@ -290,7 +290,7 @@ impl MessageDB for MysqlDB{
         &self,
         user1_id: u32,
         user2_id: u32,
-    ) -> Result<Option<NaiveDateTime>> {
+    ) -> Result<Option<NaiveDateTime>, DBError> {
         let ts = sqlx::query_scalar!(
             r#"
         SELECT MAX(`timestamp`) as "timestamp: NaiveDateTime"
@@ -313,7 +313,7 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamps_of_all_private_chats(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>> {
+    ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
         let rows = sqlx::query!(
             r#"
         SELECT
@@ -342,7 +342,7 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamp_of_all_private_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>> {
+    ) -> Result<Option<NaiveDateTime>, DBError> {
         let ts = sqlx::query_scalar!(
             r#"
         SELECT MAX(`timestamp`) as "timestamp: NaiveDateTime"
@@ -364,7 +364,7 @@ impl MessageDB for MysqlDB{
         user1_id: u32,
         user2_id: u32,
         after: NaiveDateTime,
-    ) -> Result<Vec<SessionMessage>> {
+    ) -> Result<Vec<SessionMessage>, DBError> {
         let rows = sqlx::query_as!(
             SessionMessage,
             r#"
@@ -393,7 +393,7 @@ impl MessageDB for MysqlDB{
         &self,
         user_id: u32,
         after: NaiveDateTime,
-    ) -> Result<Vec<(u32, SessionMessage)>> {
+    ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
         let rows = sqlx::query!(
             r#"
         SELECT

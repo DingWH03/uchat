@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use chrono::NaiveDateTime;
 
 use super::Request;
-use crate::{api::handler::friend, protocol::SessionMessage};
+use crate::{protocol::SessionMessage};
 
 impl Request {
     /// 获取群聊聊天记录
