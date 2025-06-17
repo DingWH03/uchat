@@ -56,7 +56,11 @@ SQL_QUERIES = [
         message TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+
+        -- 索引优化：加快用户聊天记录分页、时间查询
+        INDEX idx_sender_receiver_time (sender_id, receiver_id, timestamp),
+        INDEX idx_receiver_time (receiver_id, timestamp)
     );
     """,
 
@@ -93,7 +97,9 @@ SQL_QUERIES = [
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (group_id, user_id),
         FOREIGN KEY (group_id) REFERENCES ugroups(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+        INDEX idx_user_id (user_id)
     );
     """,
 
@@ -106,7 +112,11 @@ SQL_QUERIES = [
         message TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (group_id) REFERENCES ugroups(id) ON DELETE CASCADE,
-        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+
+        -- 索引优化：分页加载、获取某群最新消息
+        INDEX idx_group_time (group_id, timestamp),
+        INDEX idx_sender_group_time (sender_id, group_id, timestamp)
     );
     """,
 
@@ -128,7 +138,10 @@ SQL_QUERIES = [
         CHECK (
             (is_group = FALSE AND message_id IS NOT NULL AND group_message_id IS NULL) OR
             (is_group = TRUE AND group_message_id IS NOT NULL AND message_id IS NULL)
-        )
+        ),
+
+        -- 索引优化：推送离线消息
+        INDEX idx_receiver_undelivered (receiver_id, delivered, is_group, timestamp)
     );
     """
 ]

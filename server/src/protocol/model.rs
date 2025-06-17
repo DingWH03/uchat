@@ -40,6 +40,14 @@ pub struct SessionMessage {
     pub timestamp: NaiveDateTime,
 }
 
+ #[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct GroupSessionMessage {
+    pub group_id: u32,
+    pub sender_id: u32,
+    pub timestamp: NaiveDateTime,
+    pub message: String,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "ENUM('text', 'image', 'file', 'video', 'audio')")]
 pub enum MessageType {
