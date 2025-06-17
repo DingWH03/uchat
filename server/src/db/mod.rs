@@ -6,7 +6,6 @@ use crate::protocol::{
 };
 use anyhow::Result;
 
-use dotenv::dotenv;
 use sqlx::Arguments;
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use std::env;
@@ -19,9 +18,6 @@ pub struct Database {
 impl Database {
     /// 异步初始化数据库连接池
     pub async fn new() -> Result<Self> {
-        // 加载 .env 文件中的环境变量
-        dotenv().ok();
-
         // 从环境变量中获取数据库连接字符串
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL 环境变量未设置");
 
