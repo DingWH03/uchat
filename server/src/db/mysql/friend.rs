@@ -45,7 +45,7 @@ impl FriendDB for MysqlDB {
 
         // 插入 (user_id, friend_id)
         sqlx::query!(
-            "INSERT IGNORE INTO friendships (user_id, friend_id) VALUES (?, ?)",
+            "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)",
             user_id,
             friend_id
         )
@@ -54,7 +54,7 @@ impl FriendDB for MysqlDB {
 
         // 插入 (friend_id, user_id)
         sqlx::query!(
-            "INSERT IGNORE INTO friendships (user_id, friend_id) VALUES (?, ?)",
+            "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)",
             friend_id,
             user_id
         )

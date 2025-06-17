@@ -3,6 +3,7 @@ mod messages;
 
 use crate::api::error::RequestError;
 use crate::api::session_manager::{SessionManager};
+use crate::db::error::DBError;
 use crate::db::DB;
 use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, MessageType, ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
@@ -305,31 +306,28 @@ impl Request {
     }
 
     /// 返回用户的详细信息
-    pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, sqlx::Error> {
+    pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError> {
         self.db
             .get_userinfo(id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回群组的详细信息
-    pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, sqlx::Error> {
+    pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, DBError> {
         self.db
             .get_groupinfo(id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回一个用户的好友列表
-    pub async fn get_friends(&self, id: u32) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
+    pub async fn get_friends(&self, id: u32) -> Result<Vec<UserSimpleInfo>, DBError> {
         self.db
             .get_friends(id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 返回一个带有在线信息的好友列表
     pub async fn get_friends_with_status(
         &self,
         id: u32,
-    ) -> Result<Vec<UserSimpleInfoWithStatus>, sqlx::Error> {
+    ) -> Result<Vec<UserSimpleInfoWithStatus>, DBError> {
         let friends = self.get_friends(id).await?;
         let session_manager = self.sessions.read().await;
         let result = friends
@@ -350,29 +348,26 @@ impl Request {
     }
 
     /// 获取一个用户的所有群聊
-    pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, sqlx::Error> {
+    pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, DBError> {
         self.db
             .get_groups(id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 获取某个群聊的群聊成员
     pub async fn get_group_members(
         &self,
         group_id: u32,
-    ) -> Result<Vec<UserSimpleInfo>, sqlx::Error> {
+    ) -> Result<Vec<UserSimpleInfo>, DBError> {
         self.db
             .get_group_members(group_id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 通过user_id添加好友
     /// 当前版本无需确认直接通过
-    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), sqlx::Error> {
+    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), DBError> {
         self.db
             .add_friend(user_id, friend_id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 创建一个新的群聊，在创建时附带群成员列表
     pub async fn create_group(
@@ -380,25 +375,22 @@ impl Request {
         user_id: u32,
         group_name: &str,
         members: Vec<u32>,
-    ) -> Result<u32, sqlx::Error> {
+    ) -> Result<u32, DBError> {
         self.db
             .create_group(user_id, group_name, members)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 用户申请加入群聊
-    pub async fn join_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
+    pub async fn join_group(&self, user_id: u32, group_id: u32) -> Result<(), DBError> {
         self.db
             .join_group(user_id, group_id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     /// 用户退出群聊
-    pub async fn leave_group(&self, user_id: u32, group_id: u32) -> Result<(), sqlx::Error> {
+    pub async fn leave_group(&self, user_id: u32, group_id: u32) -> Result<(), DBError> {
         self.db
             .leave_group(user_id, group_id)
             .await
-            .map_err(|e| sqlx::Error::Decode(e.into()))
     }
     
     /// 对ping请求的响应
