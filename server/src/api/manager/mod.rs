@@ -37,7 +37,7 @@ impl Manager {
     }
 
     /// 修改用户身份
-    pub async fn change_user_role(&self, user_id: u32, role: RoleType) -> ManagerResponse<()> {
+    pub async fn set_user_role(&self, user_id: u32, role: RoleType) -> ManagerResponse<()> {
         info!("修改用户{}身份为{}", user_id, role.to_string());
         match self.db.change_user_role(user_id, role).await {
             Ok(_) => {ManagerResponse::ok("修改成功", ())},

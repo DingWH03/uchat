@@ -1,6 +1,6 @@
 use log::info;
 
-use crate::{api::manager::session, protocol::{ManagerResponse, RoleType}};
+use crate::{protocol::{ManagerResponse, RoleType}};
 
 use super::Manager;
 

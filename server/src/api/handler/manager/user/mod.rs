@@ -1,3 +1,5 @@
-mod get_count;
+mod count;
+mod role;
 
-pub use get_count::handle_user_get_count;
+pub use count::handle_user_get_count;
+pub use role::handle_change_role;
