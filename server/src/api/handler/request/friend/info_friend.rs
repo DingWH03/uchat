@@ -4,7 +4,7 @@ use log::{debug, warn};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{FriendRequest, ServerResponse}, server::AppState};
+use crate::{protocol::request::{FriendRequest, ServerResponse}, server::AppState};
 
 pub async fn handle_info_friend(
     Extension(state): Extension<AppState>,

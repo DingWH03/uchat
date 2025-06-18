@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use chrono::NaiveDateTime;
 
 use crate::{db::error::DBError, protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, MessageType, PatchUserRequest, RoleType, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo
+    GroupDetailedInfo, GroupSimpleInfo, MessageType, request::{PatchUserRequest, UpdateUserRequest}, RoleType, SessionMessage, UserDetailedInfo, UserSimpleInfo
 }};
 
 #[async_trait]

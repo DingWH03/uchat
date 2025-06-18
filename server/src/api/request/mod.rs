@@ -6,7 +6,7 @@ use crate::api::session_manager::{SessionManager};
 use crate::db::error::DBError;
 use crate::db::DB;
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, MessageType, ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
+    GroupDetailedInfo, GroupSimpleInfo, MessageType, message::ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
 };
 use axum::extract::ws::Message;
 use bcrypt::{BcryptError, hash};

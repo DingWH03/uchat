@@ -1,10 +1,8 @@
 pub mod model;
-pub mod client;
-pub mod server;
+pub mod request;
 pub mod frame;
 pub mod manager;
+pub mod message;
 
 pub use manager::ManagerResponse;
 pub use model::*;
-pub use client::*;
-pub use server::*;

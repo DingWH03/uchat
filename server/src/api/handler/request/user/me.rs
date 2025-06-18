@@ -5,7 +5,8 @@ use axum_extra::TypedHeader;
 use headers::Cookie;
 use log::debug;
 use log::warn;
-use crate::protocol::ServerResponse;
+use crate::protocol::request::ServerResponse;
+use crate::protocol::request::UpdateUserRequest;
 
 /// 获取个人信息
 pub async fn handle_get_me(
@@ -64,8 +65,6 @@ pub async fn handle_get_me(
 }
 
 /// 完整更新个人资料
-use crate::protocol::UpdateUserRequest;
-
 pub async fn handle_put_me(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
@@ -115,7 +114,7 @@ pub async fn handle_put_me(
 }
 
 /// 部分修改个人资料
-use crate::protocol::PatchUserRequest;
+use crate::protocol::request::PatchUserRequest;
 use crate::server::AppState;
 
 pub async fn handle_patch_me(

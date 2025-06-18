@@ -4,7 +4,7 @@ use log::{debug, warn};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{GroupRequest, ServerResponse}, server::AppState};
+use crate::{protocol::request::{GroupRequest, ServerResponse}, server::AppState};
 
 pub async fn handle_leave_group(
     Extension(state): Extension<AppState>,

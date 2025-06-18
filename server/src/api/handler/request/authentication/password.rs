@@ -1,7 +1,7 @@
 use axum::{response::IntoResponse, Extension, Json};
 use log::debug;
 
-use crate::{protocol::{PasswordRequest, ServerResponse}, server::AppState};
+use crate::{protocol::request::{PasswordRequest, ServerResponse}, server::AppState};
 
 pub async fn handle_passwd(Extension(state): Extension<AppState>, Json(payload): Json<PasswordRequest>) -> impl IntoResponse {
     debug!("处理更改密码请求: {:?}", payload);

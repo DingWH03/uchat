@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use super::MysqlDB;
 use anyhow::Result;
 use crate::protocol::RoleType;
-use crate::{db::{error::DBError, UserDB}, protocol::{PatchUserRequest, UpdateUserRequest, UserDetailedInfo}};
+use crate::{db::{error::DBError, UserDB}, protocol::{request::{PatchUserRequest, UpdateUserRequest}, UserDetailedInfo}};
 use sqlx::Arguments;
 
 #[async_trait]

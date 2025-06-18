@@ -4,7 +4,7 @@ use log::{debug, warn};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{MessageRequest, ServerResponse}, server::AppState};
+use crate::{protocol::request::{MessageRequest, ServerResponse}, server::AppState};
 
 pub async fn handle_get_group_message(
     Extension(state): Extension<AppState>,

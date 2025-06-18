@@ -61,18 +61,7 @@ pub struct MessageRequest {
     pub offset: u32, // 偏移量，用于分页
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
-pub enum ClientMessage {
-    SendMessage {
-        receiver: u32,
-        message: String,
-    },
-    SendGroupMessage {
-        group_id: u32,
-        message: String,
-    },
-}
+
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateUserRequest {

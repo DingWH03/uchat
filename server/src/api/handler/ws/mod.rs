@@ -3,7 +3,7 @@ use futures::{sink::SinkExt, stream::StreamExt};
 use log::{error, debug, info, warn};
 use tokio::sync::mpsc; // tokio::sync::Mutex for Request
 
-use crate::{protocol::ClientMessage, server::AppState};
+use crate::{protocol::message::ClientMessage, server::AppState};
 
 /// 处理 WebSocket 连接的实际逻辑
 pub async fn handle_socket(socket: WebSocket, session_id: String, state: AppState) {

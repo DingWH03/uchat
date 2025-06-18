@@ -1,7 +1,7 @@
 use axum::{response::IntoResponse, Extension, Json};
 use log::{debug, warn};
 
-use crate::{protocol::{RegisterRequest, ServerResponse}, server::AppState};
+use crate::{protocol::request::{RegisterRequest, ServerResponse}, server::AppState};
 
 
 pub async fn handle_register(Extension(state): Extension<AppState>, Json(payload): Json<RegisterRequest>) -> impl IntoResponse {

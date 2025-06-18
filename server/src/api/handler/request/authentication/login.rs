@@ -1,5 +1,5 @@
 use axum::{extract::Json, response::IntoResponse, Extension};
-use crate::protocol::{LoginRequest, ServerResponse};
+use crate::protocol::request::{LoginRequest, ServerResponse};
 use log::debug;
 use crate::server::AppState;
 

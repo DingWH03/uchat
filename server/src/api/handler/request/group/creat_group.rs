@@ -4,7 +4,7 @@ use log::{debug, warn};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{CreateGroupRequest, ServerResponse}, server::AppState};
+use crate::{protocol::request::{CreateGroupRequest, ServerResponse}, server::AppState};
 
 pub async fn handle_creat_group(
     Extension(state): Extension<AppState>,

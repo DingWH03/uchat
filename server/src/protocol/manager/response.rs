@@ -29,15 +29,6 @@ impl<T> ManagerResponse<T> {
         }
     }
 }
-
-
-
-
-#[derive(Serialize)]
-pub struct OnlineUserTree {
-    pub users: HashMap<u32, Vec<UserSessionInfo>>,
-}
-
 #[derive(Serialize)]
 pub struct UserSessionInfo {
     pub session_id: String,
@@ -45,3 +36,9 @@ pub struct UserSessionInfo {
     pub created_at: NaiveDateTime,
     pub ip: Option<String>,
 }
+#[derive(Serialize)]
+pub struct OnlineUserTree {
+    pub users: HashMap<u32, Vec<UserSessionInfo>>,
+}
+
+

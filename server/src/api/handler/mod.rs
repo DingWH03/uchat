@@ -5,7 +5,7 @@ pub mod manager;
 use axum::response::IntoResponse;
 use axum::Extension;
 use crate::server::AppState;
-use crate::protocol::ServerResponse::GenericResponse;
+use crate::protocol::request::ServerResponse::GenericResponse;
 use log::debug;
 
 pub async fn handle_request() -> &'static str {

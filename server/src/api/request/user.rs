@@ -2,7 +2,7 @@
 use axum::extract::ws::Message;
 use log::{info, warn};
 use uuid::Uuid;
-use crate::{api::error::{RequestError}, protocol::{PatchUserRequest, ServerMessage, UpdateUserRequest}};
+use crate::{api::error::{RequestError}, protocol::{request::{PatchUserRequest, UpdateUserRequest}, message::ServerMessage}};
 use super::Request;
 
 impl Request {

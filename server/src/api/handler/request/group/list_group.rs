@@ -4,7 +4,7 @@ use log::{debug, warn};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{ServerResponse}, server::AppState};
+use crate::{protocol::request::{ServerResponse}, server::AppState};
 
 pub async fn handle_list_group(
     Extension(state): Extension<AppState>,
