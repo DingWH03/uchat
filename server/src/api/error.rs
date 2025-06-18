@@ -23,3 +23,15 @@ pub enum RequestError {
     #[error("Json序列化失败")]
     JsonError(#[from] serde_json::Error),
 }
+
+#[derive(Debug, Error)]
+pub enum ManagerError {
+    #[error("Database error: {0}")]
+    DBError(#[from] DBError),
+
+    #[error("Unauthorized")]
+    Unauthorized,
+
+    #[error("User not found")]
+    UserNotFound,
+}

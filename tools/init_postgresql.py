@@ -41,6 +41,7 @@ SQL_QUERIES = [
         id SERIAL PRIMARY KEY,
         username VARCHAR(255) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('user', 'admin')) DEFAULT 'user',
         bio VARCHAR(256),
         avatar_url VARCHAR(255)
     );

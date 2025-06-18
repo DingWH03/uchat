@@ -3,6 +3,7 @@ mod friend;
 mod group;
 mod message;
 mod user;
+mod manager;
 
 use crate::db::InitDB;
 

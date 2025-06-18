@@ -41,6 +41,7 @@ SQL_QUERIES = [
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         username VARCHAR(255) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
         bio VARCHAR(256) DEFAULT NULL, -- 个人简介，最多 256 字符
         avatar_url VARCHAR(255) DEFAULT NULL -- 头像 URL，存储头像在 MinIO 的链接
     );

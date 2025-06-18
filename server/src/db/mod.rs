@@ -11,8 +11,7 @@ use async_trait::async_trait;
 use chrono::NaiveDateTime;
 
 use crate::{db::error::DBError, protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, MessageType, PatchUserRequest, SessionMessage,
-    UpdateUserRequest, UserDetailedInfo, UserSimpleInfo,
+    GroupDetailedInfo, GroupSimpleInfo, MessageType, PatchUserRequest, RoleType, SessionMessage, UpdateUserRequest, UserDetailedInfo, UserSimpleInfo
 }};
 
 #[async_trait]
@@ -165,8 +164,16 @@ pub trait MessageDB: Send + Sync {
     ) -> Result<Vec<(u32, SessionMessage)>, DBError>;
 }
 
+#[async_trait]
+pub trait ManagerDB: Send + Sync {
+    /// 获取所有用户数量(包括管理员和普通用户)
+    async fn get_user_count(&self) -> Result<u32, DBError>;
+    /// 改变用户身份
+    async fn change_user_role(&self, userid: u32, role: RoleType) -> Result<(), DBError>;
+}
+
 // 综合 trait，将所有子 trait 组合起来
 #[async_trait]
-pub trait DB: InitDB + UserDB + FriendDB + GroupDB + MessageDB {}
+pub trait DB: InitDB + UserDB + FriendDB + GroupDB + MessageDB + ManagerDB {}
 
-impl<T> DB for T where T: InitDB + UserDB + FriendDB + GroupDB + MessageDB {}
+impl<T> DB for T where T: InitDB + UserDB + FriendDB + GroupDB + MessageDB + ManagerDB {}

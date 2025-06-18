@@ -49,6 +49,34 @@ pub struct GroupSessionMessage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
+pub enum RoleType {
+    User,
+    Admin,
+}
+
+impl FromStr for RoleType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "user" => Ok(RoleType::User),
+            "admin" => Ok(RoleType::Admin),
+            _ => Err(()),
+        }
+    }
+}
+
+impl ToString for RoleType {
+    fn to_string(&self) -> String {
+        match self {
+            RoleType::Admin => "admin".to_string(),
+            RoleType::User => "user".to_string(),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "ENUM('text', 'image', 'file', 'video', 'audio')")]
 pub enum MessageType {
     #[serde(rename = "text")]
