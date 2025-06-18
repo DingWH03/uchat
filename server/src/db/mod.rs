@@ -25,7 +25,9 @@ pub trait InitDB: Send + Sync {
 #[async_trait]
 pub trait UserDB: Send + Sync {
     /// 查询用户密码哈希
-    async fn get_password_hash(&self, id: u32) -> Result<Option<String>, DBError>;
+    async fn get_password_hash(&self, id: u32) -> Result<String, DBError>;
+    /// 查询用户密码哈希以及role
+    async fn get_user_password_and_role(&self, user_id: u32) -> Result<(String, RoleType), DBError>;
     /// 更新用户密码
     async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), DBError>;
     /// 创建新用户

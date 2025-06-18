@@ -11,8 +11,8 @@ impl Request {
     /// 返回 'Ok(None)' 如果用户不存在或密码错误
     /// 可以重复登陆，会分发不同的cookie
     pub async fn login(&mut self, id: u32, password: &str) -> Result<String, RequestError> {
-        let password_hash = self.db.get_password_hash(id).await?;
-        let password_hash = password_hash.ok_or(RequestError::UserNotFound)?;
+        let (password_hash, role) = self.db.get_user_password_and_role(id).await
+        .map_err(|_| RequestError::UserNotFound)?;
 
         let valid = bcrypt::verify(password, &password_hash)?;
         if !valid {
@@ -33,7 +33,7 @@ impl Request {
         self.sessions
             .write()
             .await
-            .insert_session(id, session_cookie.clone(), None);
+            .insert_session(id, session_cookie.clone(), None, role);
 
         info!("用户 {} 登录成功", id);
 

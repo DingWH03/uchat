@@ -8,7 +8,9 @@ use crate::db::postgresql::PgSqlDB;
 use crate::db::mysql::MysqlDB;
 
 pub enum DbType {
+    #[cfg(feature = "mysql")]
     MySQL,
+    #[cfg(feature = "postgres")]
     Postgres
 }
 

@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use super::MysqlDB;
 use anyhow::Result;
+use crate::protocol::RoleType;
 use crate::{db::{error::DBError, UserDB}, protocol::{PatchUserRequest, UpdateUserRequest, UserDetailedInfo}};
 use sqlx::Arguments;
 
@@ -10,13 +11,40 @@ impl UserDB for MysqlDB {
     // async fn set_userinfo(&self, id: u32, userinfo: UserDetailedInfo) -> Result<()> {
 
     // }
+    /// 查询用户密码和身份
+    async fn get_user_password_and_role(&self, user_id: u32) -> Result<(String, RoleType), DBError> {
+        let row = sqlx::query!(
+            r#"
+            SELECT password_hash, role as `role: RoleType`
+            FROM users
+            WHERE id = ?
+            "#,
+            user_id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(row) = row {
+            let password = row.password_hash;
+            Ok((password, row.role))
+        } else {
+            Err(DBError::NotFound)
+        }
+    }
+
     /// 查询用户密码哈希
-    async fn get_password_hash(&self, id: u32) -> Result<Option<String>, DBError> {
+    async fn get_password_hash(&self, id: u32) -> Result<String, DBError> {
         let row = sqlx::query!("SELECT password_hash FROM users WHERE id = ?", id)
             .fetch_optional(&self.pool)
             .await?;
 
-        Ok(row.map(|r| r.password_hash))
+        if let Some(row) = row {
+            let password = row.password_hash;
+            Ok(password)
+        }
+        else {
+            Err(DBError::NotFound)
+        }
     }
 
     /// 更新用户密码

@@ -284,24 +284,16 @@ impl Request {
     ) -> Result<(), RequestError> {
         let password_hash = self.db.get_password_hash(user_id).await?;
 
-        match password_hash {
-            Some(password_hash) => {
-                if bcrypt::verify(old_password_hashed, &password_hash)? {
-                    let new_hashed_password = hash(new_password, 4)?;
-                    self.db
-                        .update_password(user_id, &new_hashed_password)
-                        .await?;
-                    info!("用户 {} 密码更改成功", user_id);
-                    Ok(())
-                } else {
-                    warn!("用户 {} 原密码不正确", user_id);
-                    Err(RequestError::InvalidPassword)
-                }
-            }
-            None => {
-                warn!("用户 {} 不存在", user_id);
-                Err(RequestError::UserNotFound)
-            }
+        if bcrypt::verify(old_password_hashed, &password_hash)? {
+            let new_hashed_password = hash(new_password, 4)?;
+            self.db
+                .update_password(user_id, &new_hashed_password)
+                .await?;
+            info!("用户 {} 密码更改成功", user_id);
+            Ok(())
+        } else {
+            warn!("用户 {} 原密码不正确", user_id);
+            Err(RequestError::InvalidPassword)
         }
     }
 

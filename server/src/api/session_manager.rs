@@ -2,13 +2,15 @@ use axum::extract::ws::Message;
 use chrono::NaiveDateTime;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc::UnboundedSender;
+use crate::protocol::RoleType;
 
 #[derive(Debug, Clone)]
 pub struct SessionInfo {
-    pub user_id: u32,
+    user_id: u32,
     sender: Option<UnboundedSender<Message>>, // 初始为 None
     pub created_at: NaiveDateTime,
     pub ip: Option<String>,
+    role: RoleType,
 }
 
 pub struct SessionManager {
@@ -26,7 +28,7 @@ impl SessionManager {
 
     /// 插入一个新的 Session，占位但尚未绑定 Sender
     /// session_id可能会重复，但暂时不考虑
-    pub fn insert_session(&mut self, user_id: u32, session_id: String, ip: Option<String>) {
+    pub fn insert_session(&mut self, user_id: u32, session_id: String, ip: Option<String>, role: RoleType) {
         let now = chrono::Utc::now().naive_utc();
 
         self.sessions.insert(
@@ -36,6 +38,7 @@ impl SessionManager {
                 sender: None,
                 created_at: now,
                 ip,
+                role
             },
         );
 
@@ -51,6 +54,16 @@ impl SessionManager {
             // session只要存在即可，暂时无需判断时间
             Some(session_info.user_id)
         } else {
+            None
+        }
+    }
+
+    /// 检查某个 session 的身份
+    pub fn check_session_role(&self, session_id: &str) -> Option<RoleType> {
+        if let Some(session_info) = self.sessions.get(session_id) {
+            Some(session_info.role)
+        }
+        else {
             None
         }
     }

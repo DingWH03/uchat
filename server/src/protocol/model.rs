@@ -75,6 +75,12 @@ impl ToString for RoleType {
     }
 }
 
+impl RoleType {
+    pub fn is_admin(&self) -> bool {
+        matches!(self, RoleType::Admin)
+    }
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "ENUM('text', 'image', 'file', 'video', 'audio')")]

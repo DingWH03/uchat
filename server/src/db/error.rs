@@ -9,8 +9,8 @@ pub enum DBError {
     // #[error("Diesel 错误: {0}")]
     // Diesel(#[from] diesel::result::Error),
 
-    // #[error("数据不存在")]
-    // NotFound,
+    #[error("数据不存在")]
+    NotFound,
 
     // #[error("违反约束条件: {0}")]
     // ConstraintViolation(String),
