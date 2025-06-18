@@ -17,12 +17,12 @@ headers = "0.4.1"
 log = "0.4.27"
 serde = "1.0.219"
 serde_json = "1.0.140"
-sqlx = { version = "0.8.6", features = ["mysql", "postgres", "runtime-tokio-native-tls", "macros", "chrono"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "macros", "chrono"] }
 thiserror = "2.0.12"
 tokio = { version = "1.45.1", features = ["rt-multi-thread"] }
 uuid = { version = "1.17.0", features = ["v7"] }
 
 [features]
-default = []
-mysql = []
-postgres = []
+default = ["mysql"]
+mysql = ["sqlx/mysql"]
+postgres = ["sqlx/postgres"]

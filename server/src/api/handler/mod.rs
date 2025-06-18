@@ -1,10 +1,6 @@
-pub mod authentication;
-pub mod friend;
-pub mod group;
+pub mod request;
 pub mod ws;
-pub mod message;
 pub mod manager;
-pub mod user;
 
 use axum::response::IntoResponse;
 use axum::Extension;
