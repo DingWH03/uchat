@@ -1,5 +1,8 @@
 pub mod factory;
+#[cfg(feature = "mysql")]
 mod mysql;
+#[cfg(feature = "postgres")]
+mod postgresql;
 pub mod error;
 use std::collections::HashMap;
 

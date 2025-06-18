@@ -82,3 +82,15 @@ impl FromStr for MessageType {
         }
     }
 }
+
+impl ToString for MessageType {
+    fn to_string(&self) -> String {
+        match self {
+            MessageType::Text => "text".to_string(),
+            MessageType::Image => "image".to_string(),
+            MessageType::File => "file".to_string(),
+            MessageType::Video => "video".to_string(),
+            MessageType::Audio => "audio".to_string(),
+        }
+    }
+}
