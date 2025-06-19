@@ -12,6 +12,9 @@ pub enum DBError {
     #[error("数据不存在")]
     NotFound,
 
+    #[error("其他数据库错误")]
+    Other(String),
+
     // #[error("违反约束条件: {0}")]
     // ConstraintViolation(String),
 

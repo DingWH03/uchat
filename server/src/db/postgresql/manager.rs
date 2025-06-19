@@ -106,4 +106,36 @@ impl ManagerDB for MysqlDB {
 
         Ok(result.rows_affected())
     }
+    /// 获取一条私聊消息
+    async fn get_private_message(
+        &self,
+        message_id: u64,
+    ) -> Result<FullPrivateMessage, DBError> {
+        let message = sqlx::query_as!(
+            FullPrivateMessage,
+            r#"
+            SELECT 
+                m.id,
+                m.sender_id,
+                s.username AS sender_username,
+                m.receiver_id,
+                r.username AS receiver_username,
+                m.message_type,
+                m.message,
+                m.timestamp
+            FROM messages m
+            JOIN users s ON m.sender_id = s.id
+            JOIN users r ON m.receiver_id = r.id
+            WHERE m.id = $1
+            "#,
+            message_id as i32
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match message {
+            Some(m) => Ok(m),
+            None => Err(DBError::NotFound),
+        }
+    }
 }

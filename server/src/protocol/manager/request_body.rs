@@ -58,3 +58,9 @@ pub struct GetUserRecentMessageRequest {
 pub struct DeleteMessageRequest {
     pub message_id: u64,
 }
+
+/// 获取单条消息
+#[derive(Deserialize, Debug)]
+pub struct GetMessageRequest {
+    pub message_id: u64,
+}

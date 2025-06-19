@@ -13,9 +13,7 @@ use chrono::NaiveDateTime;
 use crate::{
     db::error::DBError,
     protocol::{
-        GroupDetailedInfo, GroupSimpleInfo, MessageType, RecentPrivateMessage, RoleType,
-        SessionMessage, UserDetailedInfo, UserSimpleInfo,
-        request::{PatchUserRequest, UpdateUserRequest},
+        request::{PatchUserRequest, UpdateUserRequest}, FullPrivateMessage, GroupDetailedInfo, GroupSimpleInfo, MessageType, PreviewPrivateMessage, RoleType, SessionMessage, UserDetailedInfo, UserSimpleInfo
     },
 };
 
@@ -204,16 +202,18 @@ pub trait ManagerDB: Send + Sync {
         &self,
         count: u32,
         offset: u32,
-    ) -> Result<Vec<RecentPrivateMessage>, DBError>;
+    ) -> Result<Vec<PreviewPrivateMessage>, DBError>;
     /// 获取某用户近N条聊天记录
     async fn get_user_recent_messages(
         &self,
         count: u32,
         offset: u32,
         user_id: u32,
-    ) -> Result<Vec<RecentPrivateMessage>, DBError>;
+    ) -> Result<Vec<PreviewPrivateMessage>, DBError>;
     /// 删除某条聊天记录
     async fn delete_private_message(&self, message_id: u64) -> Result<u64, DBError>;
+    /// 获取一个私聊聊天记录
+    async fn get_private_message(&self, message_id: u64) -> Result<FullPrivateMessage, DBError>;
 }
 
 // 综合 trait，将所有子 trait 组合起来

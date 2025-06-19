@@ -35,16 +35,25 @@ else:
 
 # 数据库表创建 SQL
 SQL_QUERIES = [
+    # 用户身份枚举类型
+    """
+    CREATE TYPE role_type AS ENUM ('user', 'admin');
+    """,
     # 用户表
     """
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(255) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        role TEXT NOT NULL CHECK (role IN ('user', 'admin')) DEFAULT 'user',
+        role role_type NOT NULL DEFAULT 'user',
         bio VARCHAR(256),
         avatar_url VARCHAR(255)
     );
+    """,
+    
+    # message_type枚举类型
+    """
+    CREATE TYPE message_type AS ENUM ('text', 'image', 'file', 'video', 'audio');
     """,
 
     # 消息表（私聊）
@@ -53,7 +62,7 @@ SQL_QUERIES = [
         id SERIAL PRIMARY KEY,
         sender_id INTEGER NOT NULL,
         receiver_id INTEGER NOT NULL,
-        message_type TEXT NOT NULL CHECK (message_type IN ('text', 'image', 'file', 'video', 'audio')),
+        message_type message_type NOT NULL,
         message TEXT NOT NULL,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,

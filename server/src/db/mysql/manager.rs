@@ -1,7 +1,7 @@
 use super::MysqlDB;
 use crate::{
-    db::{ManagerDB, error::DBError},
-    protocol::{RecentPrivateMessage, RoleType, UserSimpleInfo},
+    db::{error::DBError, ManagerDB},
+    protocol::{FullPrivateMessage, PreviewPrivateMessage, RoleType, UserSimpleInfo},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -56,8 +56,8 @@ impl ManagerDB for MysqlDB {
         &self,
         count: u32,
         offset: u32,
-    ) -> Result<Vec<RecentPrivateMessage>, DBError> {
-        let messages = sqlx::query_as::<_, RecentPrivateMessage>(
+    ) -> Result<Vec<PreviewPrivateMessage>, DBError> {
+        let messages = sqlx::query_as::<_, PreviewPrivateMessage>(
             r#"
             SELECT 
                 id,
@@ -86,8 +86,8 @@ impl ManagerDB for MysqlDB {
         count: u32,
         offset: u32,
         user_id: u32,
-    ) -> Result<Vec<RecentPrivateMessage>, DBError> {
-        let messages = sqlx::query_as::<_, RecentPrivateMessage>(
+    ) -> Result<Vec<PreviewPrivateMessage>, DBError> {
+        let messages = sqlx::query_as::<_, PreviewPrivateMessage>(
             r#"
             SELECT 
                 id,
@@ -121,4 +121,49 @@ impl ManagerDB for MysqlDB {
 
         Ok(result.rows_affected())
     }
+    /// 获取一条私聊消息
+    async fn get_private_message(
+        &self,
+        message_id: u64,
+    ) -> Result<FullPrivateMessage, DBError> {
+        let row = sqlx::query!(
+            r#"
+            SELECT 
+                m.id,
+                m.sender_id,
+                s.username AS sender_username,
+                m.receiver_id,
+                r.username AS receiver_username,
+                m.message_type,
+                m.message,
+                m.timestamp
+            FROM messages m
+            JOIN users s ON m.sender_id = s.id
+            JOIN users r ON m.receiver_id = r.id
+            WHERE m.id = ?
+            "#,
+            message_id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match row {
+            Some(row) => {
+                let message_type = row.message_type.parse().map_err(|_| DBError::Other("Invalid message_type".into()))?;
+                let timestamp = row.timestamp.ok_or(DBError::Other("Missing timestamp".into()))?;
+                Ok(FullPrivateMessage {
+                    id: row.id,
+                    sender_id: row.sender_id,
+                    sender_username: row.sender_username,
+                    receiver_id: row.receiver_id,
+                    receiver_username: row.receiver_username,
+                    message_type,
+                    message: row.message,
+                    timestamp,
+                })
+            }
+            None => Err(DBError::NotFound),
+        }
+    }
+
 }

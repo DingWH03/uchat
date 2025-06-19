@@ -50,16 +50,29 @@ pub struct GroupSessionMessage {
 
 /// 用于manager后台获取消息
 #[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct RecentPrivateMessage {
-    pub id: i32,
-    pub sender_id: i32,
+pub struct PreviewPrivateMessage {
+    pub id: u32,
+    pub sender_id: u32,
     pub sender_username: String,
-    pub receiver_id: i32,
+    pub receiver_id: u32,
     pub receiver_username: String,
     pub message_type: MessageType,        // 可改为 enum 类型（如 MessageType 枚举）更安全
     pub message_preview: String,     // message 前 100 字符
     pub timestamp: NaiveDateTime,
 }
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct FullPrivateMessage {
+    pub id: u32,
+    pub sender_id: u32,
+    pub sender_username: String,
+    pub receiver_id: u32,
+    pub receiver_username: String,
+    pub message_type: MessageType,
+    pub message: String, // 完整消息内容
+    pub timestamp: chrono::NaiveDateTime,
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "ENUM", rename_all = "lowercase")]
@@ -103,7 +116,9 @@ impl RoleType {
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
-#[sqlx(type_name = "ENUM('text', 'image', 'file', 'video', 'audio')")]
+#[cfg_attr(feature = "mysql", sqlx(type_name = "text"))]
+#[cfg_attr(feature = "postgres", sqlx(type_name = "message_type"))]
+#[sqlx(rename_all = "lowercase")]
 pub enum MessageType {
     #[serde(rename = "text")]
     #[sqlx(rename = "text")]
