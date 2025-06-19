@@ -49,8 +49,11 @@ pub struct GroupSessionMessage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[sqlx(type_name = "ENUM", rename_all = "lowercase")]
 pub enum RoleType {
+    #[sqlx(rename = "user")]
     User,
+    #[sqlx(rename = "admin")]
     Admin,
 }
 
