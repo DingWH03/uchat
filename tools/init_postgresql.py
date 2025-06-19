@@ -129,7 +129,25 @@ SQL_QUERIES = [
             (is_group = TRUE AND group_message_id IS NOT NULL AND message_id IS NULL)
         )
     );
+    """,
+
+    # 近期聊天记录视图
     """
+    CREATE OR REPLACE VIEW recent_private_messages_view AS
+    SELECT 
+        m.id,
+        m.sender_id,
+        sender.username AS sender_username,
+        m.receiver_id,
+        receiver.username AS receiver_username,
+        m.message_type,
+        LEFT(m.message, 100) AS message_preview,
+        m.timestamp
+    FROM 
+        messages AS m
+    JOIN users AS sender ON m.sender_id = sender.id
+    JOIN users AS receiver ON m.receiver_id = receiver.id;
+"""
 ]
 
 INDEX_QUERIES = [

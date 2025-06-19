@@ -1,18 +1,23 @@
+pub mod error;
 pub mod factory;
 #[cfg(feature = "mysql")]
 mod mysql;
 #[cfg(feature = "postgres")]
 mod postgresql;
-pub mod error;
 use std::collections::HashMap;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 
-use crate::{db::error::DBError, protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, MessageType, request::{PatchUserRequest, UpdateUserRequest}, RoleType, SessionMessage, UserDetailedInfo, UserSimpleInfo
-}};
+use crate::{
+    db::error::DBError,
+    protocol::{
+        GroupDetailedInfo, GroupSimpleInfo, MessageType, RecentPrivateMessage, RoleType,
+        SessionMessage, UserDetailedInfo, UserSimpleInfo,
+        request::{PatchUserRequest, UpdateUserRequest},
+    },
+};
 
 #[async_trait]
 pub trait InitDB: Send + Sync {
@@ -27,7 +32,8 @@ pub trait UserDB: Send + Sync {
     /// 查询用户密码哈希
     async fn get_password_hash(&self, id: u32) -> Result<String, DBError>;
     /// 查询用户密码哈希以及role
-    async fn get_user_password_and_role(&self, user_id: u32) -> Result<(String, RoleType), DBError>;
+    async fn get_user_password_and_role(&self, user_id: u32)
+    -> Result<(String, RoleType), DBError>;
     /// 更新用户密码
     async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), DBError>;
     /// 创建新用户
@@ -61,7 +67,7 @@ pub trait FriendDB: Send + Sync {
     /// 直接双向成为好友，暂不支持请求与同意机制
     async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), DBError>;
     /// 删除好友
-    async fn delete_friendship(&self, user_id: u32, friend_id:u32) -> Result<(), DBError>;
+    async fn delete_friendship(&self, user_id: u32, friend_id: u32) -> Result<(), DBError>;
 }
 
 #[async_trait]
@@ -73,7 +79,12 @@ pub trait GroupDB: Send + Sync {
     /// 根据group_id🔍群组成员列表
     async fn get_group_members(&self, group_id: u32) -> Result<Vec<UserSimpleInfo>, DBError>;
     /// 创建群组
-    async fn create_group(&self, user_id: u32, group_name: &str, members: Vec<u32>) -> Result<u32, DBError>;
+    async fn create_group(
+        &self,
+        user_id: u32,
+        group_name: &str,
+        members: Vec<u32>,
+    ) -> Result<u32, DBError>;
     /// 添加群组成员，user_id是发送者的id，group_id是接收者的id
     async fn join_group(&self, user_id: u32, group_id: u32) -> Result<(), DBError>;
     /// 退出群聊
@@ -99,7 +110,12 @@ pub trait MessageDB: Send + Sync {
         group_message_id: Option<u64>,
     ) -> Result<(), DBError>;
     /// 添加群聊信息聊天记录
-    async fn add_group_message(&self, group_id: u32, sender: u32, message: &str) -> Result<u64, DBError>;
+    async fn add_group_message(
+        &self,
+        group_id: u32,
+        sender: u32,
+        message: &str,
+    ) -> Result<u64, DBError>;
     /// 获取私聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
@@ -112,9 +128,16 @@ pub trait MessageDB: Send + Sync {
     /// 获取群聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
-    async fn get_group_messages(&self, group_id: u32, offset: u32) -> Result<Vec<SessionMessage>, DBError>;
+    async fn get_group_messages(
+        &self,
+        group_id: u32,
+        offset: u32,
+    ) -> Result<Vec<SessionMessage>, DBError>;
     /// 获取某群聊最新一条消息时间戳
-    async fn get_latest_timestamp_of_group(&self, group_id: u32) -> Result<Option<NaiveDateTime>, DBError>;
+    async fn get_latest_timestamp_of_group(
+        &self,
+        group_id: u32,
+    ) -> Result<Option<NaiveDateTime>, DBError>;
     /// 用户加入群聊的所有的群消息最后的时间戳
     async fn get_latest_timestamps_of_all_groups(
         &self,
@@ -176,6 +199,21 @@ pub trait ManagerDB: Send + Sync {
     async fn get_all_user(&self) -> Result<Vec<UserSimpleInfo>, DBError>;
     /// 改变用户身份
     async fn change_user_role(&self, userid: u32, role: RoleType) -> Result<(), DBError>;
+    /// 获取全服务器近N条聊天记录
+    async fn get_recent_messages(
+        &self,
+        count: u32,
+        offset: u32,
+    ) -> Result<Vec<RecentPrivateMessage>, DBError>;
+    /// 获取某用户近N条聊天记录
+    async fn get_user_recent_messages(
+        &self,
+        count: u32,
+        offset: u32,
+        user_id: u32,
+    ) -> Result<Vec<RecentPrivateMessage>, DBError>;
+    /// 删除某条聊天记录
+    async fn delete_private_message(&self, message_id: u64) -> Result<u64, DBError>;
 }
 
 // 综合 trait，将所有子 trait 组合起来

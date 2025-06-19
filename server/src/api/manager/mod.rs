@@ -1,12 +1,12 @@
 pub mod session;
 pub mod user;
+pub mod message;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use crate::api::session_manager::{SessionInfo, SessionManager};
 use crate::db::DB;
-use crate::protocol::{ManagerResponse, RoleType};
-use log::{info,error};
+use log::{info};
 
 pub struct Manager {
     db: Arc<dyn DB>,

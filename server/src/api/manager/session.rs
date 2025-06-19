@@ -1,8 +1,7 @@
-use std::collections::HashMap;
 
 use log::info;
 
-use crate::{api::session_manager::SessionInfo, protocol::{manager::OnlineUserTree, ManagerResponse, RoleType}};
+use crate::{protocol::{manager::OnlineUserTree, ManagerResponse, RoleType}};
 
 use super::Manager;
 

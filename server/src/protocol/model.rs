@@ -48,6 +48,19 @@ pub struct GroupSessionMessage {
     pub message: String,
 }
 
+/// 用于manager后台获取消息
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct RecentPrivateMessage {
+    pub id: i32,
+    pub sender_id: i32,
+    pub sender_username: String,
+    pub receiver_id: i32,
+    pub receiver_username: String,
+    pub message_type: MessageType,        // 可改为 enum 类型（如 MessageType 枚举）更安全
+    pub message_preview: String,     // message 前 100 字符
+    pub timestamp: NaiveDateTime,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "ENUM", rename_all = "lowercase")]
 pub enum RoleType {

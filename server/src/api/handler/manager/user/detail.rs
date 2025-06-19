@@ -16,7 +16,7 @@ pub async fn handle_get_userinfo(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Query(payload): Query<CheckUserDetailRequest>,
 ) -> impl IntoResponse {
-    debug!("manager请求：查看用户 {} 详细信息", payload.user_id,);
+    debug!("manager请求：查看用户 {} 详细信息", payload.user_id);
 
     let session_id = if let Some(session_id_cookie) = cookies.get("session_id") {
         session_id_cookie.to_string()
