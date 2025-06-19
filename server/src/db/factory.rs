@@ -46,6 +46,5 @@ pub async fn create_database(db_type: DbType, database_url: &str) -> Result<Arc<
         //     let db = MariaDbDatabase::init(database_url).await?;
         //     Ok(Box::new(db))
         // }
-        _ => Err(anyhow!("The selected database type is not supported or the corresponding feature is not enabled.")),
     }
 }

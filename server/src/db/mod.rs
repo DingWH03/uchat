@@ -60,6 +60,8 @@ pub trait FriendDB: Send + Sync {
     /// 添加好友，user_id是发送者的id，friend_id是接收者的id
     /// 直接双向成为好友，暂不支持请求与同意机制
     async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), DBError>;
+    /// 删除好友
+    async fn delete_friendship(&self, user_id: u32, friend_id:u32) -> Result<(), DBError>;
 }
 
 #[async_trait]
@@ -170,6 +172,8 @@ pub trait MessageDB: Send + Sync {
 pub trait ManagerDB: Send + Sync {
     /// 获取所有用户数量(包括管理员和普通用户)
     async fn get_user_count(&self) -> Result<u32, DBError>;
+    /// 获取所有的用户
+    async fn get_all_user(&self) -> Result<Vec<UserSimpleInfo>, DBError>;
     /// 改变用户身份
     async fn change_user_role(&self, userid: u32, role: RoleType) -> Result<(), DBError>;
 }

@@ -64,4 +64,29 @@ impl FriendDB for MysqlDB {
         tx.commit().await?;
         Ok(())
     }
+    /// 直接删除好友
+    async fn delete_friendship(&self, user_id: u32, friend_id: u32) -> Result<(), DBError> {
+        let mut tx = self.pool.begin().await?;
+
+        // 删除 (user_id, friend_id) 关系
+        sqlx::query!(
+            "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?",
+            user_id,
+            friend_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        // 删除 (friend_id, user_id) 关系（双向删除）
+        sqlx::query!(
+            "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?",
+            friend_id,
+            user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        Ok(())
+    }
 }
