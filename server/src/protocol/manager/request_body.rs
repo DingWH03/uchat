@@ -18,6 +18,11 @@ pub struct DeleteUserRequest {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct DeleteSessionRequest {
+    pub session_id: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct DeleteFriendshipRequest {
     pub user_id: u32,
     pub friend_id: u32,
