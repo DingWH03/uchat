@@ -5,6 +5,7 @@ use crate::api::error::RequestError;
 use crate::api::session_manager::{SessionManager};
 use crate::db::error::DBError;
 use crate::db::DB;
+use crate::protocol::RoleType;
 use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, MessageType, message::ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
 };
@@ -52,10 +53,16 @@ impl Request {
         Ok(online_friends)
     }
 
-    /// 检查session_id是否存在
+    /// 检查session_id是否存在，返回user_id
     pub async fn check_session(&self, session_id: &str) -> Option<u32> {
         let sessions_read_guard = self.sessions.read().await;
         sessions_read_guard.check_session(session_id)
+    }
+
+    /// 检查session_id是否存在，返回role
+    pub async fn check_session_role(&self, session_id: &str) -> Option<RoleType> {
+        let sessions_read_guard = self.sessions.read().await;
+        sessions_read_guard.check_session_role(session_id)
     }
 
     /// 登陆session sender

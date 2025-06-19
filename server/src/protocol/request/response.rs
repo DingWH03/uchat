@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::protocol::model::{UserSimpleInfo, GroupSimpleInfo, UserSimpleInfoWithStatus, SessionMessage, UserDetailedInfo, GroupDetailedInfo};
+use crate::protocol::{model::{GroupDetailedInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus}, RoleType};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "action")]
@@ -13,6 +13,11 @@ pub enum ServerResponse {
     LoginResponse {
         status: bool,
         message: String,
+    },
+    #[serde(rename = "check_session_response")]
+    CheckSessionResponse {
+        status: bool,
+        role: RoleType,
     },
     #[serde(rename = "register_response")]
     RegisterResponse {

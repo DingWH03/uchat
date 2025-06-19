@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use log::info;
 
-use crate::{protocol::{ManagerResponse, RoleType}};
+use crate::{api::session_manager::SessionInfo, protocol::{manager::OnlineUserTree, ManagerResponse, RoleType}};
 
 use super::Manager;
 
@@ -37,5 +39,15 @@ impl Manager {
     pub async fn check_session_role(&self, session_id: &str) -> Option<RoleType> {
         let sessions = self.sessions.read().await;
         sessions.check_session_role(session_id)
+    }
+
+    /// 获取在线用户及其 session_id
+    pub async fn get_online_user(&self) -> ManagerResponse<OnlineUserTree> {
+        info!("响应manager获取在线用户");
+        let sessions = self.sessions.read().await;
+        ManagerResponse::ok(
+            "获取成功",
+            OnlineUserTree::from(sessions.get_all_online_users_tree()),
+        ) // 返回一个克隆，可能比较影响效率
     }
 }

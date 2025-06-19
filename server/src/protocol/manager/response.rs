@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use chrono::NaiveDateTime;
 use serde::Serialize;
 
+use crate::api::session_manager::SessionInfo;
+
 #[derive(Serialize, Debug)]
 pub struct ManagerResponse<T> {
     pub status: bool,
@@ -39,6 +41,26 @@ pub struct UserSessionInfo {
 #[derive(Serialize)]
 pub struct OnlineUserTree {
     pub users: HashMap<u32, Vec<UserSessionInfo>>,
+}
+impl From<HashMap<u32, Vec<(String, SessionInfo)>>> for OnlineUserTree {
+    fn from(source: HashMap<u32, Vec<(String, SessionInfo)>>) -> Self {
+        let mut users = HashMap::with_capacity(source.len());
+
+        for (user_id, sessions) in source {
+            let mut session_infos = Vec::with_capacity(sessions.len());
+            for (session_id, info) in sessions {
+                session_infos.push(UserSessionInfo {
+                    session_id,
+                    user_id,
+                    created_at: info.created_at,
+                    ip: info.ip,
+                });
+            }
+            users.insert(user_id, session_infos);
+        }
+
+        OnlineUserTree { users }
+    }
 }
 
 

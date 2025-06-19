@@ -8,4 +8,5 @@ pub fn router() -> Router {
         .route("/logout", post(handler::request::authentication::logout::handle_logout))
         .route("/ws", get(handler::request::authentication::ws_connect::handle_connect))
         .route("/password", post(handler::request::authentication::password::handle_passwd))
+        .route("/check_session", get(handler::request::authentication::session::handle_check_session))
 }

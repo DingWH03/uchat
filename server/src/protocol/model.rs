@@ -55,6 +55,8 @@ pub enum RoleType {
     User,
     #[sqlx(rename = "admin")]
     Admin,
+    #[sqlx(rename = "invalid")]
+    Invalid,
 }
 
 impl FromStr for RoleType {
@@ -64,6 +66,7 @@ impl FromStr for RoleType {
         match s {
             "user" => Ok(RoleType::User),
             "admin" => Ok(RoleType::Admin),
+            "invalid" => Ok(RoleType::Invalid),
             _ => Err(()),
         }
     }
@@ -74,6 +77,7 @@ impl ToString for RoleType {
         match self {
             RoleType::Admin => "admin".to_string(),
             RoleType::User => "user".to_string(),
+            RoleType::Invalid => "invalid".to_string(),
         }
     }
 }
