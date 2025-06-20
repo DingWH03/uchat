@@ -21,8 +21,11 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "macros", "c
 thiserror = "2.0.12"
 tokio = { version = "1.45.1", features = ["rt-multi-thread"] }
 uuid = { version = "1.17.0", features = ["v7"] }
+utoipa = { version = "5.4.0", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 
 [features]
-default = ["mysql"]
+default = ["mysql", "swagger"]
 mysql = ["sqlx/mysql"]
 postgres = ["sqlx/postgres"]
+swagger = []                                                                

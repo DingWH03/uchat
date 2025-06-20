@@ -51,7 +51,18 @@ impl Server {
         let manager = Arc::new(Mutex::new(Manager::new(db, sessions)));
         let state = AppState { request, manager };
         // 构建路由
-        let app = router().layer(Extension(state));
+        let mut app = router().layer(Extension(state));
+
+        // 条件编译：仅在启用 swagger 特性时添加
+        #[cfg(feature = "swagger")]
+        {
+            use crate::api::doc;
+            use utoipa_swagger_ui::SwaggerUi;
+            app = app.merge(
+                SwaggerUi::new("/swagger")
+                    .url("/api-docs/openapi.json", doc::openapi())
+            );
+        }
 
         Server { addr, app }
     }

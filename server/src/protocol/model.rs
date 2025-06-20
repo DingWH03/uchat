@@ -1,49 +1,52 @@
 use serde::{Serialize, Deserialize};
 use chrono::NaiveDateTime;
 use sqlx::Type;
+use utoipa::ToSchema;
 use std::str::FromStr;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserSimpleInfo {
     pub user_id: u32,
     pub username: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserDetailedInfo {
     pub user_id: u32,
     pub username: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserSimpleInfoWithStatus {
     pub base: UserSimpleInfo,
     pub online: bool
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GroupSimpleInfo {
     pub group_id: u32,
     pub title: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GroupDetailedInfo {
     pub group_id: u32,
     pub title: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct SessionMessage {
     pub sender_id: u32,
     pub message: String,
+    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
     pub timestamp: NaiveDateTime,
 }
 
- #[derive(Debug, Serialize, sqlx::FromRow)]
+ #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct GroupSessionMessage {
     pub group_id: u32,
     pub sender_id: u32,
+    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
     pub timestamp: NaiveDateTime,
     pub message: String,
 }
@@ -74,7 +77,7 @@ pub struct FullPrivateMessage {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize, ToSchema)]
 #[sqlx(type_name = "ENUM", rename_all = "lowercase")]
 pub enum RoleType {
     #[sqlx(rename = "user")]
