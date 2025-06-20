@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use chrono::NaiveDateTime;
 use serde::Serialize;
+use utoipa::ToSchema;
 
 use crate::api::session_manager::SessionInfo;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct ManagerResponse<T> {
     pub status: bool,
     pub code: u16,
@@ -31,14 +32,15 @@ impl<T> ManagerResponse<T> {
         }
     }
 }
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct UserSessionInfo {
     pub session_id: String,
     pub user_id: u32,
+    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
     pub created_at: NaiveDateTime,
     pub ip: Option<String>,
 }
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct OnlineUserTree {
     pub users: HashMap<u32, Vec<UserSessionInfo>>,
 }

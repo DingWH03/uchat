@@ -4,10 +4,17 @@ use headers::Cookie;
 use log::{debug, warn};
 
 use crate::{
-    server::AppState,
-    protocol::ManagerResponse, // 你的 ManagerResponse 结构体
+    protocol::{manager::OnlineUserTree, ManagerResponse}, server::AppState 
 };
 
+#[utoipa::path(
+    get,
+    path = "/manager/online/tree",
+    responses(
+        (status = 200, description = "返回在线用户树", body = ManagerResponse<OnlineUserTree>)
+    ),
+    tag = "manager"
+)]
 pub async fn handle_tree_online(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,

@@ -1,4 +1,4 @@
-mod tree;
+pub mod tree;
 mod session;
 
 pub use tree::handle_tree_online;

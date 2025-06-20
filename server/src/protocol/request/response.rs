@@ -2,6 +2,138 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use crate::protocol::{model::{GroupDetailedInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus}, RoleType};
 
+
+#[derive(Serialize, Debug, ToSchema)]
+pub struct RequestResponse<T> {
+    pub status: bool,
+    pub code: u16,
+    pub message: String, // 提示信息统一为 String
+    pub data: Option<T>, // 仅在成功时存在数据
+}
+
+impl<T> RequestResponse<T> {
+    pub fn ok(message: impl Into<String>, data: T) -> Self {
+        Self {
+            status: true,
+            code: 200,
+            message: message.into(),
+            data: Some(data),
+        }
+    }
+
+    pub fn err(message: impl Into<String>) -> Self {
+        Self {
+            status: false,
+            code: 500,
+            message: message.into(),
+            data: None,
+        }
+    }
+}
+
+/// 通用响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct GenericResponse {
+    pub status: String,
+    pub message: String,
+}
+
+/// 登录响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct LoginResponse {
+    pub status: bool,
+    pub message: String,
+}
+
+/// 检查会话响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct CheckSessionResponse {
+    pub status: bool,
+    pub role: RoleType,
+}
+
+/// 注册响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct RegisterResponse {
+    pub status: bool,
+    pub message: String,
+}
+
+/// 收到消息
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct ReceiveMessage {
+    pub group_id: u32,
+    pub sender: u32,
+    pub message: String,
+    pub timestamp: String,
+}
+
+/// 错误响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct ErrorResponse {
+    pub message: String,
+}
+
+/// 在线用户列表
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct OnlineUsers {
+    pub flag: String,
+    pub user_ids: Vec<u32>,
+}
+
+/// 用户信息响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct UserInfo {
+    pub user_id: u32,
+    pub userinfo: UserDetailedInfo,
+}
+
+/// 群聊信息响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct GroupInfo {
+    pub group_id: u32,
+    pub groupinfo: GroupDetailedInfo,
+}
+
+/// 群成员列表响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct GroupMembers {
+    pub group_id: u32,
+    pub member_ids: Vec<UserSimpleInfo>,
+}
+
+/// 好友列表响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct FriendList {
+    pub friends: Vec<UserSimpleInfo>,
+}
+
+/// 好友列表（含状态）响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct FriendListWithStatus {
+    pub friends: Vec<UserSimpleInfoWithStatus>,
+}
+
+/// 群组列表响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct GroupList {
+    pub groups: Vec<GroupSimpleInfo>,
+}
+
+/// 私聊消息响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct Messages {
+    pub friend_id: u32,
+    pub messages: Vec<SessionMessage>,
+}
+
+/// 群聊消息响应
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+pub struct GroupMessages {
+    pub group_id: u32,
+    pub messages: Vec<SessionMessage>,
+}
+
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 #[serde(tag = "action")]
 pub enum ServerResponse {
