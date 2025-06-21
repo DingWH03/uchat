@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Json, Query},
+    extract::{Extension, Query},
     response::IntoResponse,
 };
 use axum_extra::extract::TypedHeader;
@@ -21,7 +21,7 @@ pub async fn handle_delete_friendship(
     let session_id = if let Some(session_id_cookie) = cookies.get("session_id") {
         session_id_cookie.to_string()
     } else {
-        return Json(ManagerResponse::<()>::err("未找到 session_id Cookie")).into_response();
+        return ManagerResponse::<()>::unauthorized().into_response();
     };
 
     let manager_lock = state.manager.lock().await;
@@ -29,10 +29,10 @@ pub async fn handle_delete_friendship(
     // 验证权限
     match manager_lock.check_session_role(&session_id).await {
         Some(role) if role.is_admin() => {
-            Json(manager_lock.delete_friendship(payload.user_id, payload.friend_id).await).into_response()
+            manager_lock.delete_friendship(payload.user_id, payload.friend_id).await.into_response()
         }
-        Some(_) => Json(ManagerResponse::<()>::err("无管理员权限")).into_response(),
-        None => Json(ManagerResponse::<()>::err("会话无效或已过期")).into_response(),
+        Some(_) => ManagerResponse::<()>::forbidden().into_response(),
+        None => ManagerResponse::<()>::unauthorized().into_response(),
     }
 }
 
@@ -46,7 +46,7 @@ pub async fn handle_get_friends(
     let session_id = if let Some(session_id_cookie) = cookies.get("session_id") {
         session_id_cookie.to_string()
     } else {
-        return Json(ManagerResponse::<()>::err("未找到 session_id Cookie")).into_response();
+        return ManagerResponse::<()>::unauthorized().into_response();
     };
 
     let manager_lock = state.manager.lock().await;
@@ -54,9 +54,9 @@ pub async fn handle_get_friends(
     // 验证权限
     match manager_lock.check_session_role(&session_id).await {
         Some(role) if role.is_admin() => {
-            Json(manager_lock.get_friends(payload.user_id).await).into_response()
+            manager_lock.get_friends(payload.user_id).await.into_response()
         }
-        Some(_) => Json(ManagerResponse::<()>::err("无管理员权限")).into_response(),
-        None => Json(ManagerResponse::<()>::err("会话无效或已过期")).into_response(),
+        Some(_) => ManagerResponse::<()>::forbidden().into_response(),
+        None => ManagerResponse::<()>::unauthorized().into_response(),
     }
 }

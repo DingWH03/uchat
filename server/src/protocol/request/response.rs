@@ -1,3 +1,4 @@
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use crate::protocol::{model::{GroupDetailedInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus}, RoleType};
@@ -29,7 +30,24 @@ impl<T> RequestResponse<T> {
             data: None,
         }
     }
+
+    pub fn unauthorized() -> Self {
+        Self {
+            status: false,
+            code: 401,
+            message: "认证失败".to_string(),
+            data: None,
+        }
+    }
 }
+
+impl<T: serde::Serialize> IntoResponse for RequestResponse<T> {
+    fn into_response(self) -> axum::response::Response {
+        let status = StatusCode::from_u16(self.code).unwrap_or(StatusCode::OK);
+        (status, Json(self)).into_response()
+    }
+}
+
 
 /// 通用响应
 #[derive(Serialize, Deserialize, Debug, ToSchema)]

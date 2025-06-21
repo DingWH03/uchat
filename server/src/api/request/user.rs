@@ -1,8 +1,8 @@
 // api/request/user
 use axum::extract::ws::Message;
-use log::{info, warn};
+use log::{error, info, warn};
 use uuid::Uuid;
-use crate::{api::error::{RequestError}, protocol::{request::{PatchUserRequest, UpdateUserRequest}, message::ServerMessage}};
+use crate::{api::error::RequestError, protocol::{message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}}};
 use super::Request;
 
 impl Request {
@@ -92,8 +92,14 @@ impl Request {
         }
     }
     /// 删除用户，注销账号
-    pub async fn delete_user(&self, id: u32) -> Result<(), RequestError> {
-        self.db.delete_user(id).await.map_err(RequestError::from)
+    pub async fn delete_user(&self, id: u32) -> RequestResponse<()> {
+        match self.db.delete_user(id).await {
+            Ok(()) => RequestResponse::ok("注销成功", ()),
+            Err(e) => {
+                error!("注销用户账号失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
     }
     /// 更新用户信息
     pub async fn update_user_info_full(

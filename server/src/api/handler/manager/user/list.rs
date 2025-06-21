@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, Extension, Json};
+use axum::{response::IntoResponse, Extension};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::{debug, warn};
@@ -20,7 +20,7 @@ pub async fn handle_list_user(
         session_id_cookie.to_string()
     } else {
         warn!("未找到 session_id Cookie，拒绝操作");
-        return Json(ManagerResponse::<u32>::err("未找到 session_id Cookie")).into_response();
+        return ManagerResponse::<()>::unauthorized().into_response();
     };
 
     let manager_lock = state.manager.lock().await;
@@ -30,15 +30,15 @@ pub async fn handle_list_user(
         Some(role) => {
             if !role.is_admin() {
                 warn!("用户权限不足: {:?}", role);
-                return Json(ManagerResponse::<u32>::err("无管理员权限")).into_response();
+                return ManagerResponse::<()>::forbidden().into_response();
             }
         }
         None => {
             warn!("无效或过期的 session_id: {}", session_id);
-            return Json(ManagerResponse::<u32>::err("会话无效或已过期")).into_response();
+            return ManagerResponse::<()>::unauthorized().into_response();
         }
     };
 
     // 获取用户列表
-    Json(manager_lock.get_all_user().await).into_response()
+    manager_lock.get_all_user().await.into_response()
 }

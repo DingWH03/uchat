@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use chrono::NaiveDateTime;
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -23,6 +24,7 @@ impl<T> ManagerResponse<T> {
         }
     }
 
+    /// 发生错误
     pub fn err(message: impl Into<String>) -> Self {
         Self {
             status: false,
@@ -31,7 +33,35 @@ impl<T> ManagerResponse<T> {
             data: None,
         }
     }
+
+    /// 未认证
+    pub fn unauthorized() -> Self {
+        Self {
+            status: false,
+            code: 401,
+            message: "认证失败".to_string(),
+            data: None,
+        }
+    }
+
+    /// 权限不足
+    pub fn forbidden() -> Self {
+        Self {
+            status: false,
+            code: 403,
+            message: "权限不足".to_string(),
+            data: None,
+        }
+    }
 }
+
+impl<T: serde::Serialize> IntoResponse for ManagerResponse<T> {
+    fn into_response(self) -> axum::response::Response {
+        let status = StatusCode::from_u16(self.code).unwrap_or(StatusCode::OK);
+        (status, Json(self)).into_response()
+    }
+}
+
 #[derive(Serialize, ToSchema)]
 pub struct UserSessionInfo {
     pub session_id: String,

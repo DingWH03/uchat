@@ -1,17 +1,19 @@
-use axum::{response::IntoResponse, Extension, Json};
+use axum::{response::IntoResponse, Extension};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::{debug, warn};
 
 use crate::{
-    protocol::{manager::OnlineUserTree, ManagerResponse}, server::AppState 
+    protocol::{manager::OnlineUserTree, Empty, ManagerResponse}, server::AppState 
 };
 
 #[utoipa::path(
     get,
     path = "/manager/online/tree",
     responses(
-        (status = 200, description = "返回在线用户树", body = ManagerResponse<OnlineUserTree>)
+        (status = 200, description = "返回在线用户树", body = ManagerResponse<OnlineUserTree>),
+        (status = 401, description = "未登陆", body = ManagerResponse<Empty>),
+        (status = 403, description = "权限不足(需管理员权限)", body = ManagerResponse<Empty>)
     ),
     tag = "manager"
 )]
@@ -27,7 +29,7 @@ pub async fn handle_tree_online(
         session_id_cookie.to_string()
     } else {
         warn!("未找到 session_id Cookie，拒绝操作");
-        return Json(ManagerResponse::<u32>::err("未找到 session_id Cookie")).into_response();
+        return ManagerResponse::<()>::unauthorized().into_response();
     };
 
     let manager_lock = state.manager.lock().await;
@@ -37,15 +39,15 @@ pub async fn handle_tree_online(
         Some(role) => {
             if !role.is_admin() {
                 warn!("用户权限不足: {:?}", role);
-                return Json(ManagerResponse::<u32>::err("无管理员权限")).into_response();
+                return ManagerResponse::<()>::forbidden().into_response();
             }
         }
         None => {
             warn!("无效或过期的 session_id: {}", session_id);
-            return Json(ManagerResponse::<u32>::err("会话无效或已过期")).into_response();
+            return ManagerResponse::<()>::unauthorized().into_response();
         }
     };
 
     // 获取用户列表
-    Json(manager_lock.get_online_user().await).into_response()
+    manager_lock.get_online_user().await.into_response()
 }

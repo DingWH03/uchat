@@ -166,3 +166,6 @@ impl ToString for MessageType {
         }
     }
 }
+
+#[derive(Serialize, ToSchema)]
+pub struct Empty;
