@@ -16,7 +16,7 @@ use crate::{protocol::{request::{FriendRequest, RequestResponse}, Empty, UserDet
         (status = 200, description = "获取个人信息", body = RequestResponse<UserDetailedInfo>),
         (status = 401, description = "认证失败", body = RequestResponse<Empty>)
     ),
-    tag = "request/user"
+    tag = "request/friend"
 )]
 pub async fn handle_info_friend(
     Extension(state): Extension<AppState>,
