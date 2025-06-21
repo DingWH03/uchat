@@ -2,7 +2,7 @@
 use axum::extract::ws::Message;
 use log::{error, info, warn};
 use uuid::Uuid;
-use crate::{api::error::RequestError, protocol::{message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}}};
+use crate::{api::error::RequestError, protocol::{message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}, UserDetailedInfo}};
 use super::Request;
 
 impl Request {
@@ -91,6 +91,23 @@ impl Request {
             Err(RequestError::SessionNotFound.into())
         }
     }
+
+    /// 返回用户的详细信息
+    pub async fn get_userinfo(&self, id: u32) -> RequestResponse<UserDetailedInfo> {
+        match self.db
+            .get_userinfo(id)
+            .await {
+                Ok(Some(info)) => RequestResponse::ok("获取成功", info),
+                Ok(None) => {
+                    warn!("数据库中无用户: {}的信息", id);
+                    RequestResponse::not_found()
+                },
+                Err(e) => {
+                error!("注销用户账号失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+            }
+    }
     /// 删除用户，注销账号
     pub async fn delete_user(&self, id: u32) -> RequestResponse<()> {
         match self.db.delete_user(id).await {
@@ -106,15 +123,27 @@ impl Request {
         &self, 
         id: u32,
         update: UpdateUserRequest,
-    ) -> Result<(), RequestError> {
-        self.db.update_user_info_full(id, update).await.map_err(RequestError::from)
+    ) -> RequestResponse<()> {
+        match self.db.update_user_info_full(id, update).await {
+            Ok(_) => RequestResponse::ok("更新成功", ()),
+            Err(e) => {
+                error!("更新信息失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
     }
     /// 更新用户部分信息
     pub async fn update_user_info_partial(
         &self, 
         id: u32,
         update: PatchUserRequest,
-    ) -> Result<(), RequestError> {
-        self.db.update_user_info_partial(id, update).await.map_err(RequestError::from)
+    ) -> RequestResponse<()> {
+        match self.db.update_user_info_partial(id, update).await {
+            Ok(_) => RequestResponse::ok("更新成功", ()),
+            Err(e) => {
+                error!("更新信息失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
     }
 }

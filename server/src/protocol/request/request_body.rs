@@ -1,4 +1,5 @@
 use serde::{Deserialize};
+use utoipa::{IntoParams, ToSchema};
 
 #[derive(Deserialize, Debug)]
 pub struct RegisterRequest {
@@ -26,9 +27,8 @@ pub enum FriendRequestType {
     Info = 2,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct FriendRequest {
-    pub request_type: FriendRequestType,
     pub id: u32,
 }
 
@@ -63,12 +63,12 @@ pub struct MessageRequest {
 
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateUserRequest {
     pub username: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct PatchUserRequest {
     pub username: Option<String>,
 }

@@ -39,6 +39,15 @@ impl<T> RequestResponse<T> {
             data: None,
         }
     }
+
+    pub fn not_found() -> Self {
+        Self {
+            status: false,
+            code: 404,
+            message: "找不到信息".to_string(),
+            data: None,
+        }
+    }
 }
 
 impl<T: serde::Serialize> IntoResponse for RequestResponse<T> {

@@ -304,12 +304,6 @@ impl Request {
         }
     }
 
-    /// 返回用户的详细信息
-    pub async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError> {
-        self.db
-            .get_userinfo(id)
-            .await
-    }
     /// 返回群组的详细信息
     pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, DBError> {
         self.db
