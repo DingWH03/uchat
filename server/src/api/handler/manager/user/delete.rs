@@ -7,10 +7,25 @@ use headers::Cookie;
 use log::debug;
 
 use crate::{
-    protocol::{manager::{DeleteUserRequest}, ManagerResponse},
+    protocol::{manager::DeleteUserRequest, Empty, ManagerResponse},
     server::AppState,
 };
 
+/// 指定删除某用户
+#[utoipa::path(
+    delete,
+    path = "/manager/user",
+    params(
+        DeleteUserRequest
+    ),
+    responses(
+        (status = 200, description = "删除成功", body = ManagerResponse<Empty>),
+        (status = 401, description = "认证失败", body = ManagerResponse<Empty>),
+        (status = 403, description = "权限不足", body = ManagerResponse<Empty>),
+        (status = 500, description = "服务器错误", body = ManagerResponse<Empty>)
+    ),
+    tag = "manager/user"
+)]
 pub async fn handle_delete_user(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,

@@ -7,10 +7,25 @@ use headers::Cookie;
 use log::debug;
 
 use crate::{
-    protocol::{ManagerResponse, manager::CheckUserDetailRequest},
+    protocol::{manager::CheckUserDetailRequest, Empty, ManagerResponse, UserDetailedInfo},
     server::AppState,
 };
 
+/// 查看某用户详细个人信息
+#[utoipa::path(
+    get,
+    path = "/manager/user/detail",
+    params(
+        CheckUserDetailRequest
+    ),
+    responses(
+        (status = 200, description = "获取成功", body = ManagerResponse<UserDetailedInfo>),
+        (status = 401, description = "认证失败", body = ManagerResponse<Empty>),
+        (status = 403, description = "权限不足", body = ManagerResponse<Empty>),
+        (status = 500, description = "服务器错误", body = ManagerResponse<Empty>)
+    ),
+    tag = "manager/user"
+)]
 pub async fn handle_get_userinfo(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,

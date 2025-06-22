@@ -8,6 +8,13 @@ use crate::api::handler::manager::message::privite::__path_handle_delete_message
 use crate::api::handler::manager::message::privite::__path_handle_get_message;
 use crate::api::handler::manager::message::privite::__path_handle_get_recent_messages;
 use crate::api::handler::manager::message::privite::__path_handle_get_user_recent_messages;
+use crate::api::handler::manager::user::count::__path_handle_user_get_count;
+use crate::api::handler::manager::user::delete::__path_handle_delete_user;
+use crate::api::handler::manager::user::detail::__path_handle_get_userinfo;
+use crate::api::handler::manager::user::friend::__path_handle_delete_friendship;
+use crate::api::handler::manager::user::friend::__path_handle_get_friends;
+use crate::api::handler::manager::user::list::__path_handle_list_user;
+use crate::api::handler::manager::user::role::__path_handle_change_role;
 use crate::api::handler::request::authentication::login::__path_handle_login;
 use crate::api::handler::request::authentication::logout::__path_handle_logout;
 use crate::api::handler::request::authentication::password::__path_handle_passwd;
@@ -44,8 +51,11 @@ use utoipa::OpenApi;
         handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, 
         handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status,
         handle_creat_group, handle_info_group, handle_join_group, handle_leave_group, handle_list_group, handle_members_group,
+        // 下面都是manager接口，即必须管理员权限才能访问的api
         handle_get_group_message, handle_get_session_message,
-        handle_tree_online, handle_delete_session, handle_delete_message, handle_get_message, handle_get_recent_messages, handle_get_user_recent_messages
+        handle_tree_online, handle_delete_session, 
+        handle_delete_message, handle_get_message, handle_get_recent_messages, handle_get_user_recent_messages,
+        handle_user_get_count, handle_delete_user, handle_get_userinfo, handle_delete_friendship, handle_get_friends, handle_list_user, handle_change_role
     ),
     components(
         schemas(
@@ -59,8 +69,14 @@ use utoipa::OpenApi;
     ),
     tags(
         (name = "测试接口", description = "仅用来测试对http的请求是否正常"),
-        (name = "manager/message", description = "后台管理聊天记录审核"),
-        (name = "manager/online", description = "后台管理在线用户与会话")
+        (name = "request/auth", description = "常规api：账号注册与身份认证"),
+        (name = "request/friend", description = "常规api：好友"),
+        (name = "request/group", description = "常规api：群组"),
+        (name = "request/message", description = "常规api：聊天记录"),
+        (name = "request/user", description = "常规api：个人信息"),
+        (name = "manager/message", description = "后台管理：聊天记录"),
+        (name = "manager/online", description = "后台管理：在线用户与会话"),
+        (name = "manager/user", description = "后台管理：用户"),
     )
 )]
 pub struct ApiDoc;

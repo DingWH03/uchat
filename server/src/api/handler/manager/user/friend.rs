@@ -7,10 +7,25 @@ use headers::Cookie;
 use log::debug;
 
 use crate::{
-    protocol::{manager::{DeleteFriendshipRequest, GetFriendsRequest}, ManagerResponse},
+    protocol::{manager::{DeleteFriendshipRequest, GetFriendsRequest}, Empty, ManagerResponse, UserSimpleInfo},
     server::AppState,
 };
 
+/// 指定删除某好友关系
+#[utoipa::path(
+    delete,
+    path = "/manager/user/friend",
+    params(
+        DeleteFriendshipRequest
+    ),
+    responses(
+        (status = 200, description = "删除成功", body = ManagerResponse<Empty>),
+        (status = 401, description = "认证失败", body = ManagerResponse<Empty>),
+        (status = 403, description = "权限不足", body = ManagerResponse<Empty>),
+        (status = 500, description = "服务器错误", body = ManagerResponse<Empty>)
+    ),
+    tag = "manager/user"
+)]
 pub async fn handle_delete_friendship(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
@@ -36,6 +51,21 @@ pub async fn handle_delete_friendship(
     }
 }
 
+/// 查看某用户所有好友
+#[utoipa::path(
+    get,
+    path = "/manager/user/friend",
+    params(
+        GetFriendsRequest
+    ),
+    responses(
+        (status = 200, description = "获取成功", body = ManagerResponse<Vec<UserSimpleInfo>>),
+        (status = 401, description = "认证失败", body = ManagerResponse<Empty>),
+        (status = 403, description = "权限不足", body = ManagerResponse<Empty>),
+        (status = 500, description = "服务器错误", body = ManagerResponse<Empty>)
+    ),
+    tag = "manager/user"
+)]
 pub async fn handle_get_friends(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
