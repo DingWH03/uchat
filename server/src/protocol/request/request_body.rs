@@ -54,7 +54,7 @@ pub struct CreateGroupRequest {
 }
 
 /// 获取聊天记录的请求
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct MessageRequest {
     pub id: u32, // 用户ID或群组ID
     pub offset: u32, // 偏移量，用于分页

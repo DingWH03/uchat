@@ -19,6 +19,8 @@ use crate::api::handler::request::group::join_group::__path_handle_join_group;
 use crate::api::handler::request::group::leave_group::__path_handle_leave_group;
 use crate::api::handler::request::group::list_group::__path_handle_list_group;
 use crate::api::handler::request::group::members_group::__path_handle_members_group;
+use crate::api::handler::request::message::group_message::__path_handle_get_group_message;
+use crate::api::handler::request::message::session_message::__path_handle_get_session_message;
 use crate::api::handler::request::user::me::__path_handle_delete_me;
 use crate::api::handler::request::user::me::__path_handle_get_me;
 use crate::api::handler::request::user::me::__path_handle_patch_me;
@@ -33,6 +35,7 @@ use utoipa::OpenApi;
         handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, 
         handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status,
         handle_creat_group, handle_info_group, handle_join_group, handle_leave_group, handle_list_group, handle_members_group,
+        handle_get_group_message, handle_get_session_message,
         handle_tree_online
     ),
     components(schemas(ServerResponse)),

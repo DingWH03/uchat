@@ -2,10 +2,13 @@
 
 use std::collections::HashMap;
 
-use chrono::NaiveDateTime;
-
 use super::Request;
-use crate::{db::error::DBError, protocol::SessionMessage};
+use crate::{
+    db::error::DBError,
+    protocol::{SessionMessage, request::RequestResponse},
+};
+use chrono::NaiveDateTime;
+use log::error;
 
 impl Request {
     /// 获取群聊聊天记录
@@ -13,10 +16,14 @@ impl Request {
         &self,
         group_id: u32,
         offset: u32,
-    ) -> Result<Vec<SessionMessage>, DBError> {
-        self.db
-            .get_group_messages(group_id, offset)
-            .await
+    ) -> RequestResponse<Vec<SessionMessage>> {
+        match self.db.get_group_messages(group_id, offset).await {
+            Ok(list) => RequestResponse::ok("获取成功", list),
+            Err(e) => {
+                error!("获取群聊聊天记录失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
     }
     /// 获取私聊聊天记录
     pub async fn get_messages(
@@ -24,28 +31,28 @@ impl Request {
         sender: u32,
         receiver: u32,
         offset: u32,
-    ) -> Result<Vec<SessionMessage>, DBError> {
-        self.db
-            .get_messages(sender, receiver, offset)
-            .await
+    ) -> RequestResponse<Vec<SessionMessage>> {
+        match self.db.get_messages(sender, receiver, offset).await {
+            Ok(list) => RequestResponse::ok("获取成功", list),
+            Err(e) => {
+                error!("获取群聊聊天记录失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
     }
     /// 获取某群聊最新一条消息时间戳
     pub async fn get_latest_timestamp_of_group(
         &self,
         group_id: u32,
     ) -> Result<Option<NaiveDateTime>, DBError> {
-        self.db
-            .get_latest_timestamp_of_group(group_id)
-            .await
+        self.db.get_latest_timestamp_of_group(group_id).await
     }
     /// 获取用户所有群聊最新一条消息时间戳
     pub async fn get_latest_timestamps_of_all_groups(
         &self,
         user_id: u32,
     ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
-        self.db
-            .get_latest_timestamps_of_all_groups(user_id)
-            .await
+        self.db.get_latest_timestamps_of_all_groups(user_id).await
     }
     /// 当前用户所有群聊中最新的一条消息的时间戳（全局最大）
     pub async fn get_latest_timestamp_of_all_group_messages(
