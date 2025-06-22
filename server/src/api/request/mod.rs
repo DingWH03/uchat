@@ -5,6 +5,7 @@ use crate::api::error::RequestError;
 use crate::api::session_manager::{SessionManager};
 use crate::db::error::DBError;
 use crate::db::DB;
+use crate::protocol::request::RequestResponse;
 use crate::protocol::RoleType;
 use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, MessageType, message::ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
@@ -60,9 +61,12 @@ impl Request {
     }
 
     /// 检查session_id是否存在，返回role
-    pub async fn check_session_role(&self, session_id: &str) -> Option<RoleType> {
+    pub async fn check_session_role(&self, session_id: &str) -> RequestResponse<RoleType> {
         let sessions_read_guard = self.sessions.read().await;
-        sessions_read_guard.check_session_role(session_id)
+        match sessions_read_guard.check_session_role(session_id) {
+            Some(role) => RequestResponse::ok("获取成功", role),
+            None => RequestResponse::unauthorized()
+        }
     }
 
     /// 登陆session sender
@@ -256,28 +260,29 @@ impl Request {
         &self,
         username: &str,
         password: &str,
-    ) -> Result<Option<u32>, BcryptError> {
+    ) -> RequestResponse<u32> {
         // 检查用户名和密码是否为空
         if username.is_empty() || password.is_empty() {
             warn!("用户名或密码不能为空");
-            return Ok(None);
+            return RequestResponse::bad_request("用户名密码不得为空");
         }
-        let hashed_password = hash(password, 4)?; // Hash the password
+        // Hash the password
+        let hashed_password =  match hash(password, 4) {
+            Ok(hashed) => hashed,
+            Err(e) => {
+                error!("加密密码处理失败！错误: {}", e);
+                return RequestResponse::err(format!("服务器错误：{}", e))
+            }
+        }; 
         let user_id = self.db.new_user(username, &hashed_password).await;
         match user_id {
-            Ok(Some(id)) => {
+            Ok(id) => {
                 info!("用户 {} 注册成功", id);
-                Ok(Some(id))
-            }
-            Ok(None) => {
-                warn!("用户注册失败 (可能用户名已存在或数据库操作未返回ID)");
-                Ok(None)
+                RequestResponse::ok("注册成功", id)
             }
             Err(e) => {
                 error!("数据库用户注册失败: {:?}", e);
-                // Convert sqlx::Error to BcryptError if needed, or define a custom error type.
-                // For simplicity, returning None on sqlx error for now.
-                Ok(None)
+                RequestResponse::err(format!("数据库错误：{}", e))
             }
         }
     }
@@ -288,19 +293,51 @@ impl Request {
         user_id: u32,
         old_password_hashed: &str,
         new_password: &str,
-    ) -> Result<(), RequestError> {
-        let password_hash = self.db.get_password_hash(user_id).await?;
+    ) -> RequestResponse<()> {
+        // 检查用户名和密码是否为空
+        if new_password.is_empty() {
+            warn!("密码不能为空");
+            return RequestResponse::bad_request("密码不得为空");
+        }
+        let password_hash = match self.db.get_password_hash(user_id).await {
+            Ok(password) => password,
+            Err(e) => {
+                // 区分用户不存在和数据库错误
+                match e {
+                    DBError::NotFound => return RequestResponse::not_found(),
+                    _ => return RequestResponse::err(format!("数据库错误：{}", e))
+                }
+            }
+        };
 
-        if bcrypt::verify(old_password_hashed, &password_hash)? {
-            let new_hashed_password = hash(new_password, 4)?;
-            self.db
-                .update_password(user_id, &new_hashed_password)
-                .await?;
-            info!("用户 {} 密码更改成功", user_id);
-            Ok(())
-        } else {
-            warn!("用户 {} 原密码不正确", user_id);
-            Err(RequestError::InvalidPassword)
+        match bcrypt::verify(old_password_hashed, &password_hash) {
+            Ok(true) => {
+                let new_hashed_password = match hash(new_password, 4) {
+                    Ok(hashed) => hashed,
+                    Err(e) => {
+                        error!("新密码加密失败: {}", e);
+                        return RequestResponse::err(format!("服务器错误：{}", e));
+                    }
+                };
+                match self.db.update_password(user_id, &new_hashed_password).await {
+                    Ok(_) => {
+                        info!("用户 {} 密码更改成功", user_id);
+                        RequestResponse::ok("密码更改成功", ())
+                    }
+                    Err(e) => {
+                        error!("更新密码数据库操作失败: {:?}", e);
+                        RequestResponse::err(format!("数据库错误：{}", e))
+                    }
+                }
+            }
+            Ok(false) => {
+                warn!("用户 {} 原密码不正确", user_id);
+                RequestResponse::unauthorized()
+            }
+            Err(e) => {
+                error!("密码验证失败: {}", e);
+                RequestResponse::err(format!("服务器错误：{}", e))
+            }
         }
     }
 

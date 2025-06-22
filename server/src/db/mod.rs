@@ -35,7 +35,7 @@ pub trait UserDB: Send + Sync {
     /// 更新用户密码
     async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), DBError>;
     /// 创建新用户
-    async fn new_user(&self, username: &str, password_hash: &str) -> Result<Option<u32>, DBError>;
+    async fn new_user(&self, username: &str, password_hash: &str) -> Result<u32, DBError>;
     /// 删除用户
     async fn delete_user(&self, id: u32) -> Result<(), DBError>;
     /// 完整更新用户信息

@@ -65,7 +65,7 @@ impl UserDB for MysqlDB {
     }
 
     /// 创建新用户
-    async fn new_user(&self, username: &str, password_hash: &str) -> Result<Option<u32>, DBError> {
+    async fn new_user(&self, username: &str, password_hash: &str) -> Result<u32, DBError> {
         let result = sqlx::query!(
             "INSERT INTO users (username, password_hash) VALUES (?, ?)",
             username,
@@ -77,7 +77,7 @@ impl UserDB for MysqlDB {
         // 获取插入的自增ID
         let last_insert_id = result.last_insert_id() as u32;
 
-        Ok(Some(last_insert_id))
+        Ok(last_insert_id)
     }
 
     /// 删除用户

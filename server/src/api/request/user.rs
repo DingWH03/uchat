@@ -2,7 +2,7 @@
 use axum::extract::ws::Message;
 use log::{error, info, warn};
 use uuid::Uuid;
-use crate::{api::error::RequestError, protocol::{message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}, UserDetailedInfo}};
+use crate::{db::error::DBError, protocol::{message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}, UserDetailedInfo}};
 use super::Request;
 
 impl Request {
@@ -10,13 +10,27 @@ impl Request {
     /// 返回 'Ok(Some(session_cookie))' 如果登陆成功
     /// 返回 'Ok(None)' 如果用户不存在或密码错误
     /// 可以重复登陆，会分发不同的cookie
-    pub async fn login(&mut self, id: u32, password: &str) -> Result<String, RequestError> {
-        let (password_hash, role) = self.db.get_user_password_and_role(id).await
-        .map_err(|_| RequestError::UserNotFound)?;
+    pub async fn login(&mut self, id: u32, password: &str) -> RequestResponse<String> {
+        let (password_hash, role) = match self.db.get_user_password_and_role(id).await {
+            Ok(tuple) => tuple,
+            Err(e) => {
+                // 区分用户不存在和数据库错误
+                match e {
+                    DBError::NotFound => return RequestResponse::not_found(),
+                    _ => return RequestResponse::err(format!("数据库错误：{}", e))
+                }
+            }
+        };
 
-        let valid = bcrypt::verify(password, &password_hash)?;
+        let valid = match bcrypt::verify(password, &password_hash) {
+            Ok(valid) => valid,
+            Err(e) => {
+                error!("密码校验失败: {}", e);
+                return RequestResponse::err("密码校验失败".to_string());
+            }
+        };
         if !valid {
-            return Err(RequestError::InvalidPassword);
+            return RequestResponse::unauthorized()
         }
 
         let session_cookie = Uuid::now_v7().to_string();
@@ -41,7 +55,13 @@ impl Request {
         if is_first_login {
             let online_friends = self.get_online_friends(id).await.unwrap_or_default();
             let server_message = ServerMessage::OnlineMessage { friend_id: id };
-            let json = serde_json::to_string(&server_message)?;
+            let json = match serde_json::to_string(&server_message) {
+                Ok(j) => j,
+                Err(e) => {
+                    error!("序列化上线消息失败: {}", e);
+                    return RequestResponse::err(format!("序列化上线消息失败: {}", e));
+                }
+            };
 
             for friend in online_friends {
                 self.send_to_user(
@@ -52,10 +72,10 @@ impl Request {
             }
         }
 
-        Ok(session_cookie)
+        RequestResponse::ok("登陆成功", session_cookie)
     }
     /// 退出该会话
-    pub async fn logout(&self, session_id: &str) -> Result<(), anyhow::Error> {
+    pub async fn logout(&self, session_id: &str) -> RequestResponse<()> {
         let mut sessions_write_guard = self.sessions.write().await;
 
         // 获取当前用户 ID（用于广播）
@@ -74,7 +94,13 @@ impl Request {
 
                 let online_friends = self.get_online_friends(user_id).await.unwrap_or_default();
                 let server_message = ServerMessage::OfflineMessage { friend_id: user_id };
-                let json = serde_json::to_string(&server_message)?;
+                let json = match serde_json::to_string(&server_message) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        error!("序列化上线消息失败: {}", e);
+                        return RequestResponse::err(format!("序列化上线消息失败: {}", e));
+                    }
+                };
                 for friend in online_friends {
                     self.send_to_user(
                         friend.user_id,
@@ -85,10 +111,10 @@ impl Request {
             }
 
             info!("会话 {} 已注销", session_id);
-            Ok(())
+            RequestResponse::ok("注销成功", ())
         } else {
             warn!("会话 {} 不存在或已过期", session_id);
-            Err(RequestError::SessionNotFound.into())
+            RequestResponse::bad_request("会话不存在")
         }
     }
 

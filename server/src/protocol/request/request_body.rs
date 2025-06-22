@@ -1,20 +1,20 @@
 use serde::{Deserialize};
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, ToSchema)]
 pub struct RegisterRequest {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, ToSchema)]
 pub struct PasswordRequest {
     pub user_id: u32,
     pub old_password: String,
     pub new_password: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, ToSchema)]
 pub struct LoginRequest {
     pub userid: u32,
     pub password: String,

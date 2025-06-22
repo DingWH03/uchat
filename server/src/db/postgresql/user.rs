@@ -37,7 +37,7 @@ impl UserDB for PgSqlDB {
     }
 
     /// 创建新用户
-    async fn new_user(&self, username: &str, password_hash: &str) -> Result<Option<u32>, DBError> {
+    async fn new_user(&self, username: &str, password_hash: &str) -> Result<u32, DBError> {
         let row = sqlx::query!(
             "INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id",
             username,
@@ -49,7 +49,7 @@ impl UserDB for PgSqlDB {
         // 获取插入的自增ID
         let last_insert_id = row.id as u32;
 
-        Ok(Some(last_insert_id))
+        Ok(last_insert_id)
     }
 
     /// 删除用户

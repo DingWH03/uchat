@@ -4,12 +4,21 @@ use axum::{
 };
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use log::{debug, warn};
+use log::{debug};
 
-use crate::api::handler::ws::handle_socket;
+use crate::{api::handler::ws::handle_socket, protocol::request::RequestResponse};
 use crate::server::AppState;
 /// 处理WebSocket升级请求
 /// 签名已调整为标准的WebSocket升级处理器，并从 Cookie 中提取 session_id
+#[utoipa::path(
+    get,
+    path = "/auth/ws",
+    responses(
+        (status = 101, description = "WebSocket 协议升级成功"),
+        (status = 401, description = "认证失败，缺少或非法 session_id Cookie")
+    ),
+    tag = "request/auth"
+)]
 pub async fn handle_connect(
     ws: WebSocketUpgrade,                      // Axum 提供的 WebSocket 升级器
     Extension(state): Extension<AppState>,     // 获取共享的应用程序状态
@@ -17,26 +26,20 @@ pub async fn handle_connect(
 ) -> Response {
     debug!("收到WebSocket升级请求");
 
-    // 尝试从 Cookie 中获取 "session_id"
-    let session_id = if let Some(session_id_cookie) = cookies.get("session_id") {
-        debug!("从 Cookie 中找到 session_id: {}", session_id_cookie);
-        session_id_cookie.to_string()
-    } else {
-        warn!("未找到 session_id Cookie，拒绝 WebSocket 连接");
-        return (
-            axum::http::StatusCode::UNAUTHORIZED,
-            "未找到 session_id Cookie，拒绝 WebSocket 连接",
-        )
-            .into_response();
-    };
-
-    let request_lock = state.request.lock().await; // 获取 Request 的 Mutex 锁 (tokio::sync::Mutex)
-    if let Some(user_id) = request_lock.check_session(&session_id).await {
-        debug!("登陆用户id: {}", user_id);
-    } else {
-        warn!("会话ID {} 不存在或已过期", session_id);
-        return (axum::http::StatusCode::UNAUTHORIZED, "会话ID不存在或已过期").into_response();
+    let session_id = cookies.get("session_id").map(str::to_string);
+    if session_id.is_none() {
+        return RequestResponse::<()>::unauthorized().into_response();
     }
+
+    let session_id = session_id.unwrap();
+
+    let request_lock = state.request.lock().await;
+    let _user_id = match request_lock.check_session(&session_id).await {
+        Some(uid) => uid,
+        None => {
+            return RequestResponse::<()>::unauthorized().into_response();
+        }
+    };
     drop(request_lock); // 及时释放 Mutex 锁
     // 使用 ws.on_upgrade 方法将 HTTP 连接升级为 WebSocket 连接
     // 然后将控制权交给 handle_socket 函数来处理 WebSocket 帧，并传递 session_id

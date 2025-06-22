@@ -3,6 +3,12 @@
 use crate::api::handler::__path_handle_request;
 use crate::api::handler::__path_ping;
 use crate::api::handler::manager::online::tree::__path_handle_tree_online;
+use crate::api::handler::request::authentication::login::__path_handle_login;
+use crate::api::handler::request::authentication::logout::__path_handle_logout;
+use crate::api::handler::request::authentication::password::__path_handle_passwd;
+use crate::api::handler::request::authentication::register::__path_handle_register;
+use crate::api::handler::request::authentication::ws_connect::__path_handle_connect;
+use crate::api::handler::request::authentication::session::__path_handle_check_session;
 use crate::api::handler::request::friend::info_friend::__path_handle_info_friend;
 use crate::api::handler::request::user::me::__path_handle_delete_me;
 use crate::api::handler::request::user::me::__path_handle_get_me;
@@ -13,7 +19,12 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(ping, handle_request, handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, handle_info_friend, handle_tree_online),
+    paths(ping, handle_request, 
+        handle_login, handle_logout, handle_register, handle_passwd, handle_connect, handle_check_session,
+        handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, 
+        handle_info_friend, 
+        handle_tree_online
+    ),
     components(schemas(ServerResponse)),
     tags(
         (name = "测试接口", description = "仅用来测试对http的请求是否正常"),

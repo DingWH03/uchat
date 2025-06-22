@@ -1,28 +1,22 @@
 use axum::{extract::Json, response::IntoResponse, Extension};
-use crate::protocol::request::{LoginRequest, ServerResponse};
+use crate::protocol::{request::{LoginRequest, RequestResponse}, Empty};
 use log::debug;
 use crate::server::AppState;
 
+/// 登陆处理函数
+#[utoipa::path(
+    post,
+    path = "/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "登陆成功", body = RequestResponse<String>),
+        (status = 401, description = "认证失败", body = RequestResponse<Empty>),
+        (status = 500, description = "服务器内部错误", body = RequestResponse<Empty>),
+    ),
+    tag = "request/auth"
+)]
 pub async fn handle_login(Extension(state): Extension<AppState>, Json(payload): Json<LoginRequest>) -> impl IntoResponse {
     debug!("处理登录请求: {:?}", payload);
     let mut request = state.request.lock().await;
-    let login_result = request.login(payload.userid, &payload.password).await;
-    let response = match login_result {
-        Ok(session_id) => ServerResponse::LoginResponse {
-            status: true,
-            message: format!(
-                "{}",
-                session_id
-            ),
-        },
-        Err(e) => {
-            debug!("登录失败: {}", e);
-            ServerResponse::LoginResponse {
-                status: false,
-                message: format!("登录失败: {}", e),
-            }
-        }
-    };
-    debug!("登录响应: {:?}", response);
-    axum::Json(response)
+    request.login(payload.userid, &payload.password).await.into_response()
 }

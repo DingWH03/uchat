@@ -31,6 +31,15 @@ impl<T> RequestResponse<T> {
         }
     }
 
+    pub fn bad_request(message: impl Into<String>) -> Self {
+        Self {
+            status: false,
+            code: 400,
+            message: message.into(),
+            data: None,
+        }
+    }
+
     pub fn unauthorized() -> Self {
         Self {
             status: false,

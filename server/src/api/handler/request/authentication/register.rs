@@ -1,30 +1,22 @@
 use axum::{response::IntoResponse, Extension, Json};
-use log::{debug, warn};
+use log::{debug};
 
-use crate::{protocol::request::{RegisterRequest, ServerResponse}, server::AppState};
+use crate::{protocol::{request::{RegisterRequest, RequestResponse}, Empty}, server::AppState};
 
-
+/// 注册处理函数
+#[utoipa::path(
+    post,
+    path = "/auth/register",
+    request_body = RegisterRequest,
+    responses(
+        (status = 200, description = "注册成功", body = RequestResponse<String>),
+        (status = 400, description = "用户名或密码格式错误", body = RequestResponse<Empty>),
+        (status = 500, description = "服务器内部错误", body = RequestResponse<Empty>),
+    ),
+    tag = "request/auth"
+)]
 pub async fn handle_register(Extension(state): Extension<AppState>, Json(payload): Json<RegisterRequest>) -> impl IntoResponse {
     debug!("处理注册请求: {:?}", payload);
     let request = state.request.lock().await;
-    let register_result = request.register(&payload.username, &payload.password).await;
-    let response = match register_result {
-        Ok(user_id) => ServerResponse::RegisterResponse {
-            status: true,
-            message: format!(
-                "注册成功，你的id为{}",
-                user_id.map_or("出错".to_string(), |id| id.to_string())
-            ),
-        },
-        Err(e) => {
-            warn!("注册失败: {}", e);
-            ServerResponse::RegisterResponse {
-                status: false,
-                message: format!("注册失败: {}", e),
-            }
-        }
-    };
-    let json = serde_json::to_string_pretty(&response).unwrap();
-    debug!("注册响应: {}", json);
-    axum::Json(response)
+    request.register(&payload.username, &payload.password).await.into_response()
 }
