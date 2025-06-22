@@ -10,6 +10,9 @@ use crate::api::handler::request::authentication::register::__path_handle_regist
 use crate::api::handler::request::authentication::ws_connect::__path_handle_connect;
 use crate::api::handler::request::authentication::session::__path_handle_check_session;
 use crate::api::handler::request::friend::info_friend::__path_handle_info_friend;
+use crate::api::handler::request::friend::add_friend::__path_handle_add_friend;
+use crate::api::handler::request::friend::list_friend::__path_handle_list_friend;
+use crate::api::handler::request::friend::list_friend::__path_handle_list_friend_with_status;
 use crate::api::handler::request::user::me::__path_handle_delete_me;
 use crate::api::handler::request::user::me::__path_handle_get_me;
 use crate::api::handler::request::user::me::__path_handle_patch_me;
@@ -22,7 +25,7 @@ use utoipa::OpenApi;
     paths(ping, handle_request, 
         handle_login, handle_logout, handle_register, handle_passwd, handle_connect, handle_check_session,
         handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, 
-        handle_info_friend, 
+        handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status,
         handle_tree_online
     ),
     components(schemas(ServerResponse)),

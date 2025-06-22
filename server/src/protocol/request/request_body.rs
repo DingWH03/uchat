@@ -27,7 +27,7 @@ pub enum FriendRequestType {
     Info = 2,
 }
 
-#[derive(Deserialize, Debug, IntoParams)]
+#[derive(Deserialize, Debug, IntoParams, ToSchema)]
 pub struct FriendRequest {
     pub id: u32,
 }

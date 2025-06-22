@@ -348,17 +348,30 @@ impl Request {
             .await
     }
     /// 返回一个用户的好友列表
-    pub async fn get_friends(&self, id: u32) -> Result<Vec<UserSimpleInfo>, DBError> {
-        self.db
+    pub async fn get_friends(&self, id: u32) -> RequestResponse<Vec<UserSimpleInfo>> {
+        match self.db
             .get_friends(id)
-            .await
+            .await {
+                Ok(list) => RequestResponse::ok("获取成功", list),
+                Err(e) => {
+                    error!("数据库获取好友列表失败: {}", e);
+                    RequestResponse::err(format!("服务器错误：{}", e))
+                }
+            }
     }
     /// 返回一个带有在线信息的好友列表
-    pub async fn get_friends_with_status(
-        &self,
-        id: u32,
-    ) -> Result<Vec<UserSimpleInfoWithStatus>, DBError> {
-        let friends = self.get_friends(id).await?;
+    pub async fn get_friends_with_status(&self, id: u32) -> RequestResponse<Vec<UserSimpleInfoWithStatus>> {
+        let friends_resp = self.get_friends(id).await;
+        if !friends_resp.status {
+            return RequestResponse::err(friends_resp.message)
+        }
+
+        // 安全地解包数据
+        let friends = match friends_resp.data {
+            Some(friends) => friends,
+            None => return RequestResponse::ok("获取成功", Vec::new()),
+        };
+
         let session_manager = self.sessions.read().await;
         let result = friends
             .into_iter()
@@ -369,13 +382,14 @@ impl Request {
 
                 UserSimpleInfoWithStatus {
                     base: friend,
-                    online: online,
+                    online,
                 }
             })
             .collect();
 
-        Ok(result)
+        RequestResponse::ok("获取成功", result)
     }
+
 
     /// 获取一个用户的所有群聊
     pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, DBError> {
@@ -394,10 +408,13 @@ impl Request {
     }
     /// 通过user_id添加好友
     /// 当前版本无需确认直接通过
-    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> Result<(), DBError> {
-        self.db
+    pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> RequestResponse<()> {
+        match self.db
             .add_friend(user_id, friend_id)
-            .await
+            .await {
+                Ok(_) => RequestResponse::ok("添加成功", ()),
+                Err(e) => RequestResponse::bad_request("该用户不存在"),
+            }
     }
     /// 创建一个新的群聊，在创建时附带群成员列表
     pub async fn create_group(
