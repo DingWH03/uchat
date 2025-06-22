@@ -25,7 +25,11 @@ use crate::api::handler::request::user::me::__path_handle_delete_me;
 use crate::api::handler::request::user::me::__path_handle_get_me;
 use crate::api::handler::request::user::me::__path_handle_patch_me;
 use crate::api::handler::request::user::me::__path_handle_put_me;
-use crate::protocol::request::ServerResponse;
+use crate::protocol::request::RequestResponse;
+use crate::protocol::Empty;
+use crate::protocol::RoleType;
+use crate::protocol::UserDetailedInfo;
+use crate::protocol::UserSimpleInfo;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -38,7 +42,16 @@ use utoipa::OpenApi;
         handle_get_group_message, handle_get_session_message,
         handle_tree_online
     ),
-    components(schemas(ServerResponse)),
+    components(
+        schemas(
+            RequestResponse<String>,
+            RequestResponse<Empty>,
+            RequestResponse<UserSimpleInfo>,
+            RequestResponse<UserDetailedInfo>,
+            Empty,
+            RoleType,
+        )
+    ),
     tags(
         (name = "测试接口", description = "仅用来测试对http的请求是否正常"),
         (name = "manager", description = "后台管理请求api")

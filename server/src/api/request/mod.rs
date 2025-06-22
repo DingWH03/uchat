@@ -466,7 +466,7 @@ impl Request {
     }
 
     /// 对ping请求的响应
-    pub async fn ping(&self) -> String {
-        "pong".to_string()
+    pub async fn ping(&self) -> RequestResponse<()> {
+        RequestResponse::ok("pong", ())
     }
 }
