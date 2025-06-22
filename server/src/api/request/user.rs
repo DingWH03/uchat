@@ -1,9 +1,16 @@
 // api/request/user
+use super::Request;
+use crate::{
+    db::error::DBError,
+    protocol::{
+        UserDetailedInfo,
+        message::ServerMessage,
+        request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
+    },
+};
 use axum::extract::ws::Message;
 use log::{error, info, warn};
 use uuid::Uuid;
-use crate::{db::error::DBError, protocol::{message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}, UserDetailedInfo}};
-use super::Request;
 
 impl Request {
     /// 处理用户通过http请求登录
@@ -17,7 +24,7 @@ impl Request {
                 // 区分用户不存在和数据库错误
                 match e {
                     DBError::NotFound => return RequestResponse::not_found(),
-                    _ => return RequestResponse::err(format!("数据库错误：{}", e))
+                    _ => return RequestResponse::err(format!("数据库错误：{}", e)),
                 }
             }
         };
@@ -30,7 +37,7 @@ impl Request {
             }
         };
         if !valid {
-            return RequestResponse::unauthorized()
+            return RequestResponse::unauthorized();
         }
 
         let session_cookie = Uuid::now_v7().to_string();
@@ -120,19 +127,17 @@ impl Request {
 
     /// 返回用户的详细信息
     pub async fn get_userinfo(&self, id: u32) -> RequestResponse<UserDetailedInfo> {
-        match self.db
-            .get_userinfo(id)
-            .await {
-                Ok(Some(info)) => RequestResponse::ok("获取成功", info),
-                Ok(None) => {
-                    warn!("数据库中无用户: {}的信息", id);
-                    RequestResponse::not_found()
-                },
-                Err(e) => {
-                error!("注销用户账号失败，检查数据库错误: {}", e);
+        match self.db.get_userinfo(id).await {
+            Ok(Some(info)) => RequestResponse::ok("获取成功", info),
+            Ok(None) => {
+                warn!("数据库中无用户: {}的信息", id);
+                RequestResponse::not_found()
+            }
+            Err(e) => {
+                error!("获取用户的详细信息失败，检查数据库错误: {}", e);
                 RequestResponse::err(format!("数据库错误：{}", e))
             }
-            }
+        }
     }
     /// 删除用户，注销账号
     pub async fn delete_user(&self, id: u32) -> RequestResponse<()> {
@@ -146,7 +151,7 @@ impl Request {
     }
     /// 更新用户信息
     pub async fn update_user_info_full(
-        &self, 
+        &self,
         id: u32,
         update: UpdateUserRequest,
     ) -> RequestResponse<()> {
@@ -160,7 +165,7 @@ impl Request {
     }
     /// 更新用户部分信息
     pub async fn update_user_info_partial(
-        &self, 
+        &self,
         id: u32,
         update: PatchUserRequest,
     ) -> RequestResponse<()> {

@@ -42,13 +42,12 @@ pub enum GroupRequestType {
     Member = 5
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams, ToSchema)]
 pub struct GroupRequest {
-    pub request_type: GroupRequestType,
     pub id: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, ToSchema)]
 pub struct CreateGroupRequest {
     pub group_name: String,
     pub members: Vec<u32>, // 成员ID列表

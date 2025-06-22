@@ -1,5 +1,5 @@
 use axum::{response::IntoResponse, Extension};
-use log::{debug, warn};
+use log::{debug};
 
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;

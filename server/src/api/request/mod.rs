@@ -1,17 +1,18 @@
-mod user;
 mod messages;
+mod user;
 
 use crate::api::error::RequestError;
-use crate::api::session_manager::{SessionManager};
-use crate::db::error::DBError;
+use crate::api::session_manager::SessionManager;
 use crate::db::DB;
-use crate::protocol::request::RequestResponse;
+use crate::db::error::DBError;
 use crate::protocol::RoleType;
+use crate::protocol::request::RequestResponse;
 use crate::protocol::{
-    GroupDetailedInfo, GroupSimpleInfo, MessageType, message::ServerMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus
+    GroupDetailedInfo, GroupSimpleInfo, MessageType, UserSimpleInfo,
+    UserSimpleInfoWithStatus, message::ServerMessage,
 };
 use axum::extract::ws::Message;
-use bcrypt::{BcryptError, hash};
+use bcrypt::{hash};
 use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 use log::{debug, error, info, warn};
@@ -27,10 +28,7 @@ pub struct Request {
 
 impl Request {
     pub fn new(db: Arc<dyn DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
-        Self {
-            db,
-            sessions, 
-        }
+        Self { db, sessions }
     }
 
     /// 获取该用户所有在线好友的信息
@@ -65,7 +63,7 @@ impl Request {
         let sessions_read_guard = self.sessions.read().await;
         match sessions_read_guard.check_session_role(session_id) {
             Some(role) => RequestResponse::ok("获取成功", role),
-            None => RequestResponse::unauthorized()
+            None => RequestResponse::unauthorized(),
         }
     }
 
@@ -108,7 +106,12 @@ impl Request {
             return;
         };
         // 存储到数据库中
-        match self.db.add_message(sender_id, receiver_id, MessageType::Text, msg).await { // 新增了消息类型枚举，先在这挖一个坑
+        match self
+            .db
+            .add_message(sender_id, receiver_id, MessageType::Text, msg)
+            .await
+        {
+            // 新增了消息类型枚举，先在这挖一个坑
             Ok(message_id) => {
                 debug!(
                     "用户 {} 发送私聊消息给用户 {} 成功，消息ID: {}",
@@ -160,7 +163,7 @@ impl Request {
     /// 先读取群聊成员列表，然后发送消息给每个成员
     pub async fn send_to_group(&self, group_id: u32, msg: Message) {
         // 获取群成员列表
-        let members = match self.get_group_members(group_id).await {
+        let members = match self.db.get_group_members(group_id).await {
             Err(e) => {
                 error!("获取群组 {} 成员失败: {:?}", group_id, e);
                 return;
@@ -256,24 +259,20 @@ impl Request {
     /// 用户名允许重复，会自动生成唯一的userid
     /// 用户名和密码不可为空
     /// 返回 'Ok(Some(user_id))' 如果注册成功
-    pub async fn register(
-        &self,
-        username: &str,
-        password: &str,
-    ) -> RequestResponse<u32> {
+    pub async fn register(&self, username: &str, password: &str) -> RequestResponse<u32> {
         // 检查用户名和密码是否为空
         if username.is_empty() || password.is_empty() {
             warn!("用户名或密码不能为空");
             return RequestResponse::bad_request("用户名密码不得为空");
         }
         // Hash the password
-        let hashed_password =  match hash(password, 4) {
+        let hashed_password = match hash(password, 4) {
             Ok(hashed) => hashed,
             Err(e) => {
                 error!("加密密码处理失败！错误: {}", e);
-                return RequestResponse::err(format!("服务器错误：{}", e))
+                return RequestResponse::err(format!("服务器错误：{}", e));
             }
-        }; 
+        };
         let user_id = self.db.new_user(username, &hashed_password).await;
         match user_id {
             Ok(id) => {
@@ -305,7 +304,7 @@ impl Request {
                 // 区分用户不存在和数据库错误
                 match e {
                     DBError::NotFound => return RequestResponse::not_found(),
-                    _ => return RequestResponse::err(format!("数据库错误：{}", e))
+                    _ => return RequestResponse::err(format!("数据库错误：{}", e)),
                 }
             }
         };
@@ -342,28 +341,37 @@ impl Request {
     }
 
     /// 返回群组的详细信息
-    pub async fn get_groupinfo(&self, id: u32) -> Result<Option<GroupDetailedInfo>, DBError> {
-        self.db
-            .get_groupinfo(id)
-            .await
+    pub async fn get_groupinfo(&self, id: u32) -> RequestResponse<GroupDetailedInfo> {
+        match self.db.get_groupinfo(id).await {
+            Ok(Some(info)) => RequestResponse::ok("获取成功", info),
+            Ok(None) => {
+                warn!("数据库中无群组: {}的信息", id);
+                RequestResponse::not_found()
+            }
+            Err(e) => {
+                error!("获取群组的详细信息失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
     }
     /// 返回一个用户的好友列表
     pub async fn get_friends(&self, id: u32) -> RequestResponse<Vec<UserSimpleInfo>> {
-        match self.db
-            .get_friends(id)
-            .await {
-                Ok(list) => RequestResponse::ok("获取成功", list),
-                Err(e) => {
-                    error!("数据库获取好友列表失败: {}", e);
-                    RequestResponse::err(format!("服务器错误：{}", e))
-                }
+        match self.db.get_friends(id).await {
+            Ok(list) => RequestResponse::ok("获取成功", list),
+            Err(e) => {
+                error!("数据库获取好友列表失败: {}", e);
+                RequestResponse::err(format!("服务器错误：{}", e))
             }
+        }
     }
     /// 返回一个带有在线信息的好友列表
-    pub async fn get_friends_with_status(&self, id: u32) -> RequestResponse<Vec<UserSimpleInfoWithStatus>> {
+    pub async fn get_friends_with_status(
+        &self,
+        id: u32,
+    ) -> RequestResponse<Vec<UserSimpleInfoWithStatus>> {
         let friends_resp = self.get_friends(id).await;
         if !friends_resp.status {
-            return RequestResponse::err(friends_resp.message)
+            return RequestResponse::err(friends_resp.message);
         }
 
         // 安全地解包数据
@@ -390,31 +398,36 @@ impl Request {
         RequestResponse::ok("获取成功", result)
     }
 
-
     /// 获取一个用户的所有群聊
-    pub async fn get_groups(&self, id: u32) -> Result<Vec<GroupSimpleInfo>, DBError> {
-        self.db
-            .get_groups(id)
-            .await
+    pub async fn get_groups(&self, id: u32) -> RequestResponse<Vec<GroupSimpleInfo>> {
+        match self.db.get_groups(id).await {
+            Ok(list) => RequestResponse::ok("获取成功", list),
+            Err(e) => {
+                error!("数据库获取群聊列表失败: {}", e);
+                RequestResponse::err(format!("服务器错误：{}", e))
+            }
+        }
     }
     /// 获取某个群聊的群聊成员
-    pub async fn get_group_members(
-        &self,
-        group_id: u32,
-    ) -> Result<Vec<UserSimpleInfo>, DBError> {
-        self.db
-            .get_group_members(group_id)
-            .await
+    pub async fn get_group_members(&self, group_id: u32) -> RequestResponse<Vec<UserSimpleInfo>> {
+        match self.db.get_group_members(group_id).await {
+            Ok(list) => RequestResponse::ok("获取成功", list),
+            Err(e) => {
+                error!("数据库获取群聊成员失败: {}", e);
+                RequestResponse::err(format!("群组不存在服务器错误：{}", e))
+            }
+        }
     }
     /// 通过user_id添加好友
     /// 当前版本无需确认直接通过
     pub async fn add_friend(&self, user_id: u32, friend_id: u32) -> RequestResponse<()> {
-        match self.db
-            .add_friend(user_id, friend_id)
-            .await {
-                Ok(_) => RequestResponse::ok("添加成功", ()),
-                Err(e) => RequestResponse::bad_request("该用户不存在"),
+        match self.db.add_friend(user_id, friend_id).await {
+            Ok(_) => RequestResponse::ok("添加成功", ()),
+            Err(e) => {
+                error!("数据库错误：{}", e);
+                RequestResponse::bad_request("该用户不存在")
             }
+        }
     }
     /// 创建一个新的群聊，在创建时附带群成员列表
     pub async fn create_group(
@@ -422,24 +435,36 @@ impl Request {
         user_id: u32,
         group_name: &str,
         members: Vec<u32>,
-    ) -> Result<u32, DBError> {
-        self.db
-            .create_group(user_id, group_name, members)
-            .await
+    ) -> RequestResponse<u32> {
+        match self.db.create_group(user_id, group_name, members).await {
+            Ok(id) => RequestResponse::ok("创建成功", id),
+            Err(e) => {
+                error!("数据库错误：{}", e);
+                RequestResponse::err(format!("服务器错误：{}", e))
+            }
+        }
     }
     /// 用户申请加入群聊
-    pub async fn join_group(&self, user_id: u32, group_id: u32) -> Result<(), DBError> {
-        self.db
-            .join_group(user_id, group_id)
-            .await
+    pub async fn join_group(&self, user_id: u32, group_id: u32) -> RequestResponse<()> {
+        match self.db.join_group(user_id, group_id).await {
+            Ok(_) => RequestResponse::ok("加入成功", ()),
+            Err(e) => {
+                error!("加入群聊失败：{}", e);
+                RequestResponse::bad_request("群聊不存在或服务器错误")
+            }
+        }
     }
     /// 用户退出群聊
-    pub async fn leave_group(&self, user_id: u32, group_id: u32) -> Result<(), DBError> {
-        self.db
-            .leave_group(user_id, group_id)
-            .await
+    pub async fn leave_group(&self, user_id: u32, group_id: u32) -> RequestResponse<()> {
+        match self.db.leave_group(user_id, group_id).await {
+            Ok(_) => RequestResponse::ok("退出成功", ()),
+            Err(e) => {
+                error!("退出群聊失败：{}", e);
+                RequestResponse::bad_request("群聊不存在或服务器错误")
+            }
+        }
     }
-    
+
     /// 对ping请求的响应
     pub async fn ping(&self) -> String {
         "pong".to_string()
