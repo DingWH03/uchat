@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use utoipa::IntoParams;
 use crate::protocol::RoleType;
 
 #[derive(Deserialize, Debug)]
@@ -20,7 +21,7 @@ pub struct DeleteUserRequest {
 }
 
 /// 删除登录会话
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct DeleteSessionRequest {
     pub session_id: String,
 }
@@ -39,14 +40,14 @@ pub struct GetFriendsRequest {
 }
 
 /// 获取近期聊天记录
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct GetRecentMessageRequest {
     pub count: u32,
     pub offset: u32,
 }
 
 /// 获取用户近期聊天记录
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct GetUserRecentMessageRequest {
     pub count: u32,
     pub offset: u32,
@@ -54,13 +55,13 @@ pub struct GetUserRecentMessageRequest {
 }
 
 /// 删除单条消息
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct DeleteMessageRequest {
     pub message_id: u64,
 }
 
 /// 获取单条消息
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, IntoParams)]
 pub struct GetMessageRequest {
     pub message_id: u64,
 }

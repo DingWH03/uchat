@@ -55,7 +55,7 @@ impl Manager {
         );
         let result = self.db.delete_private_message(message_id).await;
         match result {
-            Ok(index) => ManagerResponse::ok("获取成功", index),
+            Ok(index) => ManagerResponse::ok("删除成功", index),
             Err(e) => {
                 error!("删除失败，检查数据库错误: {}", e);
                 ManagerResponse::err(format!("数据库错误：{}", e))

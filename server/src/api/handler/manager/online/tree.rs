@@ -15,7 +15,7 @@ use crate::{
         (status = 401, description = "未登陆", body = ManagerResponse<Empty>),
         (status = 403, description = "权限不足(需管理员权限)", body = ManagerResponse<Empty>)
     ),
-    tag = "manager"
+    tag = "manager/online"
 )]
 pub async fn handle_tree_online(
     Extension(state): Extension<AppState>,

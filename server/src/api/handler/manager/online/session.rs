@@ -4,9 +4,24 @@ use headers::Cookie;
 use log::{debug, warn};
 
 use crate::{
-    protocol::{manager::DeleteSessionRequest, ManagerResponse}, server::AppState // 你的 ManagerResponse 结构体
+    protocol::{manager::DeleteSessionRequest, Empty, ManagerResponse}, server::AppState 
 };
 
+/// 删除某session_id
+#[utoipa::path(
+    delete,
+    path = "/manager/online/session",
+    params(
+        DeleteSessionRequest
+    ),
+    responses(
+        (status = 200, description = "删除成功", body = ManagerResponse<Empty>),
+        (status = 401, description = "认证失败", body = ManagerResponse<Empty>),
+        (status = 403, description = "权限不足", body = ManagerResponse<Empty>),
+        (status = 500, description = "服务器错误", body = ManagerResponse<Empty>)
+    ),
+    tag = "manager/online"
+)]
 pub async fn handle_delete_session(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
@@ -39,6 +54,6 @@ pub async fn handle_delete_session(
         }
     };
 
-    // 获取用户列表
+    // 删除session
     manager_lock.remove_session(&payload.session_id).await.into_response()
 }

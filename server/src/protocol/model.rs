@@ -52,7 +52,7 @@ pub struct GroupSessionMessage {
 }
 
 /// 用于manager后台获取消息
-#[derive(Debug, Serialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct PreviewPrivateMessage {
     pub id: u32,
     pub sender_id: u32,
@@ -61,10 +61,11 @@ pub struct PreviewPrivateMessage {
     pub receiver_username: String,
     pub message_type: MessageType,        // 可改为 enum 类型（如 MessageType 枚举）更安全
     pub message_preview: String,     // message 前 100 字符
+    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
     pub timestamp: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct FullPrivateMessage {
     pub id: u32,
     pub sender_id: u32,
@@ -73,6 +74,7 @@ pub struct FullPrivateMessage {
     pub receiver_username: String,
     pub message_type: MessageType,
     pub message: String, // 完整消息内容
+    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
     pub timestamp: chrono::NaiveDateTime,
 }
 
@@ -118,7 +120,7 @@ impl RoleType {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize, ToSchema)]
 #[cfg_attr(feature = "mysql", sqlx(type_name = "text"))]
 #[cfg_attr(feature = "postgres", sqlx(type_name = "message_type"))]
 #[sqlx(rename_all = "lowercase")]
