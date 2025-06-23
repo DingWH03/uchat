@@ -144,7 +144,7 @@ pub async fn handle_admin_dashboard(
                 r#"<div class="session">Session ID: {} | IP: {:?} | 创建时间: {}</div>"#,
                 session_id,
                 info.ip,
-                info.created_at.format("%Y-%m-%d %H:%M:%S") // 若为 chrono::DateTime
+                info.created_at_datetime().format("%Y-%m-%d %H:%M:%S") // 若为 chrono::DateTime
             );
         }
         html += "</div>";

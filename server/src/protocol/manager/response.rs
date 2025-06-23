@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use axum::{http::StatusCode, response::IntoResponse, Json};
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -67,7 +67,7 @@ pub struct UserSessionInfo {
     pub session_id: String,
     pub user_id: u32,
     #[schema(example = "2025-06-20T15:30:00", value_type = String)]
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<chrono::Utc>,
     pub ip: Option<String>,
 }
 #[derive(Serialize, ToSchema)]
@@ -84,7 +84,7 @@ impl From<HashMap<u32, Vec<(String, SessionInfo)>>> for OnlineUserTree {
                 session_infos.push(UserSessionInfo {
                     session_id,
                     user_id,
-                    created_at: info.created_at,
+                    created_at: info.created_at_datetime(),
                     ip: info.ip,
                 });
             }

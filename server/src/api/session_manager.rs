@@ -1,5 +1,5 @@
 use axum::extract::ws::Message;
-use chrono::NaiveDateTime;
+use chrono::{DateTime};
 use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc::UnboundedSender;
 use crate::protocol::RoleType;
@@ -8,10 +8,19 @@ use crate::protocol::RoleType;
 pub struct SessionInfo {
     user_id: u32,
     sender: Option<UnboundedSender<Message>>, // 初始为 None
-    pub created_at: NaiveDateTime,
+    pub created_at_secs: i64,
+    pub created_at_nsecs: u32, // 用于存储创建时间的秒数
     pub ip: Option<String>,
     role: RoleType,
 }
+
+impl SessionInfo {
+    // 转成带时区的 DateTime，用于格式化显示或序列化
+    pub fn created_at_datetime(&self) -> chrono::DateTime<chrono::Utc> {
+        DateTime::from_timestamp(self.created_at_secs, self.created_at_nsecs).unwrap()
+    }
+}
+
 
 pub struct SessionManager {
     sessions: HashMap<String, SessionInfo>,
@@ -29,14 +38,14 @@ impl SessionManager {
     /// 插入一个新的 Session，占位但尚未绑定 Sender
     /// session_id可能会重复，但暂时不考虑
     pub fn insert_session(&mut self, user_id: u32, session_id: String, ip: Option<String>, role: RoleType) {
-        let now = chrono::Utc::now().naive_utc();
 
         self.sessions.insert(
             session_id.clone(),
             SessionInfo {
                 user_id,
                 sender: None,
-                created_at: now,
+                created_at_secs: chrono::Utc::now().timestamp(),
+                created_at_nsecs: chrono::Utc::now().timestamp_subsec_nanos(),
                 ip,
                 role
             },
