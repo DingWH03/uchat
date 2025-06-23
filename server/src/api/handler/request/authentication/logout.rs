@@ -14,7 +14,7 @@ use crate::{
     post,
     path = "/auth/logout",
     responses(
-        (status = 200, description = "退出登录成功", body = RequestResponse<String>),
+        (status = 200, description = "退出登录成功", body = RequestResponse<Empty>),
         (status = 401, description = "认证失败", body = RequestResponse<Empty>),
         (status = 500, description = "服务器内部错误", body = RequestResponse<Empty>),
     ),

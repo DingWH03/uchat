@@ -4,7 +4,7 @@ use log::{debug};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{request::{GroupRequest, RequestResponse}, Empty, GroupDetailedInfo}, server::AppState};
+use crate::{protocol::{request::{GroupRequest, RequestResponse}, Empty, UserSimpleInfo}, server::AppState};
 
 /// 获取群组成员
 #[utoipa::path(
@@ -14,7 +14,7 @@ use crate::{protocol::{request::{GroupRequest, RequestResponse}, Empty, GroupDet
         GroupRequest
     ),
     responses(
-        (status = 200, description = "获取成功", body = RequestResponse<GroupDetailedInfo>),
+        (status = 200, description = "获取成功", body = RequestResponse<UserSimpleInfo>),
         (status = 401, description = "认证失败", body = RequestResponse<Empty>),
         (status = 404, description = "找不到群组", body = RequestResponse<Empty>),
         (status = 500, description = "服务器错误", body = RequestResponse<Empty>)

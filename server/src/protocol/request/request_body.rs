@@ -20,26 +20,9 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-/// 好友请求具体枚举
-#[derive(Deserialize, Debug)]
-pub enum FriendRequestType {
-    Add = 1,
-    Info = 2,
-}
-
 #[derive(Deserialize, Debug, IntoParams, ToSchema)]
 pub struct FriendRequest {
     pub id: u32,
-}
-
-/// 群聊请求具体枚举
-#[derive(Deserialize, Debug)]
-pub enum GroupRequestType {
-    Join = 1,
-    Info = 2,
-    Creat = 3,
-    Leave = 4,
-    Member = 5
 }
 
 #[derive(Deserialize, Debug, IntoParams, ToSchema)]
