@@ -14,6 +14,7 @@ pub struct UserSimpleInfo {
 pub struct UserDetailedInfo {
     pub user_id: u32,
     pub username: String,
+    pub role: RoleType,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

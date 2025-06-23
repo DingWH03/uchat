@@ -137,13 +137,19 @@ impl UserDB for MysqlDB {
 
     /// 根据id查找用户详细信息
     async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError> {
-        let row = sqlx::query!("SELECT id AS user_id, username FROM users WHERE id = ?", id)
-            .fetch_optional(&self.pool)
-            .await?;
+        let row = sqlx::query_as!(
+            UserDetailedInfo,
+            r#"
+            SELECT id as user_id, username, role as "role: RoleType"
+            FROM users
+            WHERE id = ?
+            "#,
+            id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
 
-        Ok(row.map(|r| UserDetailedInfo {
-            user_id: r.user_id,
-            username: r.username,
-        }))
+        Ok(row)
     }
+
 }
