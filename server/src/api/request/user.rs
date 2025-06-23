@@ -41,20 +41,19 @@ impl Request {
         }
 
         let session_cookie = Uuid::now_v7().to_string();
-
+        info!("检查点1");
         // 检查是否是首次登录（无任何活跃 session）
         let is_first_login = {
-            let sessions_read_guard = self.sessions.read().await;
-            sessions_read_guard
+            info!("检查点2");
+            self.sessions
                 .get_sessions_by_user(id)
+                .await
                 .map_or(true, |set| set.is_empty())
         };
-
+        info!("检查点3");
         // 插入会话
         self.sessions
-            .write()
-            .await
-            .insert_session(id, session_cookie.clone(), None, role);
+            .insert_session(id, session_cookie.clone(), None, role).await;
 
         info!("用户 {} 登录成功", id);
 
@@ -83,21 +82,20 @@ impl Request {
     }
     /// 退出该会话
     pub async fn logout(&self, session_id: &str) -> RequestResponse<()> {
-        let mut sessions_write_guard = self.sessions.write().await;
 
         // 获取当前用户 ID（用于广播）
-        if let Some(user_id) = sessions_write_guard.get_user_id_by_session(session_id) {
+        if let Some(user_id) = self.sessions.get_user_id_by_session(session_id).await {
             // 删除会话
-            sessions_write_guard.delete_session(session_id);
+            self.sessions.delete_session(session_id).await;
 
             // 判断是否是该用户的最后一个 session
-            let still_online = sessions_write_guard
+            let still_online = self.sessions
                 .get_sessions_by_user(user_id)
+                .await
                 .map_or(false, |s| !s.is_empty());
 
             if !still_online {
                 // 如果该用户彻底下线，则广播 OfflineMessage
-                drop(sessions_write_guard); // 提前释放锁，避免死锁
 
                 let online_friends = self.get_online_friends(user_id).await.unwrap_or_default();
                 let server_message = ServerMessage::OfflineMessage { friend_id: user_id };

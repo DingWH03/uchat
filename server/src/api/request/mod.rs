@@ -2,7 +2,8 @@ mod messages;
 mod user;
 
 use crate::api::error::RequestError;
-use crate::api::session_manager::SessionManager;
+use crate::session::SessionManagerTrait;
+use crate::session::SessionConfig;
 use crate::db::DB;
 use crate::db::error::DBError;
 use crate::protocol::RoleType;
@@ -17,17 +18,14 @@ use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
-use tokio::sync::RwLock; // 为sessions高效率共享使用Rwlock
-
-// use tokio::sync::Mutex;
 
 pub struct Request {
     db: Arc<dyn DB>,
-    sessions: Arc<RwLock<SessionManager>>,
+    sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>,
 }
 
 impl Request {
-    pub fn new(db: Arc<dyn DB>, sessions: Arc<RwLock<SessionManager>>) -> Self {
+    pub fn new(db: Arc<dyn DB>, sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>) -> Self {
         Self { db, sessions }
     }
 
@@ -38,30 +36,26 @@ impl Request {
     ) -> Result<Vec<UserSimpleInfo>, RequestError> {
         // 获取所有好友（从数据库）
         let all_friends = self.db.get_friends(user_id).await?;
-        let session_manager = self.sessions.write().await;
         // 过滤在线好友（根据 sessions 判断）
-        let online_friends = all_friends
-            .into_iter()
-            .filter(|friend| {
-                session_manager
-                    .get_sessions_by_user(friend.user_id) // 这个是 Option<&HashSet<String>>
-                    .map_or(false, |sessions| !sessions.is_empty())
-            })
-            .collect();
+        let mut online_friends = Vec::new();
+        for friend in all_friends {
+            let sessions = self.sessions.get_sessions_by_user(friend.user_id).await;
+            if sessions.map_or(false, |sessions| !sessions.is_empty()) {
+                online_friends.push(friend);
+            }
+        }
 
         Ok(online_friends)
     }
 
     /// 检查session_id是否存在，返回user_id
     pub async fn check_session(&self, session_id: &str) -> Option<u32> {
-        let sessions_read_guard = self.sessions.read().await;
-        sessions_read_guard.check_session(session_id)
+        self.sessions.check_session(session_id).await
     }
 
     /// 检查session_id是否存在，返回role
     pub async fn check_session_role(&self, session_id: &str) -> RequestResponse<RoleType> {
-        let sessions_read_guard = self.sessions.read().await;
-        match sessions_read_guard.check_session_role(session_id) {
+        match self.sessions.check_session_role(session_id).await {
             Some(role) => RequestResponse::ok("获取成功", role),
             None => RequestResponse::unauthorized(),
         }
@@ -73,26 +67,22 @@ impl Request {
         session_id: &str,
         sender: tokio::sync::mpsc::UnboundedSender<Message>,
     ) {
-        let mut sessions_write_guard = self.sessions.write().await;
-        sessions_write_guard.register_sender(session_id, sender);
+        self.sessions.register_sender(session_id, sender).await;
     }
 
     /// 撤销sender
     pub async fn unregister_session(&self, session_id: &str) {
-        let mut sessions_write_guard = self.sessions.write().await;
-        sessions_write_guard.unregister_sender(session_id);
+        self.sessions.unregister_sender(session_id).await;
     }
 
     /// 根据session_id发送消息
     pub async fn send_to_session(&self, session_id: &str, msg: Message) {
-        let sessions_read_guard = self.sessions.read().await;
-        sessions_read_guard.send_to_session(session_id, msg)
+        self.sessions.send_to_session(session_id, msg).await
     }
 
     /// 发送给用户的所有 WebSocket 连接
     pub async fn send_to_user(&self, user_id: u32, msg: Message) {
-        let sessions_read_guard = self.sessions.read().await;
-        sessions_read_guard.send_to_user(user_id, msg)
+        self.sessions.send_to_user(user_id, msg).await
     }
 
     /// 发送给用户所有的 WebSocket 连接（v2版）
@@ -171,7 +161,7 @@ impl Request {
             Ok(members) => members,
         };
 
-        let sessions = Arc::clone(&self.sessions);
+        let sessions = self.sessions.clone();
         let msg = Arc::new(msg); // 共享消息，避免多次 clone
         let mut tasks = FuturesUnordered::new();
 
@@ -180,9 +170,7 @@ impl Request {
             let sessions = Arc::clone(&sessions);
             tasks.push(tokio::spawn(async move {
                 sessions
-                    .read()
-                    .await
-                    .send_to_user(member.user_id, (*msg).clone());
+                    .send_to_user(member.user_id, (*msg).clone()).await;
             }));
         }
 
@@ -251,8 +239,7 @@ impl Request {
 
     /// 通过session_id查询用户ID
     pub async fn get_user_id_by_session(&self, session_id: &str) -> Option<u32> {
-        let sessions_read_guard = self.sessions.read().await;
-        sessions_read_guard.get_user_id_by_session(session_id)
+        self.sessions.get_user_id_by_session(session_id).await
     }
 
     /// 处理用户注册请求
@@ -380,20 +367,23 @@ impl Request {
             None => return RequestResponse::ok("获取成功", Vec::new()),
         };
 
-        let session_manager = self.sessions.read().await;
-        let result = friends
-            .into_iter()
-            .map(|friend| {
+        let session_manager = self.sessions.clone();
+        let futures = friends.into_iter().map(|friend| {
+            let session_manager = session_manager.clone();
+            async move {
                 let online = session_manager
                     .get_sessions_by_user(friend.user_id)
+                    .await
                     .map_or(false, |sessions| !sessions.is_empty());
 
                 UserSimpleInfoWithStatus {
                     base: friend,
                     online,
                 }
-            })
-            .collect();
+            }
+        });
+
+        let result = futures::future::join_all(futures).await;
 
         RequestResponse::ok("获取成功", result)
     }

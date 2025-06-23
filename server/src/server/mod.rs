@@ -3,15 +3,18 @@
 mod route;
 
 use crate::api::manager::Manager;
-use crate::api::{request::Request, session_manager::SessionManager};
+use crate::api::request::Request;
 use crate::db::factory::{DbType, create_database};
+#[cfg(feature = "redis-support")]
+use crate::redis::RedisClient;
+use crate::session::create_session_manager;
 use axum::{Extension, Router};
 use log::{error, info};
 use route::router;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::{Mutex};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -46,7 +49,24 @@ impl Server {
             }
         };
 
-        let sessions = Arc::new(RwLock::new(SessionManager::new()));
+        // 初始化redis连接池
+        #[cfg(feature = "redis-support")]
+        let redis_client = {
+            let redis_url = env::var("REDIS_URL").expect("REDIS_URL 环境变量未设置");
+            let redis_client = RedisClient::new(&redis_url).await;
+            match redis_client {
+                Err(e) => {
+                    error!("Redis连接失败: {}", e);
+                    panic!("Redis连接失败: {}", e);
+                }
+                Ok(client) => {
+                    info!("Redis连接成功");
+                    client
+                }
+            }
+        };
+        #[cfg(not(feature = "redis-support"))]
+        let sessions = create_session_manager().await;
         let request = Arc::new(Mutex::new(Request::new(db.clone(), sessions.clone())));
         let manager = Arc::new(Mutex::new(Manager::new(db, sessions)));
         let state = AppState { request, manager };
@@ -58,10 +78,8 @@ impl Server {
         {
             use crate::api::doc;
             use utoipa_swagger_ui::SwaggerUi;
-            app = app.merge(
-                SwaggerUi::new("/swagger")
-                    .url("/api-docs/openapi.json", doc::openapi())
-            );
+            app =
+                app.merge(SwaggerUi::new("/swagger").url("/api-docs/openapi.json", doc::openapi()));
         }
 
         Server { addr, app }

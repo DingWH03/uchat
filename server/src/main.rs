@@ -3,6 +3,9 @@ mod protocol;
 mod server;
 mod api;
 mod error;
+mod session;
+#[cfg(feature = "redis-support")]
+mod redis;
 
 use std::{env, net::SocketAddr};
 use log::error;

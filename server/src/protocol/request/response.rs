@@ -1,8 +1,6 @@
-use axum::{http::StatusCode, response::IntoResponse, Json};
-use serde::{Deserialize, Serialize};
+use axum::{Json, http::StatusCode, response::IntoResponse};
+use serde::Serialize;
 use utoipa::ToSchema;
-use crate::protocol::{model::{GroupDetailedInfo, GroupSimpleInfo, SessionMessage, UserDetailedInfo, UserSimpleInfo, UserSimpleInfoWithStatus}, RoleType};
-
 
 #[derive(Serialize, Debug, ToSchema)]
 pub struct RequestResponse<T> {
@@ -65,7 +63,6 @@ impl<T: serde::Serialize> IntoResponse for RequestResponse<T> {
         (status, Json(self)).into_response()
     }
 }
-
 
 // /// 通用响应
 // #[derive(Serialize, Deserialize, Debug, ToSchema)]
@@ -252,4 +249,3 @@ impl<T: serde::Serialize> IntoResponse for RequestResponse<T> {
 //         messages: Vec<SessionMessage>,
 //     },
 // }
-

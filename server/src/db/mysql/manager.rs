@@ -1,7 +1,7 @@
 use super::MysqlDB;
 use crate::{
     db::{error::DBError, ManagerDB},
-    protocol::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType, UserSimpleInfo},
+    protocol::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType},
 };
 use anyhow::Result;
 use async_trait::async_trait;

@@ -4,7 +4,7 @@ use chrono::DateTime;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::api::session_manager::SessionInfo;
+use crate::session::SessionInfo;
 
 #[derive(Serialize, Debug, ToSchema)]
 pub struct ManagerResponse<T> {
