@@ -1,12 +1,12 @@
 use log::{info, error};
 
-use crate::protocol::{ManagerResponse, RoleType, UserDetailedInfo, UserSimpleInfo};
+use crate::protocol::{ManagerResponse, ManagerUserSimpleInfo, RoleType, UserDetailedInfo, UserSimpleInfo};
 
 use super::Manager;
 
 impl Manager {
      /// 查看所有用户
-     pub async fn get_all_user(&self) -> ManagerResponse<Vec<UserSimpleInfo>> {
+     pub async fn get_all_user(&self) -> ManagerResponse<Vec<ManagerUserSimpleInfo>> {
         info!("响应获取全部用户");
         match self.db.get_all_user().await {
             Ok(result) => ManagerResponse::ok("获取成功", result),

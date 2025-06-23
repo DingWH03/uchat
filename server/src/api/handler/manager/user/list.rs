@@ -4,7 +4,7 @@ use headers::Cookie;
 use log::{debug, warn};
 
 use crate::{
-    protocol::{Empty, ManagerResponse, UserSimpleInfo}, server::AppState // 你的 ManagerResponse 结构体
+    protocol::{Empty, ManagerResponse, ManagerUserSimpleInfo}, server::AppState // 你的 ManagerResponse 结构体
 };
 
 /// 获取注册总用户列表
@@ -12,7 +12,7 @@ use crate::{
     get,
     path = "/manager/user/list",
     responses(
-        (status = 200, description = "返回用户列表", body = ManagerResponse<Vec<UserSimpleInfo>>),
+        (status = 200, description = "返回用户列表", body = ManagerResponse<Vec<ManagerUserSimpleInfo>>),
         (status = 401, description = "未登陆", body = ManagerResponse<Empty>),
         (status = 403, description = "权限不足(需管理员权限)", body = ManagerResponse<Empty>)
     ),

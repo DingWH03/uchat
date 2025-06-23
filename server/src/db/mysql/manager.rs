@@ -1,7 +1,7 @@
 use super::MysqlDB;
 use crate::{
     db::{error::DBError, ManagerDB},
-    protocol::{FullPrivateMessage, PreviewPrivateMessage, RoleType, UserSimpleInfo},
+    protocol::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType, UserSimpleInfo},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -16,26 +16,20 @@ impl ManagerDB for MysqlDB {
         Ok(row.count as u32)
     }
     /// 获取全部用户
-    async fn get_all_user(&self) -> Result<Vec<UserSimpleInfo>, DBError> {
-        let rows = sqlx::query!(
+    async fn get_all_user(&self) -> Result<Vec<ManagerUserSimpleInfo>, DBError> {
+        let rows = sqlx::query_as!(
+            ManagerUserSimpleInfo,
             r#"
-            SELECT id as user_id, username
+            SELECT id as user_id, username, role as "role: RoleType"
             FROM users
             "#
         )
         .fetch_all(&self.pool)
         .await?;
 
-        let users = rows
-            .into_iter()
-            .map(|row| UserSimpleInfo {
-                user_id: row.user_id,
-                username: row.username,
-            })
-            .collect();
-
-        Ok(users)
+        Ok(rows)
     }
+
     /// 改变身份
     async fn change_user_role(&self, userid: u32, role: RoleType) -> Result<(), DBError> {
         sqlx::query!(
