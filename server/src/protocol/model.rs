@@ -89,6 +89,7 @@ pub struct FullPrivateMessage {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize, ToSchema)]
 #[sqlx(type_name = "ENUM", rename_all = "lowercase")]
+#[serde(rename_all = "PascalCase")]
 pub enum RoleType {
     #[sqlx(rename = "user")]
     User,
