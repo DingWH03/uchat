@@ -1,7 +1,13 @@
 [package]
-name = "server"
+name = "uchat-server"
 version = "0.1.0"
 edition = "2024"
+authors = ["DingVero <DingVero@outlook.com>"]
+build = "build.rs"
+
+[build-dependencies]
+chrono = { version = "0.4.41", features = ["serde"] }
+toml="0.8.23"
 
 [dependencies]
 anyhow = "1.0.98"

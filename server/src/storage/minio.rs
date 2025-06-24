@@ -33,7 +33,7 @@ impl MinioStorage {
             .load()
             .await;
         let s3_config = S3ConfigBuilder::from(&config)
-            .force_path_style(true) // ✅ 关键配置
+            .force_path_style(true) // 不构建虚拟主机样式的 URL
             .build();
 
         let client = Client::from_conf(s3_config);
@@ -124,7 +124,7 @@ impl MinioStorage {
                 !current_policy.contains("\"s3:GetObject\"") // 可再加更严格判断
             }
             Err(_) => {
-                // 获取失败，说明无策略或权限不足 ➜ 需要设置
+                // 获取失败，说明无策略或权限不足 -> 需要设置
                 true
             }
         };

@@ -9,7 +9,7 @@ use crate::db::factory::{DbType, create_database};
 use crate::redis::RedisClient;
 use crate::session::SessionConfig;
 use crate::session::create_session_manager;
-use crate::storage::{init_storage, StorageBackend, StorageConfig};
+use crate::storage::{StorageBackend, StorageConfig, init_storage};
 use axum::{Extension, Router};
 use log::{error, info};
 use route::router;
@@ -91,7 +91,11 @@ impl Server {
         // 初始化存储
         let storage = init_storage(storage_backend, &storage_config).await;
         let sessions = create_session_manager(config).await;
-        let request = Arc::new(Mutex::new(Request::new(db.clone(), sessions.clone(), storage.clone())));
+        let request = Arc::new(Mutex::new(Request::new(
+            db.clone(),
+            sessions.clone(),
+            storage.clone(),
+        )));
         let manager = Arc::new(Mutex::new(Manager::new(db, sessions, storage)));
         let state = AppState { request, manager };
         // 构建路由
@@ -110,7 +114,25 @@ impl Server {
     }
 
     pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
-        info!("服务器已启动，监听地址 http://{}", self.addr);
+        let banner = r#"
+            _    _          _               _   
+            | |  | |        | |             | |  
+            | |  | |   ___  | |__     __ _  | |_ 
+            | |  | |  / __| | '_ \   / _` | | __|
+            | |__| | | (__  | | | | | (_| | | |_ 
+             \____/   \___| |_| |_|  \__,_|  \__|
+                                                
+        "#;
+
+        println!("{}", banner);
+        println!("项目名称     : {}", env!("PKG_NAME"));
+        println!("版本号       : {}", env!("PKG_VERSION"));
+        println!("作者         : {}", env!("PKG_AUTHORS"));
+        println!("构建时间     : {}", env!("BUILD_TIME"));
+        println!("监听地址     : http://{}", self.addr);
+        let now = chrono::Local::now();
+        println!("启动时间     : {}\n", now.format("%Y-%m-%d %H:%M:%S"));
+
         let listener = tokio::net::TcpListener::bind(self.addr).await?;
         axum::serve(listener, self.app.into_make_service()).await?;
         Ok(())
