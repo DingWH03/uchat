@@ -3,15 +3,20 @@
 pub mod memory;
 #[cfg(not(feature = "redis-support"))]
 pub use crate::session::memory::SessionConfig;
+#[cfg(feature = "redis-support")]
+pub mod redis;
+#[cfg(feature = "redis-support")]
+pub use crate::session::redis::{SessionConfig};
 use async_trait::async_trait;
 use axum::extract::ws::Message;
 use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc::UnboundedSender};
 use crate::protocol::RoleType;
 use std::{collections::HashMap, sync::Arc};
 use chrono::{DateTime};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SessionInfo {
     user_id: u32,
     pub created_at_secs: i64,
@@ -91,25 +96,17 @@ pub trait SessionManagerTrait: Send + Sync {
 }
 
 /// 工厂函数，根据 feature 选择 SessionManager 实现
-pub async fn create_session_manager() -> Arc<dyn SessionManagerTrait<Config = SessionConfig>> {
+pub async fn create_session_manager(config: SessionConfig) -> Arc<dyn SessionManagerTrait<Config = SessionConfig>> {
     #[cfg(not(feature = "redis-support"))]
     {
-        let config = SessionConfig {
-            // 这里写内存配置内容，若无可空结构体也行
-        };
         let manager = memory::SessionManager::new_with_config(config).await;
         manager
     }
     
     // 你后续可增加 redis-support 分支:
-    /*
     #[cfg(feature = "redis-support")]
     {
-        let config = RedisSessionConfig {
-            // 填写 Redis 配置
-        };
         let manager = redis::RedisSessionManager::new_with_config(config).await;
         manager
     }
-    */
 }

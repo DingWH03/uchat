@@ -41,16 +41,13 @@ impl Request {
         }
 
         let session_cookie = Uuid::now_v7().to_string();
-        info!("检查点1");
         // 检查是否是首次登录（无任何活跃 session）
         let is_first_login = {
-            info!("检查点2");
             self.sessions
                 .get_sessions_by_user(id)
                 .await
                 .map_or(true, |set| set.is_empty())
         };
-        info!("检查点3");
         // 插入会话
         self.sessions
             .insert_session(id, session_cookie.clone(), None, role).await;

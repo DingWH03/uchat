@@ -7,6 +7,7 @@ use crate::api::request::Request;
 use crate::db::factory::{DbType, create_database};
 #[cfg(feature = "redis-support")]
 use crate::redis::RedisClient;
+use crate::session::SessionConfig;
 use crate::session::create_session_manager;
 use axum::{Extension, Router};
 use log::{error, info};
@@ -14,7 +15,7 @@ use route::router;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::{Mutex};
+use tokio::sync::Mutex;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -66,7 +67,15 @@ impl Server {
             }
         };
         #[cfg(not(feature = "redis-support"))]
-        let sessions = create_session_manager().await;
+        let config = { SessionConfig {} };
+        #[cfg(feature = "redis-support")]
+        let config = {
+            SessionConfig {
+                redis: Arc::new(redis_client),
+                session_expire_secs: 7200, // 默认会话过期时间为2小时
+            }
+        };
+        let sessions = create_session_manager(config).await;
         let request = Arc::new(Mutex::new(Request::new(db.clone(), sessions.clone())));
         let manager = Arc::new(Mutex::new(Manager::new(db, sessions)));
         let state = AppState { request, manager };

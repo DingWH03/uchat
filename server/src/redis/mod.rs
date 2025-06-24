@@ -1,7 +1,7 @@
 // src/redis/mod.rs
 use bb8::{Pool, PooledConnection};
 use bb8_redis::RedisConnectionManager;
-use redis::{AsyncCommands, RedisResult};
+use redis::{AsyncCommands, AsyncIter, RedisResult};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -44,6 +44,35 @@ impl RedisClient {
         }
         Ok(result)
     }
+
+    /// 获取 Redis 中指定键的数量，如果不存在则返回 None。
+    pub async fn scard(&self, key: &str) -> RedisResult<usize> {
+        let mut conn = self.get_conn().await?;
+        conn.scard(key).await
+    }
+
+    /// 批量获取 Redis 中指定键的值，返回一个包含每个键对应值的向量。
+    pub async fn mget(&self, keys: &[String]) -> RedisResult<Vec<Option<String>>> {
+        let mut conn = self.get_conn().await?;
+        conn.get(keys).await
+    }
+
+
+
+    /// 扫描 Redis 中匹配模式的键，非阻塞版本优于 KEYS 命令。
+    pub async fn scan_keys(&self, pattern: &str) -> RedisResult<Vec<String>> {
+        let mut conn = self.get_conn().await?;
+        let mut iter: AsyncIter<String> = conn.scan_match(pattern).await?;
+        let mut keys = Vec::new();
+        while let Some(res) = iter.next_item().await {
+            match res {
+                Ok(key) => keys.push(key),
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(keys)
+    }
+
 
     pub async fn del(&self, key: &str) -> RedisResult<()> {
         let mut conn = self.get_conn().await?;
