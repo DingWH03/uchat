@@ -9,6 +9,7 @@ use crate::db::factory::{DbType, create_database};
 use crate::redis::RedisClient;
 use crate::session::SessionConfig;
 use crate::session::create_session_manager;
+use crate::storage::{init_storage, StorageBackend, StorageConfig};
 use axum::{Extension, Router};
 use log::{error, info};
 use route::router;
@@ -30,7 +31,7 @@ pub struct Server {
 
 impl Server {
     pub async fn new(addr: SocketAddr) -> Self {
-        // 从环境变量中获取数据库连接字符串
+        // 从环境变量中获取数据库连接字符串，完成初始化数据库操作
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL 环境变量未设置");
         let db_type = match env::var("DB_TYPE")
             .unwrap_or_else(|_| "mysql".to_string())
@@ -66,6 +67,7 @@ impl Server {
                 }
             }
         };
+        /// 选择会话存储配置
         #[cfg(not(feature = "redis-support"))]
         let config = { SessionConfig {} };
         #[cfg(feature = "redis-support")]
@@ -75,9 +77,22 @@ impl Server {
                 session_expire_secs: 7200, // 默认会话过期时间为2小时
             }
         };
+        // 从环境变量读取 MinIO（或其他存储）配置
+        let storage_config = StorageConfig {
+            endpoint: env::var("MINIO_ENDPOINT").expect("环境变量 MINIO_ENDPOINT 未设置"),
+            access_key: env::var("MINIO_ACCESS_KEY").expect("环境变量 MINIO_ACCESS_KEY 未设置"),
+            secret_key: env::var("MINIO_SECRET_KEY").expect("环境变量 MINIO_SECRET_KEY 未设置"),
+            bucket: env::var("MINIO_BUCKET").expect("环境变量 MINIO_BUCKET 未设置"),
+            base_url: env::var("MINIO_BASE_URL").expect("环境变量 MINIO_BASE_URL 未设置"),
+            local_dir: env::var("LOCAL_STORAGE_DIR").unwrap_or_else(|_| "./data".to_string()), // 这个你可以选用默认
+        };
+        // 选用 MinIO 作为存储后端（以后可用环境变量或配置动态切换）
+        let storage_backend = StorageBackend::Minio;
+        // 初始化存储
+        let storage = init_storage(storage_backend, &storage_config).await;
         let sessions = create_session_manager(config).await;
-        let request = Arc::new(Mutex::new(Request::new(db.clone(), sessions.clone())));
-        let manager = Arc::new(Mutex::new(Manager::new(db, sessions)));
+        let request = Arc::new(Mutex::new(Request::new(db.clone(), sessions.clone(), storage.clone())));
+        let manager = Arc::new(Mutex::new(Manager::new(db, sessions, storage)));
         let state = AppState { request, manager };
         // 构建路由
         let mut app = router().layer(Extension(state));

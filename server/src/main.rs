@@ -4,6 +4,7 @@ mod server;
 mod api;
 mod error;
 mod session;
+mod storage;
 #[cfg(feature = "redis-support")]
 mod redis;
 

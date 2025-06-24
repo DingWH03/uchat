@@ -12,6 +12,7 @@ use crate::protocol::{
     GroupDetailedInfo, GroupSimpleInfo, MessageType, UserSimpleInfo,
     UserSimpleInfoWithStatus, message::ServerMessage,
 };
+use crate::storage::{ObjectStorage};
 use axum::extract::ws::Message;
 use bcrypt::{hash};
 use futures::StreamExt;
@@ -22,11 +23,12 @@ use std::sync::Arc;
 pub struct Request {
     db: Arc<dyn DB>,
     sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>,
+    storage: Arc<dyn ObjectStorage + Send + Sync>,
 }
 
 impl Request {
-    pub fn new(db: Arc<dyn DB>, sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>) -> Self {
-        Self { db, sessions }
+    pub fn new(db: Arc<dyn DB>, sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>, storage: Arc<dyn ObjectStorage + Send + Sync>) -> Self {
+        Self { db, sessions, storage }
     }
 
     /// 获取该用户所有在线好友的信息

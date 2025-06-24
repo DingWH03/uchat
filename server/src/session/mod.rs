@@ -103,7 +103,7 @@ pub async fn create_session_manager(config: SessionConfig) -> Arc<dyn SessionMan
         manager
     }
     
-    // 你后续可增加 redis-support 分支:
+    // redis-support 分支:
     #[cfg(feature = "redis-support")]
     {
         let manager = redis::RedisSessionManager::new_with_config(config).await;

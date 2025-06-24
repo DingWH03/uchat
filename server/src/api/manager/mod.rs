@@ -5,16 +5,18 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use crate::session::{SessionConfig, SessionInfo, SessionManagerTrait};
 use crate::db::DB;
+use crate::storage::{ObjectStorage};
 use log::{info};
 
 pub struct Manager {
     db: Arc<dyn DB>,
     sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>,
+    storage: Arc<dyn ObjectStorage + Send + Sync>,
 }
 
 impl Manager {
-    pub fn new(db: Arc<dyn DB>, sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>) -> Self {
-        Self { db, sessions }
+    pub fn new(db: Arc<dyn DB>, sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>, storage: Arc<dyn ObjectStorage + Send + Sync>,) -> Self {
+        Self { db, sessions, storage }
     }
 
     /// 获取在线用户及其 session_id
