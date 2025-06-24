@@ -1,13 +1,13 @@
-use axum::{routing::{get}, Router};
-use crate::api::handler;
+use crate::api::handler::request::user;
+use axum::{routing::{get, post}, Router};
 
 pub fn router() -> Router {
     Router::new().route(
         "/me",
-        get(handler::request::user::me::handle_get_me)
-            .put(handler::request::user::me::handle_put_me)
-            .patch(handler::request::user::me::handle_patch_me)
-            .delete(handler::request::user::me::handle_delete_me),
-)
-
+        get(user::me::handle_get_me)
+            .put(user::me::handle_put_me)
+            .patch(user::me::handle_patch_me)
+            .delete(user::me::handle_delete_me),
+    )
+    .route("/avatar", post(user::avatar::handle_upload_avatar))
 }

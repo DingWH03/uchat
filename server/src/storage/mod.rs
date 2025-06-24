@@ -58,4 +58,7 @@ pub trait ObjectStorage: Send + Sync {
 
     /// 获取公开 URL（可用于前端展示）
     fn get_url(&self, object_path: &str) -> String;
+
+    /// 删除指定前缀下，除了指定保留文件之外的所有对象
+    async fn delete_prefix_except(&self, prefix: &str, except_keys: &[&str]) -> anyhow::Result<()>;
 }

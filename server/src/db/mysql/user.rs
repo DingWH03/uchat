@@ -135,6 +135,23 @@ impl UserDB for MysqlDB {
         Ok(())
     }
 
+    /// 更新用户头像
+    async fn update_user_avatar(
+        &self,
+        id: u32,
+        avatar_url: &str,
+    ) -> Result<(), DBError> {
+        sqlx::query!(
+            "UPDATE users SET avatar_url = ? WHERE id = ?",
+            avatar_url,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
     /// 根据id查找用户详细信息
     async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError> {
         let row = sqlx::query_as!(

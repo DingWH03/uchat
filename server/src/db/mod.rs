@@ -50,6 +50,11 @@ pub trait UserDB: Send + Sync {
         id: u32,
         patch: PatchUserRequest,
     ) -> Result<(), DBError>;
+    async fn update_user_avatar(
+        &self,
+        id: u32,
+        avatar_url: &str,
+    ) -> Result<(), DBError>;
     /// 根据id查找用户详细信息
     async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError>;
     // 设置UserDetailedInfo用户信息，当前用户信息较少，以后会考虑单独设置某一部分，例如个性签名，头像等

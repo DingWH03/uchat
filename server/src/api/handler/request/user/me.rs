@@ -144,3 +144,4 @@ pub async fn handle_delete_me(
     };
     request_lock.delete_user(user_id).await.into_response()
 }
+

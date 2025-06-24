@@ -79,6 +79,30 @@ impl ObjectStorage for MinioStorage {
     fn get_url(&self, object_path: &str) -> String {
         format!("{}/{}", self.base_url, object_path)
     }
+
+    /// 删除指定 prefix 下除 except_keys 之外的对象
+    async fn delete_prefix_except(&self, prefix: &str, except_keys: &[&str]) -> anyhow::Result<()> {
+        // 列举指定前缀下所有对象
+        let resp = self.client
+            .list_objects_v2()
+            .bucket(&self.bucket)
+            .prefix(prefix)
+            .send()
+            .await
+            .context("failed to list objects in MinIO (S3)")?;
+
+        if let Some(contents) = resp.contents {
+            for obj in contents {
+                if let Some(key) = obj.key {
+                    if !except_keys.contains(&key.as_str()) {
+                        self.delete(&key).await?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl MinioStorage {

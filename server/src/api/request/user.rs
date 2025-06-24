@@ -172,4 +172,57 @@ impl Request {
             }
         }
     }
+
+    /// 更新用户头像
+    pub async fn update_avatar(
+        &self,
+        user_id: u32,
+        file_bytes: &[u8],
+        file_name: &str,
+        content_type: &str,
+    ) -> RequestResponse<String> {
+        // 构建路径
+        let timestamp = chrono::Utc::now().timestamp();
+        let new_file_name = format!("{}_{}", timestamp, file_name);
+
+        let object_dir = format!("avatars/{}/", user_id);
+        let object_path = format!("{}{}", object_dir, new_file_name);
+
+        // 上传到 MinIO（或其他实现）
+        let result = self
+            .storage
+            .upload(&object_path, file_bytes, content_type)
+            .await;
+
+        let url = match result {
+            Ok(url) => url,
+            Err(e) => {
+                error!("头像上传失败: {}", e);
+                return RequestResponse::err("头像上传失败");
+            }
+        };
+
+        // 删除该用户头像文件夹下除当前头像之外的其他文件
+        if let Err(e) = self
+            .storage
+            .delete_prefix_except(&object_dir, &[&new_file_name])
+            .await
+        {
+            error!("删除旧头像失败: {}", e);
+        }
+
+        // 更新数据库中头像字段
+        let update_result = self
+            .db
+            .update_user_avatar(user_id, &url)
+            .await;
+
+        match update_result {
+            Ok(_) => RequestResponse::ok("头像更新成功", url),
+            Err(e) => {
+                error!("头像URL写入数据库失败: {}", e);
+                RequestResponse::err("头像更新失败")
+            }
+        }
+    }
 }
