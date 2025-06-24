@@ -8,6 +8,7 @@ use std::str::FromStr;
 pub struct UserSimpleInfo {
     pub user_id: u32,
     pub username: String,
+    pub avatar_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

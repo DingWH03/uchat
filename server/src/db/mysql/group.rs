@@ -60,7 +60,8 @@ impl GroupDB for MysqlDB {
             "
             SELECT 
                 gm.user_id, 
-                u.username 
+                u.username,
+                u.avatar_url 
             FROM 
                 group_members gm
             JOIN 
@@ -81,6 +82,7 @@ impl GroupDB for MysqlDB {
             .map(|r| UserSimpleInfo {
                 user_id: r.user_id,
                 username: r.username,
+                avatar_url: r.avatar_url.unwrap_or_default(), // 如果avatar_url可能为NULL，使用unwrap_or_default()
             })
             .collect())
     }

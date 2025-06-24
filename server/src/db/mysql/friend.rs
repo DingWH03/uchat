@@ -14,7 +14,8 @@ impl FriendDB for MysqlDB {
             "
             SELECT 
                 f.friend_id, 
-                u.username 
+                u.username,
+                u.avatar_url
             FROM 
                 friendships f
             JOIN 
@@ -35,6 +36,7 @@ impl FriendDB for MysqlDB {
             .map(|r| UserSimpleInfo {
                 user_id: r.friend_id,
                 username: r.username,
+                avatar_url: r.avatar_url.unwrap_or_default(), // 如果avatar_url为NULL，使用默认值
             })
             .collect())
     }
