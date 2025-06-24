@@ -23,6 +23,7 @@ pub struct UserDetailedInfo {
     pub user_id: u32,
     pub username: String,
     pub role: RoleType,
+    pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

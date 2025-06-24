@@ -157,7 +157,7 @@ impl UserDB for MysqlDB {
         let row = sqlx::query_as!(
             UserDetailedInfo,
             r#"
-            SELECT id as user_id, username, role as "role: RoleType"
+            SELECT id as user_id, username, role as "role: RoleType", avatar_url
             FROM users
             WHERE id = ?
             "#,
