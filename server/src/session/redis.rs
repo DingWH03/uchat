@@ -59,8 +59,31 @@ impl SessionManagerTrait for RedisSessionManager {
     }
 
     async fn get_sessions_by_user(&self, user_id: u32) -> Option<Vec<String>> {
-        self.redis.smembers(&format!("user_sessions:{}", user_id)).await.ok()
+        let session_ids = self.redis.smembers(&format!("user_sessions:{}", user_id)).await.ok()?;
+        let session_keys: Vec<String> = session_ids.iter().map(|id| format!("session:{}", id)).collect();
+
+        let values = self.redis.mget(&session_keys).await.ok()?;
+
+        // 仅保留那些真的还在 Redis 的 session
+        let valid_sessions: Vec<String> = session_ids
+            .into_iter()
+            .zip(values)
+            .filter_map(|(sid, val)| {
+                if val.is_some() {
+                    Some(sid)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if valid_sessions.is_empty() {
+            None
+        } else {
+            Some(valid_sessions)
+        }
     }
+
 
     async fn register_sender(&self, session_id: &str, sender: UnboundedSender<Message>) {
         self.sender_store.insert(session_id, sender);
