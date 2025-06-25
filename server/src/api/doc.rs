@@ -25,6 +25,7 @@ use crate::api::handler::request::friend::info_friend::__path_handle_info_friend
 use crate::api::handler::request::friend::add_friend::__path_handle_add_friend;
 use crate::api::handler::request::friend::list_friend::__path_handle_list_friend;
 use crate::api::handler::request::friend::list_friend::__path_handle_list_friend_with_status;
+use crate::api::handler::request::friend::status_friend::__path_handle_get_status_by_userid;
 use crate::api::handler::request::group::creat_group::__path_handle_creat_group;
 use crate::api::handler::request::group::info_group::__path_handle_info_group;
 use crate::api::handler::request::group::join_group::__path_handle_join_group;
@@ -39,6 +40,7 @@ use crate::api::handler::request::user::me::__path_handle_patch_me;
 use crate::api::handler::request::user::me::__path_handle_put_me;
 use crate::api::handler::request::user::avatar::__path_handle_upload_avatar;
 use crate::api::handler::request::user::contact::__path_handle_get_contact_timestamps;
+use crate::api::handler::request::user::contact::__path_handle_get_contact_list;
 use crate::protocol::request::RequestResponse;
 use crate::protocol::Empty;
 use crate::protocol::RoleType;
@@ -50,8 +52,8 @@ use utoipa::OpenApi;
 #[openapi(
     paths(ping, handle_request, 
         handle_login, handle_logout, handle_register, handle_passwd, handle_connect, handle_check_session,
-        handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, handle_upload_avatar, handle_get_contact_timestamps,
-        handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status,
+        handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, handle_upload_avatar, handle_get_contact_timestamps, handle_get_contact_list, 
+        handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status, handle_get_status_by_userid, 
         handle_creat_group, handle_info_group, handle_join_group, handle_leave_group, handle_list_group, handle_members_group,
         // 下面都是manager接口，即必须管理员权限才能访问的api
         handle_get_group_message, handle_get_session_message,

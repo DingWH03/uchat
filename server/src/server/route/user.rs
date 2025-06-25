@@ -11,4 +11,5 @@ pub fn router() -> Router {
     )
     .route("/avatar", post(user::avatar::handle_upload_avatar))
     .route("/contact/timestamps", post(user::contact::handle_get_contact_timestamps))
+    .route("/contact/list", post(user::contact::handle_get_contact_list))
 }

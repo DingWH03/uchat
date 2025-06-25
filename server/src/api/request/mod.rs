@@ -2,6 +2,8 @@ mod messages;
 mod user;
 
 use crate::api::error::RequestError;
+use crate::protocol::ContactList;
+use crate::protocol::UserStatus;
 use crate::session::SessionManagerTrait;
 use crate::session::SessionConfig;
 use crate::db::DB;
@@ -388,6 +390,52 @@ impl Request {
         let result = futures::future::join_all(futures).await;
 
         RequestResponse::ok("获取成功", result)
+    }
+
+    /// 批量查询用户在线状态，返回 Vec<UserStatus>
+    pub async fn get_status_by_userids(&self, user_ids: &[u32]) -> RequestResponse<Vec<UserStatus>> {
+        let session_manager = self.sessions.clone();
+
+        // 生成异步任务，查询每个 user_id 是否在线，返回 UserStatus 结构体
+        let futures = user_ids.iter().map(|&user_id| {
+            let session_manager = session_manager.clone();
+            async move {
+                let online = session_manager
+                    .get_sessions_by_user(user_id)
+                    .await
+                    .map_or(false, |sessions| !sessions.is_empty());
+                UserStatus { user_id, online }
+            }
+        });
+
+        let result = futures::future::join_all(futures).await;
+
+        RequestResponse::ok("获取成功", result)
+    }
+
+    /// 批量获取所有的用户和好友列表
+    pub async fn get_contact_list(
+        &self,
+        user_id: u32,
+    ) -> RequestResponse<ContactList> {
+        let friends = match self.db.get_friends(user_id).await {
+            Ok(friends) => friends,
+            Err(e) => {
+                error!("获取好友列表失败: {}", e);
+                return RequestResponse::err(format!("服务器错误：{}", e));
+            }
+        };
+        let groups = match self.db.get_groups(user_id).await {
+            Ok(groups) => groups,
+            Err(e) => {
+                error!("获取群组列表失败: {}", e);
+                return RequestResponse::err(format!("服务器错误：{}", e));
+            }
+        };
+        RequestResponse::ok("获取成功", ContactList {
+            friends,
+            groups,
+        })
     }
 
     /// 获取一个用户的所有群聊

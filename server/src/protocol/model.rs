@@ -188,3 +188,15 @@ pub struct UpdateTimestamps {
     pub friends_updated_at: i64,
     pub groups_updated_at: i64,
 }
+
+#[derive(Serialize, ToSchema)]
+pub struct ContactList {
+    pub friends: Vec<UserSimpleInfo>,
+    pub groups: Vec<GroupSimpleInfo>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UserStatus {
+    pub user_id: u32,
+    pub online: bool,
+}
