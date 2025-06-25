@@ -3,9 +3,7 @@ use super::Request;
 use crate::{
     db::error::DBError,
     protocol::{
-        UserDetailedInfo,
-        message::ServerMessage,
-        request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
+        message::ServerMessage, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}, UpdateTimestamps, UserDetailedInfo
     },
 };
 use axum::extract::ws::Message;
@@ -140,6 +138,16 @@ impl Request {
             Ok(()) => RequestResponse::ok("注销成功", ()),
             Err(e) => {
                 error!("注销用户账号失败，检查数据库错误: {}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
+    }
+    /// 查询用户的好友和群组更新时间戳(单位：秒)
+    pub async fn get_update_timestamps(&self, id: u32) -> RequestResponse<UpdateTimestamps> {
+        match self.db.get_update_timestamps(id).await {
+            Ok(timestamps) => RequestResponse::ok("获取成功", timestamps),
+            Err(e) => {
+                error!("获取用户更新时间戳失败，检查数据库错误: {}", e);
                 RequestResponse::err(format!("数据库错误：{}", e))
             }
         }

@@ -38,6 +38,7 @@ use crate::api::handler::request::user::me::__path_handle_get_me;
 use crate::api::handler::request::user::me::__path_handle_patch_me;
 use crate::api::handler::request::user::me::__path_handle_put_me;
 use crate::api::handler::request::user::avatar::__path_handle_upload_avatar;
+use crate::api::handler::request::user::contact::__path_handle_get_contact_timestamps;
 use crate::protocol::request::RequestResponse;
 use crate::protocol::Empty;
 use crate::protocol::RoleType;
@@ -49,7 +50,7 @@ use utoipa::OpenApi;
 #[openapi(
     paths(ping, handle_request, 
         handle_login, handle_logout, handle_register, handle_passwd, handle_connect, handle_check_session,
-        handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, handle_upload_avatar,
+        handle_delete_me, handle_patch_me, handle_put_me, handle_get_me, handle_upload_avatar, handle_get_contact_timestamps,
         handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status,
         handle_creat_group, handle_info_group, handle_join_group, handle_leave_group, handle_list_group, handle_members_group,
         // 下面都是manager接口，即必须管理员权限才能访问的api

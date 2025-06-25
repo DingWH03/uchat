@@ -13,7 +13,7 @@ use chrono::NaiveDateTime;
 use crate::{
     db::error::DBError,
     protocol::{
-        request::{PatchUserRequest, UpdateUserRequest}, FullPrivateMessage, GroupDetailedInfo, GroupSimpleInfo, ManagerUserSimpleInfo, MessageType, PreviewPrivateMessage, RoleType, SessionMessage, UserDetailedInfo, UserSimpleInfo
+        request::{PatchUserRequest, UpdateUserRequest}, FullPrivateMessage, GroupDetailedInfo, GroupSimpleInfo, ManagerUserSimpleInfo, MessageType, PreviewPrivateMessage, RoleType, SessionMessage, UpdateTimestamps, UserDetailedInfo, UserSimpleInfo
     },
 };
 
@@ -34,6 +34,8 @@ pub trait UserDB: Send + Sync {
     -> Result<(String, RoleType), DBError>;
     /// 更新用户密码
     async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), DBError>;
+    /// 获取用户的好友和群组更新时间（返回时间戳，单位：秒）
+    async fn get_update_timestamps(&self, id: u32) -> Result<UpdateTimestamps, DBError>;
     /// 创建新用户
     async fn new_user(&self, username: &str, password_hash: &str) -> Result<u32, DBError>;
     /// 删除用户

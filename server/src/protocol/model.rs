@@ -182,3 +182,9 @@ impl ToString for MessageType {
 
 #[derive(Serialize, ToSchema)]
 pub struct Empty;
+
+#[derive(Serialize, ToSchema)]
+pub struct UpdateTimestamps {
+    pub friends_updated_at: i64,
+    pub groups_updated_at: i64,
+}

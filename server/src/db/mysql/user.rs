@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use super::MysqlDB;
 use anyhow::Result;
-use crate::protocol::RoleType;
+use crate::protocol::{RoleType, UpdateTimestamps};
 use crate::{db::{error::DBError, UserDB}, protocol::{request::{PatchUserRequest, UpdateUserRequest}, UserDetailedInfo}};
 use sqlx::Arguments;
 
@@ -63,6 +63,25 @@ impl UserDB for MysqlDB {
 
         Ok(())
     }
+
+    /// 获取用户的好友和群组更新时间（返回时间戳，单位：秒）
+    async fn get_update_timestamps(&self, id: u32) -> Result<UpdateTimestamps, DBError> {
+        let row = sqlx::query!(
+            "SELECT friends_updated_at, groups_updated_at FROM users WHERE id = ?",
+            id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(row) = row {
+            let friends_ts = row.friends_updated_at.ok_or(DBError::NotFound)?.timestamp();
+            let groups_ts = row.groups_updated_at.ok_or(DBError::NotFound)?.timestamp();
+            Ok(UpdateTimestamps { friends_updated_at: friends_ts, groups_updated_at: groups_ts })
+        } else {
+            Err(DBError::NotFound)
+        }
+    }
+
 
     /// 创建新用户
     async fn new_user(&self, username: &str, password_hash: &str) -> Result<u32, DBError> {

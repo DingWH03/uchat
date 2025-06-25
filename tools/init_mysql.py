@@ -43,7 +43,9 @@ SQL_QUERIES = [
         password_hash VARCHAR(255) NOT NULL,
         role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
         bio VARCHAR(256) DEFAULT NULL, -- 个人简介，最多 256 字符
-        avatar_url VARCHAR(255) DEFAULT NULL -- 头像 URL，存储头像在 MinIO 的链接
+        avatar_url VARCHAR(255) DEFAULT NULL, -- 头像 URL，存储头像在 MinIO 的链接
+        friends_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        groups_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     """,
 
@@ -164,6 +166,40 @@ SQL_QUERIES = [
     JOIN users AS receiver ON m.receiver_id = receiver.id;
     """
 ]
+
+# 在 SQL_QUERIES 的末尾追加
+SQL_QUERIES.extend([
+    """
+    CREATE TRIGGER IF NOT EXISTS trg_friendships_insert AFTER INSERT ON friendships FOR EACH ROW
+    BEGIN
+        UPDATE users SET friends_updated_at = NOW() WHERE id = NEW.user_id;
+        UPDATE users SET friends_updated_at = NOW() WHERE id = NEW.friend_id;
+    END;
+    """,
+
+    """
+    CREATE TRIGGER IF NOT EXISTS trg_friendships_delete AFTER DELETE ON friendships FOR EACH ROW
+    BEGIN
+        UPDATE users SET friends_updated_at = NOW() WHERE id = OLD.user_id;
+        UPDATE users SET friends_updated_at = NOW() WHERE id = OLD.friend_id;
+    END;
+    """,
+
+    """
+    CREATE TRIGGER IF NOT EXISTS trg_group_members_insert AFTER INSERT ON group_members FOR EACH ROW
+    BEGIN
+        UPDATE users SET groups_updated_at = NOW() WHERE id = NEW.user_id;
+    END;
+    """,
+
+    """
+    CREATE TRIGGER IF NOT EXISTS trg_group_members_delete AFTER DELETE ON group_members FOR EACH ROW
+    BEGIN
+        UPDATE users SET groups_updated_at = NOW() WHERE id = OLD.user_id;
+    END;
+    """
+])
+
 
 
 def connect_db():
