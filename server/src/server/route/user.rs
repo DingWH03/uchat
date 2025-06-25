@@ -10,6 +10,6 @@ pub fn router() -> Router {
             .delete(user::me::handle_delete_me),
     )
     .route("/avatar", post(user::avatar::handle_upload_avatar))
-    .route("/contact/timestamps", post(user::contact::handle_get_contact_timestamps))
-    .route("/contact/list", post(user::contact::handle_get_contact_list))
+    .route("/contact/timestamps", get(user::contact::handle_get_contact_timestamps))
+    .route("/contact/list", get(user::contact::handle_get_contact_list))
 }
