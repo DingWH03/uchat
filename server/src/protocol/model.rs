@@ -195,3 +195,10 @@ pub struct UserStatus {
     pub user_id: u32,
     pub online: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct IdMessagePair {
+    /// 对方用户ID 或 群聊ID
+    pub id: u32,
+    pub message: SessionMessage,
+}

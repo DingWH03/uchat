@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use aws_sdk_s3::config::Builder as S3ConfigBuilder;
 use aws_sdk_s3::config::Credentials;
 use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::types::Bucket;
 use aws_sdk_s3::{Client, config::Region};
 use log::info;
 

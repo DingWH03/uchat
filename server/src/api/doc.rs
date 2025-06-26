@@ -32,8 +32,18 @@ use crate::api::handler::request::group::join_group::__path_handle_join_group;
 use crate::api::handler::request::group::leave_group::__path_handle_leave_group;
 use crate::api::handler::request::group::list_group::__path_handle_list_group;
 use crate::api::handler::request::group::members_group::__path_handle_members_group;
-use crate::api::handler::request::message::group_message::__path_handle_get_group_message;
-use crate::api::handler::request::message::session_message::__path_handle_get_session_message;
+use crate::api::handler::request::message::group::__path_handle_get_group_message;
+use crate::api::handler::request::message::group::__path_handle_get_all_group_messages_after_timestamp;
+use crate::api::handler::request::message::group::__path_handle_get_group_messages_after_timestamp;
+use crate::api::handler::request::message::group::__path_handle_get_latest_timestamp_of_all_group_messages;
+use crate::api::handler::request::message::group::__path_handle_get_latest_timestamp_of_group;
+use crate::api::handler::request::message::group::__path_handle_get_latest_timestamps_of_all_groups;
+use crate::api::handler::request::message::private::__path_handle_get_session_message;
+use crate::api::handler::request::message::private::__path_handle_get_all_private_messages_after_timestamp;
+use crate::api::handler::request::message::private::__path_handle_get_latest_timestamp_of_all_private_messages;
+use crate::api::handler::request::message::private::__path_handle_get_latest_timestamp_with_user;
+use crate::api::handler::request::message::private::__path_handle_get_latest_timestamps_of_all_private_chats;
+use crate::api::handler::request::message::private::__path_handle_get_private_messages_after_timestamp;
 use crate::api::handler::request::user::me::__path_handle_delete_me;
 use crate::api::handler::request::user::me::__path_handle_get_me;
 use crate::api::handler::request::user::me::__path_handle_patch_me;
@@ -56,7 +66,15 @@ use utoipa::OpenApi;
         handle_info_friend, handle_add_friend, handle_list_friend, handle_list_friend_with_status, handle_get_status_by_userid, 
         handle_creat_group, handle_info_group, handle_join_group, handle_leave_group, handle_list_group, handle_members_group,
         // 下面都是manager接口，即必须管理员权限才能访问的api
+        // ----------------message----------------
         handle_get_group_message, handle_get_session_message,
+        handle_get_all_private_messages_after_timestamp, handle_get_latest_timestamp_of_all_private_messages,
+        handle_get_latest_timestamp_with_user, handle_get_latest_timestamps_of_all_private_chats,
+        handle_get_private_messages_after_timestamp,
+        handle_get_group_messages_after_timestamp, handle_get_all_group_messages_after_timestamp,
+        handle_get_latest_timestamp_of_all_group_messages, handle_get_latest_timestamp_of_group,
+        handle_get_latest_timestamps_of_all_groups,
+        // ----------------user----------------
         handle_tree_online, handle_delete_session, 
         handle_delete_message, handle_get_message, handle_get_recent_messages, handle_get_user_recent_messages,
         handle_user_get_count, handle_delete_user, handle_get_userinfo, handle_delete_friendship, handle_get_friends, handle_list_user, handle_change_role

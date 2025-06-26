@@ -12,7 +12,7 @@ use async_trait::async_trait;
 use crate::{
     db::error::DBError,
     protocol::{
-        request::{PatchUserRequest, UpdateUserRequest}, FullPrivateMessage, GroupDetailedInfo, GroupSimpleInfo, ManagerUserSimpleInfo, MessageType, PreviewPrivateMessage, RoleType, SessionMessage, UpdateTimestamps, UserDetailedInfo, UserSimpleInfo
+        request::{PatchUserRequest, UpdateUserRequest}, FullPrivateMessage, GroupDetailedInfo, GroupSimpleInfo, IdMessagePair, ManagerUserSimpleInfo, MessageType, PreviewPrivateMessage, RoleType, SessionMessage, UpdateTimestamps, UserDetailedInfo, UserSimpleInfo
     },
 };
 
@@ -163,7 +163,7 @@ pub trait MessageDB: Send + Sync {
         &self,
         user_id: u32,
         after: i64,
-    ) -> Result<Vec<(u32, SessionMessage)>, DBError>;
+    ) -> Result<Vec<IdMessagePair>, DBError>;
     /// 获取与某个用户的最后一条私聊消息时间戳
     async fn get_latest_timestamp_with_user(
         &self,
@@ -192,7 +192,7 @@ pub trait MessageDB: Send + Sync {
         &self,
         user_id: u32,
         after: i64,
-    ) -> Result<Vec<(u32, SessionMessage)>, DBError>;
+    ) -> Result<Vec<IdMessagePair>, DBError>;
 }
 
 #[async_trait]

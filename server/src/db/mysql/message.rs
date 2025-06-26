@@ -1,7 +1,7 @@
 use super::MysqlDB;
 use crate::{
     db::{MessageDB, error::DBError},
-    protocol::{GroupSessionMessage, MessageType, SessionMessage},
+    protocol::{GroupSessionMessage, MessageType, SessionMessage, IdMessagePair},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -264,7 +264,7 @@ impl MessageDB for MysqlDB {
         &self,
         user_id: u32,
         after: i64,
-    ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
+    ) -> Result<Vec<IdMessagePair>, DBError> {
         let rows = sqlx::query_as!(
             GroupSessionMessage,
             r#"
@@ -287,16 +287,14 @@ impl MessageDB for MysqlDB {
 
         Ok(rows
             .into_iter()
-            .map(|row| {
-                (
-                    row.group_id,
-                    SessionMessage {
-                        sender_id: row.sender_id,
-                        timestamp: row.timestamp,
-                        message: row.message,
-                    },
-                )
-            })
+            .map(|r| IdMessagePair {
+            id: r.group_id,
+            message: SessionMessage {
+                sender_id: r.sender_id,
+                timestamp: r.timestamp,
+                message: r.message,
+            },
+        })
             .collect())
     }
     /// 获取与某个用户的最后一条私聊消息时间戳
@@ -407,7 +405,7 @@ impl MessageDB for MysqlDB {
         &self,
         user_id: u32,
         after: i64,
-    ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
+    ) -> Result<Vec<IdMessagePair>, DBError> {
         let rows = sqlx::query!(
             r#"
         SELECT
@@ -432,15 +430,13 @@ impl MessageDB for MysqlDB {
 
         Ok(rows
             .into_iter()
-            .map(|r| {
-                (
-                    r.peer_id,
-                    SessionMessage {
-                        sender_id: r.sender_id,
-                        timestamp: r.timestamp,
-                        message: r.message,
-                    },
-                )
+                .map(|r| IdMessagePair {
+                id: r.peer_id,
+                message: SessionMessage {
+                    sender_id: r.sender_id,
+                    timestamp: r.timestamp,
+                    message: r.message,
+                },
             })
             .collect())
     }

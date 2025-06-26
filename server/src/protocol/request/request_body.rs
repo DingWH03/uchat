@@ -59,3 +59,8 @@ pub struct PatchUserRequest {
 pub struct CheckStatusRequest {
     pub user_ids: Vec<u32>, // 用户ID列表
 }
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct AfterTimestampQuery {
+    pub timestamp: i64,
+}
