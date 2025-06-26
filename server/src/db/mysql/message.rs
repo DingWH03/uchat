@@ -27,7 +27,7 @@ impl MessageDB for MysqlDB {
         sqlx::query!(
             r#"
         INSERT INTO messages (sender_id, receiver_id, message_type, message, timestamp)
-        VALUES (?, ?, ?, ?, FROM_UNIXTIME(?))
+        VALUES (?, ?, ?, ?, ?)
         "#,
             sender,
             receiver,
@@ -76,7 +76,7 @@ impl MessageDB for MysqlDB {
         sqlx::query!(
             r#"
         INSERT INTO ugroup_messages (group_id, sender_id, message, timestamp)
-        VALUES (?, ?, ?, FROM_UNIXTIME(?))
+        VALUES (?, ?, ?, ?)
         "#,
             group_id,
             sender,
