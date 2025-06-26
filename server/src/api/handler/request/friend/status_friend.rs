@@ -4,13 +4,16 @@ use log::{debug};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 
-use crate::{protocol::{request::RequestResponse, Empty, UserStatus}, server::AppState};
+use crate::{protocol::{request::{CheckStatusRequest, RequestResponse}, Empty, UserStatus}, server::AppState};
 
 
 /// 使用好友id批量查询好友在线情况
 #[utoipa::path(
     get,
     path = "/friend/status",
+    params(
+        CheckStatusRequest
+    ),
     responses(
         (status = 200, description = "获取成功", body = RequestResponse<Vec<UserStatus>>),
         (status = 401, description = "认证失败", body = RequestResponse<Empty>),
@@ -21,7 +24,7 @@ use crate::{protocol::{request::RequestResponse, Empty, UserStatus}, server::App
 pub async fn handle_get_status_by_userid(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
-    Query(user_ids): Query<Vec<u32>>,
+    Query(user_ids): Query<CheckStatusRequest>,
 ) -> impl IntoResponse {
     debug!("处理获取好友列表请求");
     
@@ -40,5 +43,5 @@ pub async fn handle_get_status_by_userid(
         }
     };
 
-    request_lock.get_status_by_userids(&user_ids).await.into_response()
+    request_lock.get_status_by_userids(&user_ids.user_ids).await.into_response()
 }

@@ -54,3 +54,8 @@ pub struct UpdateUserRequest {
 pub struct PatchUserRequest {
     pub username: Option<String>,
 }
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct CheckStatusRequest {
+    pub user_ids: Vec<u32>, // 用户ID列表
+}
