@@ -48,6 +48,11 @@ impl SenderStore {
     }
 
     pub fn remove(&self, session_id: &str) -> Option<UnboundedSender<Message>> {
+        if let Some(sender) = self.inner.get(session_id) {
+            // 尝试发送关闭消息
+            let _ = sender.send(Message::Close(None));
+        }
+        // 移除并返回
         self.inner.remove(session_id).map(|(_, sender)| sender)
     }
 
