@@ -7,6 +7,6 @@ pub fn router() -> Router {
         .route("/list", get(handler::request::friend::list_friend::handle_list_friend))
         .route("/listv2", get(handler::request::friend::list_friend::handle_list_friend_with_status))
         .route("/info", get(handler::request::friend::info_friend::handle_info_friend))
-        .route("/status", get(handler::request::friend::status_friend::handle_get_status_by_userid))
+        .route("/status", post(handler::request::friend::status_friend::handle_get_status_by_userid))
         
 }

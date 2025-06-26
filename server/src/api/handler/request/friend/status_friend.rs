@@ -1,4 +1,4 @@
-use axum::{extract::Query, response::IntoResponse, Extension};
+use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use log::{debug};
 
 use axum_extra::extract::TypedHeader;
@@ -9,11 +9,9 @@ use crate::{protocol::{request::{CheckStatusRequest, RequestResponse}, Empty, Us
 
 /// 使用好友id批量查询好友在线情况
 #[utoipa::path(
-    get,
+    post,
     path = "/friend/status",
-    params(
-        CheckStatusRequest
-    ),
+    request_body = CheckStatusRequest,
     responses(
         (status = 200, description = "获取成功", body = RequestResponse<Vec<UserStatus>>),
         (status = 401, description = "认证失败", body = RequestResponse<Empty>),
@@ -24,7 +22,7 @@ use crate::{protocol::{request::{CheckStatusRequest, RequestResponse}, Empty, Us
 pub async fn handle_get_status_by_userid(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
-    Query(user_ids): Query<CheckStatusRequest>,
+    Json(user_ids): Json<CheckStatusRequest>,
 ) -> impl IntoResponse {
     debug!("处理获取好友列表请求");
     
