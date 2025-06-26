@@ -24,7 +24,7 @@ pub async fn handle_get_status_by_userid(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(user_ids): Json<CheckStatusRequest>,
 ) -> impl IntoResponse {
-    debug!("处理获取好友列表请求");
+    debug!("处理获取好友在线状态请求: {:?}", user_ids);
     
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
