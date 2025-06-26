@@ -22,7 +22,7 @@ impl MessageDB for MysqlDB {
         message_type: MessageType,
         message: &str,
     ) -> Result<i64, DBError> {
-        let now_ts = Utc::now().timestamp();
+        let now_ts = Utc::now().timestamp_millis(); // 毫秒级时间戳
 
         sqlx::query!(
             r#"
@@ -71,7 +71,7 @@ impl MessageDB for MysqlDB {
         sender: u32,
         message: &str,
     ) -> Result<i64, DBError> {
-        let timestamp = Utc::now().timestamp(); // 秒级时间戳
+        let now_ts = Utc::now().timestamp_millis(); // 毫秒级时间戳
 
         sqlx::query!(
             r#"
