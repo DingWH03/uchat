@@ -91,16 +91,16 @@ impl Request {
 
     /// 发送给用户所有的 WebSocket 连接（v2版）
     /// 发送给用户所有的 WebSocket 连接（v2版，支持二进制消息以提升效率）
-    pub async fn send_to_user_v2(&self, sender_session_id: &str, receiver_id: u32, msg: &str) {
+    pub async fn send_to_user_v2(&self, sender_session_id: &str, receiver_id: u32, msg: &str) -> i64 {
         let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
             warn!(
                 "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
                 sender_session_id
             );
-            return;
+            return 0;
         };
         // 存储到数据库中
-        match self
+         let timestamp = match self
             .db
             .add_message(sender_id, receiver_id, MessageType::Text, msg)
             .await
@@ -108,21 +108,23 @@ impl Request {
             // 新增了消息类型枚举，先在这挖一个坑
             Ok(message_id) => {
                 debug!(
-                    "用户 {} 发送私聊消息给用户 {} 成功，消息ID: {}",
+                    "用户 {} 发送私聊消息给用户 {} 成功，消息timestamp: {}",
                     sender_id, receiver_id, message_id
                 );
+                message_id
             }
             Err(e) => {
                 error!(
                     "用户 {} 发送私聊消息给用户 {} 失败: {:?}",
                     sender_id, receiver_id, e
                 );
-                return; // 如果数据库操作失败，直接返回
+                return 0; // 如果数据库操作失败，直接返回
             }
-        }
+        };
         let server_message = ServerMessage::SendMessage {
             sender: sender_id,
             message: msg.to_string(),
+            timestamp,
         };
         // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
         // let bin = match serde_json::to_vec(&server_message) {
@@ -142,7 +144,7 @@ impl Request {
             Ok(data) => data,
             Err(e) => {
                 error!("序列化消息为JSON失败: {:?}", e);
-                return;
+                return 0;
             }
         };
         self.send_to_user(
@@ -150,6 +152,7 @@ impl Request {
             Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
         )
         .await;
+        timestamp
     }
 
     /// 根据群号发送群消息
@@ -189,31 +192,33 @@ impl Request {
     /// 根据群号发送群消息
     /// 如果群组不存在或发送失败，返回 false
     /// 先读取群聊成员列表，然后发送消息给每个成员
-    pub async fn send_to_group_v2(&self, sender_session_id: &str, group_id: u32, msg: &str) {
+    pub async fn send_to_group_v2(&self, sender_session_id: &str, group_id: u32, msg: &str) -> i64 {
         let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
             warn!(
                 "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
                 sender_session_id
             );
-            return;
+            return 0;
         };
         // 存储到数据库中
-        match self.db.add_group_message(group_id, sender_id, msg).await {
+        let timestamp = match self.db.add_group_message(group_id, sender_id, msg).await {
             Ok(message_id) => {
                 debug!(
-                    "用户 {} 发送群消息给 {} 成功，消息ID: {}",
+                    "用户 {} 发送群消息给 {} 成功，消息timestamp: {}",
                     sender_id, group_id, message_id
                 );
+                message_id
             }
             Err(e) => {
                 error!("用户 {} 发送群消息给 {} 失败: {:?}", sender_id, group_id, e);
-                return; // 如果数据库操作失败，直接返回
+                return 0; // 如果数据库操作失败，直接返回
             }
-        }
+        };
         let server_message = ServerMessage::SendGroupMessage {
             sender: sender_id,
             group_id,
             message: msg.to_string(),
+            timestamp,
         };
         // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
         // let bin = match serde_json::to_vec(&server_message) {
@@ -229,7 +234,7 @@ impl Request {
             Ok(data) => data,
             Err(e) => {
                 error!("序列化消息为JSON失败: {:?}", e);
-                return;
+                return 0;
             }
         };
         // let json =
@@ -239,6 +244,7 @@ impl Request {
             Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
         )
         .await;
+    timestamp
     }
 
     /// 通过session_id查询用户ID

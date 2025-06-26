@@ -8,7 +8,6 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
 
 use crate::{
     db::error::DBError,
@@ -98,14 +97,14 @@ pub trait GroupDB: Send + Sync {
 
 #[async_trait]
 pub trait MessageDB: Send + Sync {
-    /// 添加私聊信息聊天记录，返回消息的自增 ID
+    /// 添加私聊信息聊天记录，返回消息的timestamp
     async fn add_message(
         &self,
         sender: u32,
         receiver: u32,
         message_type: MessageType,
         message: &str,
-    ) -> Result<u64, DBError>;
+    ) -> Result<i64, DBError>;
     /// 添加离线消息记录
     async fn add_offline_message(
         &self,
@@ -114,13 +113,13 @@ pub trait MessageDB: Send + Sync {
         message_id: Option<u64>,
         group_message_id: Option<u64>,
     ) -> Result<(), DBError>;
-    /// 添加群聊信息聊天记录
+    /// 添加群聊信息聊天记录，返回消息的timestamp
     async fn add_group_message(
         &self,
         group_id: u32,
         sender: u32,
         message: &str,
-    ) -> Result<u64, DBError>;
+    ) -> Result<i64, DBError>;
     /// 获取私聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
@@ -142,57 +141,57 @@ pub trait MessageDB: Send + Sync {
     async fn get_latest_timestamp_of_group(
         &self,
         group_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError>;
+    ) -> Result<Option<i64>, DBError>;
     /// 用户加入群聊的所有的群消息最后的时间戳
     async fn get_latest_timestamps_of_all_groups(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>, DBError>;
+    ) -> Result<HashMap<u32, i64>, DBError>;
     /// 当前用户所有群聊中最新的一条消息的时间戳（全局最大）
     async fn get_latest_timestamp_of_all_group_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError>;
+    ) -> Result<Option<i64>, DBError>;
     /// 某个群某时间之后的消息
     async fn get_group_messages_after_timestamp(
         &self,
         group_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<SessionMessage>, DBError>;
     // 当前用户所有群某时间之后的消息
     async fn get_all_group_messages_after_timestamp(
         &self,
         user_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<(u32, SessionMessage)>, DBError>;
     /// 获取与某个用户的最后一条私聊消息时间戳
     async fn get_latest_timestamp_with_user(
         &self,
         user1_id: u32,
         user2_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError>;
+    ) -> Result<Option<i64>, DBError>;
     /// 获取当前用户所有私聊会话的最后时间戳（按对方用户 ID 映射）
     async fn get_latest_timestamps_of_all_private_chats(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>, DBError>;
+    ) -> Result<HashMap<u32, i64>, DBError>;
     /// 获取当前用户所有私聊中最新的一条消息时间戳（全局最大）
     async fn get_latest_timestamp_of_all_private_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError>;
+    ) -> Result<Option<i64>, DBError>;
     /// 获取与某个用户某时间之后的聊天记录（时间递增）
     async fn get_private_messages_after_timestamp(
         &self,
         user1_id: u32,
         user2_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<SessionMessage>, DBError>;
     /// 获取所有私聊消息中某时间之后的所有聊天记录（带对方 ID）
     async fn get_all_private_messages_after_timestamp(
         &self,
         user_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<(u32, SessionMessage)>, DBError>;
 }
 

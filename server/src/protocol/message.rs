@@ -19,11 +19,13 @@ pub enum ServerMessage {
     SendMessage {
         sender: u32,
         message: String,
+        timestamp: i64, // 使用 i64 存储时间戳，单位为秒
     },
     SendGroupMessage {
         sender: u32,
         group_id: u32,
         message: String,
+        timestamp: i64, // 使用 i64 存储时间戳，单位为秒
     },
     OnlineMessage {
         friend_id: u32

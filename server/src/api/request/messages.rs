@@ -7,7 +7,6 @@ use crate::{
     db::error::DBError,
     protocol::{SessionMessage, request::RequestResponse},
 };
-use chrono::NaiveDateTime;
 use log::error;
 
 impl Request {
@@ -44,21 +43,21 @@ impl Request {
     pub async fn get_latest_timestamp_of_group(
         &self,
         group_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         self.db.get_latest_timestamp_of_group(group_id).await
     }
     /// 获取用户所有群聊最新一条消息时间戳
     pub async fn get_latest_timestamps_of_all_groups(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
+    ) -> Result<HashMap<u32, i64>, DBError> {
         self.db.get_latest_timestamps_of_all_groups(user_id).await
     }
     /// 当前用户所有群聊中最新的一条消息的时间戳（全局最大）
     pub async fn get_latest_timestamp_of_all_group_messages(
         &self,
         group_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         self.db
             .get_latest_timestamp_of_all_group_messages(group_id)
             .await
@@ -67,7 +66,7 @@ impl Request {
     pub async fn get_group_messages_after_timestamp(
         &self,
         group_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<SessionMessage>, DBError> {
         self.db
             .get_group_messages_after_timestamp(group_id, after)
@@ -77,7 +76,7 @@ impl Request {
     pub async fn get_all_group_messages_after_timestamp(
         &self,
         user_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
         self.db
             .get_all_group_messages_after_timestamp(user_id, after)
@@ -88,7 +87,7 @@ impl Request {
         &self,
         my_id: u32,
         friend_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         self.db
             .get_latest_timestamp_with_user(my_id, friend_id)
             .await
@@ -97,7 +96,7 @@ impl Request {
     pub async fn get_latest_timestamps_of_all_private_chats(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
+    ) -> Result<HashMap<u32, i64>, DBError> {
         self.db
             .get_latest_timestamps_of_all_private_chats(user_id)
             .await
@@ -106,7 +105,7 @@ impl Request {
     pub async fn get_latest_timestamp_of_all_private_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         self.db
             .get_latest_timestamp_of_all_private_messages(user_id)
             .await
@@ -116,7 +115,7 @@ impl Request {
         &self,
         my_id: u32,
         friend_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<SessionMessage>, DBError> {
         self.db
             .get_private_messages_after_timestamp(my_id, friend_id, after)
@@ -126,7 +125,7 @@ impl Request {
     pub async fn get_all_private_messages_after_timestamp(
         &self,
         user_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
         self.db
             .get_all_private_messages_after_timestamp(user_id, after)

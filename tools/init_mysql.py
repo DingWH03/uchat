@@ -57,7 +57,7 @@ SQL_QUERIES = [
         receiver_id INT UNSIGNED NOT NULL,
         message_type ENUM('text', 'image', 'file', 'video', 'audio') NOT NULL,
         message TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        timestamp BIGINT DEFAULT 0 NOT NULL, -- 使用 BIGINT 存储时间戳，单位为秒
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
 
@@ -113,7 +113,7 @@ SQL_QUERIES = [
         group_id INT UNSIGNED NOT NULL,
         sender_id INT UNSIGNED NOT NULL,
         message TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        timestamp BIGINT DEFAULT 0 NOT NULL,
         FOREIGN KEY (group_id) REFERENCES ugroups(id) ON DELETE CASCADE,
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
 

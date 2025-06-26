@@ -1,36 +1,44 @@
-use std::collections::HashMap;
-
-use crate::{db::{error::DBError, MessageDB}, protocol::{GroupSessionMessage, MessageType, SessionMessage}};
 use super::MysqlDB;
+use crate::{
+    db::{MessageDB, error::DBError},
+    protocol::{GroupSessionMessage, MessageType, SessionMessage},
+};
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::Utc;
+use std::collections::HashMap;
 
 #[async_trait]
-impl MessageDB for MysqlDB{
-
-    /// 添加私聊信息聊天记录，返回消息的自增 ID
+impl MessageDB for MysqlDB {
+    /// 添加私聊信息聊天记录，返回消息的时间戳
+    /// 注意：这里的时间戳是秒级别的，返回值是 u64 类型
+    /// 发送者和接收者的 ID 都是 u32 类型
+    /// 消息类型是 MessageType 枚举，消息内容是字符串
+    /// 该函数会将消息插入到 messages 表中，并返回当前的时间
     async fn add_message(
         &self,
         sender: u32,
         receiver: u32,
         message_type: MessageType,
         message: &str,
-    ) -> Result<u64, DBError> {
-        let result = sqlx::query!(
+    ) -> Result<i64, DBError> {
+        let now_ts = Utc::now().timestamp();
+
+        sqlx::query!(
             r#"
-            INSERT INTO messages (sender_id, receiver_id, message_type, message)
-            VALUES (?, ?, ?, ?)
-            "#,
+        INSERT INTO messages (sender_id, receiver_id, message_type, message, timestamp)
+        VALUES (?, ?, ?, ?, FROM_UNIXTIME(?))
+        "#,
             sender,
             receiver,
             message_type as MessageType,
-            message
+            message,
+            now_ts
         )
         .execute(&self.pool)
         .await?;
 
-        Ok(result.last_insert_id())
+        Ok(now_ts)
     }
 
     /// 添加离线消息记录
@@ -54,25 +62,31 @@ impl MessageDB for MysqlDB{
 
         Ok(())
     }
-
-    /// 添加群聊信息聊天记录
+    /// 添加群聊消息记录，返回消息的时间戳
+    /// 注意：这里的时间戳是秒级别的，返回值是 u64 类型
+    /// 群聊 ID 是 u32 类型，发送者 ID 是 u32 类型，消息内容是字符串
     async fn add_group_message(
         &self,
         group_id: u32,
         sender: u32,
         message: &str,
-    ) -> Result<u64, DBError> {
-        let result = sqlx::query!(
-            "INSERT INTO ugroup_messages (group_id, sender_id, message)
-            VALUES (?, ?, ?)",
+    ) -> Result<i64, DBError> {
+        let timestamp = Utc::now().timestamp(); // 秒级时间戳
+
+        sqlx::query!(
+            r#"
+        INSERT INTO ugroup_messages (group_id, sender_id, message, timestamp)
+        VALUES (?, ?, ?, FROM_UNIXTIME(?))
+        "#,
             group_id,
             sender,
-            message
+            message,
+            timestamp
         )
         .execute(&self.pool)
         .await?;
 
-        Ok(result.last_insert_id())
+        Ok(timestamp)
     }
 
     /// 获取私聊聊天记录
@@ -95,7 +109,7 @@ impl MessageDB for MysqlDB{
             r#"
             SELECT 
                 sender_id AS `sender_id!`,
-                `timestamp` AS `timestamp!: NaiveDateTime`,
+                `timestamp`,
                 message AS `message!`
             FROM messages
             WHERE 
@@ -136,7 +150,7 @@ impl MessageDB for MysqlDB{
             r#"
             SELECT
                 sender_id as `sender_id!`,
-                `timestamp` as `timestamp!: NaiveDateTime`,
+                `timestamp`,
                 message     as `message!`
             FROM ugroup_messages
             WHERE group_id = ?
@@ -157,10 +171,10 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamp_of_group(
         &self,
         group_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
-        let ts: Option<NaiveDateTime> = sqlx::query_scalar!(
+    ) -> Result<Option<i64>, DBError> {
+        let ts: Option<i64> = sqlx::query_scalar!(
             r#"
-            SELECT `timestamp` as "timestamp: NaiveDateTime"
+            SELECT `timestamp`
             FROM ugroup_messages
             WHERE group_id = ?
             ORDER BY `timestamp` DESC
@@ -169,21 +183,21 @@ impl MessageDB for MysqlDB{
             group_id
         )
         .fetch_optional(&self.pool)
-        .await?
-        .flatten();
+        .await?;
 
         Ok(ts)
     }
+
     /// 用户加入群聊的所有的群消息最后的时间戳
     async fn get_latest_timestamps_of_all_groups(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
+    ) -> Result<HashMap<u32, i64>, DBError> {
         let result = sqlx::query!(
             r#"
             SELECT
                 m.group_id,
-                MAX(m.`timestamp`) as "timestamp: NaiveDateTime"
+                MAX(m.`timestamp`) as `timestamp`
             FROM ugroup_messages m
             JOIN group_members um ON um.group_id = m.group_id
             WHERE um.user_id = ?
@@ -203,10 +217,10 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamp_of_all_group_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         let ts = sqlx::query_scalar!(
             r#"
-            SELECT MAX(m.`timestamp`) as "timestamp: NaiveDateTime"
+            SELECT MAX(m.`timestamp`)
             FROM ugroup_messages m
             JOIN group_members gm ON m.group_id = gm.group_id
             WHERE gm.user_id = ?
@@ -223,14 +237,14 @@ impl MessageDB for MysqlDB{
     async fn get_group_messages_after_timestamp(
         &self,
         group_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<SessionMessage>, DBError> {
         let msgs = sqlx::query_as!(
             SessionMessage,
             r#"
             SELECT
                 sender_id as "sender_id!",
-                `timestamp` as "timestamp!: NaiveDateTime",
+                `timestamp`,
                 message as "message!"
             FROM ugroup_messages
             WHERE group_id = ?
@@ -249,7 +263,7 @@ impl MessageDB for MysqlDB{
     async fn get_all_group_messages_after_timestamp(
         &self,
         user_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
         let rows = sqlx::query_as!(
             GroupSessionMessage,
@@ -257,7 +271,7 @@ impl MessageDB for MysqlDB{
             SELECT
                 m.group_id as `group_id!`,
                 m.sender_id as `sender_id!`,
-                m.`timestamp` as `timestamp!: NaiveDateTime`,
+                m.`timestamp`,
                 m.message as `message!`
             FROM ugroup_messages m
             JOIN group_members um ON m.group_id = um.group_id
@@ -290,10 +304,10 @@ impl MessageDB for MysqlDB{
         &self,
         user1_id: u32,
         user2_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         let ts = sqlx::query_scalar!(
             r#"
-        SELECT MAX(`timestamp`) as "timestamp: NaiveDateTime"
+        SELECT MAX(`timestamp`)
         FROM messages
         WHERE (sender_id = ? AND receiver_id = ?)
            OR (sender_id = ? AND receiver_id = ?)
@@ -313,7 +327,7 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamps_of_all_private_chats(
         &self,
         user_id: u32,
-    ) -> Result<HashMap<u32, NaiveDateTime>, DBError> {
+    ) -> Result<HashMap<u32, i64>, DBError> {
         let rows = sqlx::query!(
             r#"
         SELECT
@@ -321,7 +335,7 @@ impl MessageDB for MysqlDB{
                 WHEN sender_id = ? THEN receiver_id
                 ELSE sender_id
             END as peer_id,
-            MAX(`timestamp`) as "timestamp: NaiveDateTime"
+            MAX(`timestamp`) as `timestamp`
         FROM messages
         WHERE sender_id = ? OR receiver_id = ?
         GROUP BY peer_id
@@ -342,10 +356,10 @@ impl MessageDB for MysqlDB{
     async fn get_latest_timestamp_of_all_private_messages(
         &self,
         user_id: u32,
-    ) -> Result<Option<NaiveDateTime>, DBError> {
+    ) -> Result<Option<i64>, DBError> {
         let ts = sqlx::query_scalar!(
             r#"
-        SELECT MAX(`timestamp`) as "timestamp: NaiveDateTime"
+        SELECT MAX(`timestamp`) as `timestamp`
         FROM messages
         WHERE sender_id = ? OR receiver_id = ?
         "#,
@@ -363,14 +377,14 @@ impl MessageDB for MysqlDB{
         &self,
         user1_id: u32,
         user2_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<SessionMessage>, DBError> {
         let rows = sqlx::query_as!(
             SessionMessage,
             r#"
         SELECT
             sender_id as "sender_id!",
-            `timestamp` as "timestamp!: NaiveDateTime",
+            `timestamp`,
             message as "message!"
         FROM messages
         WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
@@ -392,7 +406,7 @@ impl MessageDB for MysqlDB{
     async fn get_all_private_messages_after_timestamp(
         &self,
         user_id: u32,
-        after: NaiveDateTime,
+        after: i64,
     ) -> Result<Vec<(u32, SessionMessage)>, DBError> {
         let rows = sqlx::query!(
             r#"
@@ -402,7 +416,7 @@ impl MessageDB for MysqlDB{
                 ELSE sender_id
             END as peer_id,
             sender_id as "sender_id!",
-            `timestamp` as "timestamp!: NaiveDateTime",
+            `timestamp`,
             message as "message!"
         FROM messages
         WHERE (sender_id = ? OR receiver_id = ?) AND `timestamp` > ?

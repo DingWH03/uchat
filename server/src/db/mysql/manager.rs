@@ -144,7 +144,7 @@ impl ManagerDB for MysqlDB {
         match row {
             Some(row) => {
                 let message_type = row.message_type.parse().map_err(|_| DBError::Other("Invalid message_type".into()))?;
-                let timestamp = row.timestamp.ok_or(DBError::Other("Missing timestamp".into()))?;
+                let timestamp = row.timestamp;
                 Ok(FullPrivateMessage {
                     id: row.id,
                     sender_id: row.sender_id,

@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-use chrono::NaiveDateTime;
 use sqlx::Type;
 use utoipa::ToSchema;
 use std::str::FromStr;
@@ -48,16 +47,14 @@ pub struct GroupDetailedInfo {
 pub struct SessionMessage {
     pub sender_id: u32,
     pub message: String,
-    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
-    pub timestamp: NaiveDateTime,
+    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
 }
 
  #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct GroupSessionMessage {
     pub group_id: u32,
     pub sender_id: u32,
-    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
-    pub timestamp: NaiveDateTime,
+    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
     pub message: String,
 }
 
@@ -71,8 +68,7 @@ pub struct PreviewPrivateMessage {
     pub receiver_username: String,
     pub message_type: MessageType,        // 可改为 enum 类型（如 MessageType 枚举）更安全
     pub message_preview: String,     // message 前 100 字符
-    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
-    pub timestamp: NaiveDateTime,
+    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
@@ -84,8 +80,7 @@ pub struct FullPrivateMessage {
     pub receiver_username: String,
     pub message_type: MessageType,
     pub message: String, // 完整消息内容
-    #[schema(example = "2025-06-20T15:30:00", value_type = String)]
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
 }
 
 
