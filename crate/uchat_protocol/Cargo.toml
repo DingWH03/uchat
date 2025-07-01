@@ -1,0 +1,16 @@
+[package]
+name = "uchat_protocol"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = "1.0.219"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "macros"] }
+utoipa = "5.4.0"
+axum = "0.8.4"
+chrono = { version = "0.4.41", features = ["serde"] }
+
+[features]
+default = ["mysql"]
+mysql = []
+postgres = []

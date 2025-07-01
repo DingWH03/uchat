@@ -123,31 +123,6 @@ SQL_QUERIES = [
     );
     """,
 
-    # 离线消息表（支持私聊和群聊）
-    """
-    CREATE TABLE IF NOT EXISTS offline_messages (
-        id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-        receiver_id INT UNSIGNED NOT NULL,
-        is_group BOOLEAN NOT NULL DEFAULT FALSE,
-        message_id INT UNSIGNED DEFAULT NULL,
-        group_message_id INT UNSIGNED DEFAULT NULL,
-        delivered BOOLEAN DEFAULT FALSE,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-        FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
-        FOREIGN KEY (group_message_id) REFERENCES ugroup_messages(id) ON DELETE CASCADE,
-
-        CHECK (
-            (is_group = FALSE AND message_id IS NOT NULL AND group_message_id IS NULL) OR
-            (is_group = TRUE AND group_message_id IS NOT NULL AND message_id IS NULL)
-        ),
-
-        -- 索引优化：推送离线消息
-        INDEX idx_receiver_undelivered (receiver_id, delivered, is_group, timestamp)
-    );
-    """,
-
     # 聊天记录视图
     """
     CREATE VIEW recent_private_messages_view AS

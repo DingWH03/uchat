@@ -3948,9 +3948,21 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
+ "uchat_protocol",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
+]
+
+[[package]]
+name = "uchat_protocol"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "serde",
+ "sqlx",
+ "utoipa",
 ]
 
 [[package]]

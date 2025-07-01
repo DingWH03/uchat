@@ -1,7 +1,8 @@
 [workspace]
-resolver = "2" 
+resolver = "3" 
 members = [
-    "server",            # 服务端
-    "client", 
+    "bin/server",            # 服务端
+    "bin/client", 
+    "crate/uchat_protocol", 
 ]
 

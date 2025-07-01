@@ -1,0 +1,52 @@
+[package]
+name = "uchat-server"
+version = "0.1.0"
+edition = "2024"
+authors = ["DingVero <DingVero@outlook.com>"]
+build = "build.rs"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true  # 自动剥离调试信息
+
+
+[build-dependencies]
+chrono = { version = "0.4.41", features = ["serde"] }
+toml="0.8.23"
+
+[dependencies]
+uchat_protocol = { path="../../crate/uchat_protocol" }
+anyhow = "1.0.98"
+async-trait = "0.1.88"
+axum = { version = "0.8.4", features = ["form", "http1", "json", "matched-path", "original-uri", "query", "tokio", "tower-log", "tracing", "macros", "ws", "multipart"] }
+axum-extra = { version = "0.10.1", features = ["typed-header", "cookie"] }
+bcrypt = "0.17.0"
+chrono = { version = "0.4.41", features = ["serde"] }
+dotenv = "0.15.0"
+env_logger = "0.11.8"
+futures = "0.3.31"
+headers = "0.4.1"
+log = "0.4.27"
+serde = "1.0.219"
+serde_json = "1.0.140"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "macros", "chrono"] }
+thiserror = "2.0.12"
+tokio = { version = "1.45.1", features = ["rt-multi-thread"] }
+uuid = { version = "1.17.0", features = ["v7"] }
+utoipa = { version = "5.4.0", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"], optional = true }
+redis = { version = "0.32.2", features = ["aio", "tokio-comp", "safe_iterators"], optional = true}
+bb8-redis = { version = "0.24.0", optional = true }
+bb8 = { version = "0.9.0", optional = true } 
+dashmap = { version = "6.1.0", features = ["serde"] }
+bytes = "1.10.1"
+aws-sdk-s3 = "1.93.0"
+aws-config = "1.8.0"
+
+[features]
+default = ["mysql", "swagger", "redis-support"]
+mysql = ["sqlx/mysql"]
+postgres = ["sqlx/postgres"]
+redis-support = ["redis", "bb8-redis", "bb8"]
+swagger = ["utoipa-swagger-ui"]                                                                
