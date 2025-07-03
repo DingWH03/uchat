@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            SELECT MAX(m.`timestamp`)\n            FROM ugroup_messages m\n            JOIN group_members gm ON m.group_id = gm.group_id\n            WHERE gm.user_id = ?\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "MAX(m.`timestamp`)",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 20
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "eef700396fd73905661d60ea53e279d58d8fddf4e8a3edbd3085391136cd0911"
+}

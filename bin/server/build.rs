@@ -2,6 +2,7 @@ use std::{fs, path::Path};
 use toml::Value;
 
 fn main() {
+    println!("cargo:rustc-env=SQLX_OFFLINE=true");  // sqlx本地化编译
     // 读取 Cargo.toml
     let manifest_path = Path::new("Cargo.toml");
     let content = fs::read_to_string(manifest_path).expect("无法读取 Cargo.toml");

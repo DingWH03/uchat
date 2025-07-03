@@ -45,6 +45,8 @@ pub struct GroupDetailedInfo {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct SessionMessage {
+    pub message_id: u32,
+    pub message_type: MessageType, // enum 类型更安全
     pub sender_id: u32,
     pub message: String,
     pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
@@ -52,6 +54,8 @@ pub struct SessionMessage {
 
  #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct GroupSessionMessage {
+    pub message_id: u32,
+    pub message_type: MessageType, // enum 类型更安全
     pub group_id: u32,
     pub sender_id: u32,
     pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒

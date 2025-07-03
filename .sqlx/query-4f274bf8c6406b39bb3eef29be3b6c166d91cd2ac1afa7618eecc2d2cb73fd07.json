@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            SELECT \n                gm.group_id, \n                g.name AS title \n            FROM \n                group_members gm\n            JOIN \n                ugroups g \n            ON \n                gm.group_id = g.id\n            WHERE \n                gm.user_id = ?\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "group_id",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | NO_DEFAULT_VALUE",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "4f274bf8c6406b39bb3eef29be3b6c166d91cd2ac1afa7618eecc2d2cb73fd07"
+}

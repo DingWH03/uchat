@@ -12,5 +12,5 @@ chrono = { version = "0.4.41", features = ["serde"] }
 
 [features]
 default = ["mysql"]
-mysql = []
-postgres = []
+mysql = ["sqlx/mysql"]
+postgres = ["sqlx/postgres"]

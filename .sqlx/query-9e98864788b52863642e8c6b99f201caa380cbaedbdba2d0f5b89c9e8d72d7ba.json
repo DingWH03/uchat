@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO ugroups (name, creator_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "9e98864788b52863642e8c6b99f201caa380cbaedbdba2d0f5b89c9e8d72d7ba"
+}

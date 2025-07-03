@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        INSERT INTO messages (sender_id, receiver_id, message_type, message, timestamp)\n        VALUES (?, ?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "bf288fedc4c07af2e27f1d12d9861ac67863697af8a0579d7e5063b83889309b"
+}

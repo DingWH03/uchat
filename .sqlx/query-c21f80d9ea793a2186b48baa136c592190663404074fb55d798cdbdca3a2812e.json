@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT friends_updated_at, groups_updated_at FROM users WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "friends_updated_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "BINARY",
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "groups_updated_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "BINARY",
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "c21f80d9ea793a2186b48baa136c592190663404074fb55d798cdbdca3a2812e"
+}

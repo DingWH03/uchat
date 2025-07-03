@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM group_members WHERE user_id = ? AND group_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "5b08f8200d4f3252f57218ddb6f1f507a0b0745fd997d86362dd54cf5bf19251"
+}

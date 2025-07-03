@@ -87,8 +87,10 @@ impl MessageDB for MysqlDB {
             SessionMessage,
             r#"
             SELECT 
+                id as `message_id!`,
                 sender_id AS `sender_id!`,
                 `timestamp`,
+                message_type as `message_type: MessageType`,
                 message AS `message!`
             FROM messages
             WHERE 
@@ -128,8 +130,10 @@ impl MessageDB for MysqlDB {
             SessionMessage,
             r#"
             SELECT
+                id as `message_id!`,
                 sender_id as `sender_id!`,
                 `timestamp`,
+                message_type as `message_type: MessageType`,
                 message     as `message!`
             FROM ugroup_messages
             WHERE group_id = ?
@@ -222,8 +226,10 @@ impl MessageDB for MysqlDB {
             SessionMessage,
             r#"
             SELECT
+                id as "message_id!",
                 sender_id as "sender_id!",
                 `timestamp`,
+                message_type as "message_type: MessageType",
                 message as "message!"
             FROM ugroup_messages
             WHERE group_id = ?
@@ -248,9 +254,11 @@ impl MessageDB for MysqlDB {
             GroupSessionMessage,
             r#"
             SELECT
+                m.id as `message_id!`,
                 m.group_id as `group_id!`,
                 m.sender_id as `sender_id!`,
                 m.`timestamp`,
+                m.message_type as `message_type: MessageType`,
                 m.message as `message!`
             FROM ugroup_messages m
             JOIN group_members um ON m.group_id = um.group_id
@@ -267,13 +275,15 @@ impl MessageDB for MysqlDB {
         Ok(rows
             .into_iter()
             .map(|r| IdMessagePair {
-            id: r.group_id,
-            message: SessionMessage {
-                sender_id: r.sender_id,
-                timestamp: r.timestamp,
-                message: r.message,
-            },
-        })
+                id: r.group_id,
+                message: SessionMessage {
+                    message_id: r.message_id,
+                    sender_id: r.sender_id,
+                    timestamp: r.timestamp,
+                    message_type: r.message_type,
+                    message: r.message,
+                },
+            })
             .collect())
     }
     /// 获取与某个用户的最后一条私聊消息时间戳
@@ -360,8 +370,10 @@ impl MessageDB for MysqlDB {
             SessionMessage,
             r#"
         SELECT
+            id as "message_id!",
             sender_id as "sender_id!",
             `timestamp`,
+            message_type as "message_type: MessageType",
             message as "message!"
         FROM messages
         WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
@@ -392,8 +404,10 @@ impl MessageDB for MysqlDB {
                 WHEN sender_id = ? THEN receiver_id
                 ELSE sender_id
             END as peer_id,
+            id as "message_id!",
             sender_id as "sender_id!",
             `timestamp`,
+            message_type as "message_type: MessageType",
             message as "message!"
         FROM messages
         WHERE (sender_id = ? OR receiver_id = ?) AND `timestamp` > ?
@@ -412,8 +426,10 @@ impl MessageDB for MysqlDB {
                 .map(|r| IdMessagePair {
                 id: r.peer_id,
                 message: SessionMessage {
+                    message_id: r.message_id,
                     sender_id: r.sender_id,
                     timestamp: r.timestamp,
+                    message_type: r.message_type,
                     message: r.message,
                 },
             })

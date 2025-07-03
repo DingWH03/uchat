@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        SELECT MAX(`timestamp`)\n        FROM messages\n        WHERE (sender_id = ? AND receiver_id = ?)\n           OR (sender_id = ? AND receiver_id = ?)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "MAX(`timestamp`)",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 20
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "8afa884cda1b022238012ecfcf3cd29c5fcc60a24b648c446a65347c3a490da5"
+}

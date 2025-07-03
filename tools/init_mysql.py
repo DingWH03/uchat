@@ -112,6 +112,7 @@ SQL_QUERIES = [
         id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         group_id INT UNSIGNED NOT NULL,
         sender_id INT UNSIGNED NOT NULL,
+        message_type ENUM('text', 'image', 'file', 'video', 'audio') NOT NULL,
         message TEXT NOT NULL,
         timestamp BIGINT DEFAULT 0 NOT NULL,
         FOREIGN KEY (group_id) REFERENCES ugroups(id) ON DELETE CASCADE,

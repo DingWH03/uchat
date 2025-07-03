@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        INSERT INTO ugroup_messages (group_id, sender_id, message, timestamp)\n        VALUES (?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "af7fb8629b53d83942af757528c4cdb6e06f91abf32ceaa0313014280f9ef6c5"
+}

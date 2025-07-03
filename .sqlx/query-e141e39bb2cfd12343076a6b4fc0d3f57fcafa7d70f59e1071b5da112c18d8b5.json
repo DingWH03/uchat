@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        SELECT\n            CASE\n                WHEN sender_id = ? THEN receiver_id\n                ELSE sender_id\n            END as peer_id,\n            MAX(`timestamp`) as `timestamp`\n        FROM messages\n        WHERE sender_id = ? OR receiver_id = ?\n        GROUP BY peer_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "peer_id",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED | BINARY",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "timestamp",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 20
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "e141e39bb2cfd12343076a6b4fc0d3f57fcafa7d70f59e1071b5da112c18d8b5"
+}

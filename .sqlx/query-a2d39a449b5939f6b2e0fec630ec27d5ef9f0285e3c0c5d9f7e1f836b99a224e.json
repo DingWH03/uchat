@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "a2d39a449b5939f6b2e0fec630ec27d5ef9f0285e3c0c5d9f7e1f836b99a224e"
+}

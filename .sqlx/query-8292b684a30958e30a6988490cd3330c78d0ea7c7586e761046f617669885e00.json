@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        SELECT MAX(`timestamp`) as `timestamp`\n        FROM messages\n        WHERE sender_id = ? OR receiver_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "timestamp",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 20
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "8292b684a30958e30a6988490cd3330c78d0ea7c7586e761046f617669885e00"
+}
