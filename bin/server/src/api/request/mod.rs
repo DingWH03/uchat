@@ -100,13 +100,13 @@ impl Request {
         sender_session_id: &str,
         receiver_id: u32,
         msg: &str,
-    ) -> i64 {
+    ) {
         let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
             warn!(
                 "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
                 sender_session_id
             );
-            return 0;
+            return;
         };
         // 存储到数据库中
         match self
@@ -145,22 +145,30 @@ impl Request {
                     Ok(data) => data,
                     Err(e) => {
                         error!("序列化消息为JSON失败: {:?}", e);
-                        return 0;
+                        return;
                     }
                 };
+                // 暂时序列化为text消息
+                let msg = Message::Text(axum::extract::ws::Utf8Bytes::from(json));
+                // 发送给接受用户所有的在线会话
                 self.send_to_user(
                     receiver_id,
-                    Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
+                    msg.clone(),
                 )
                 .await;
-                timestamp
+                // 发送给发送用户所有的在线会话，也便于多会话登陆消息同步
+                self.send_to_user(
+                    sender_id,
+                    msg,
+                )
+                .await;
             }
             Err(e) => {
                 error!(
                     "用户 {} 发送私聊消息给用户 {} 失败: {:?}",
                     sender_id, receiver_id, e
                 );
-                return 0; // 如果数据库操作失败，直接返回
+                return; // 如果数据库操作失败，直接返回
             }
         }
     }
@@ -201,13 +209,13 @@ impl Request {
     /// 根据群号发送群消息
     /// 如果群组不存在或发送失败，返回 false
     /// 先读取群聊成员列表，然后发送消息给每个成员
-    pub async fn send_to_group_v2(&self, sender_session_id: &str, group_id: u32, msg: &str) -> i64 {
+    pub async fn send_to_group_v2(&self, sender_session_id: &str, group_id: u32, msg: &str) {
         let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
             warn!(
                 "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
                 sender_session_id
             );
-            return 0;
+            return;
         };
         // 存储到数据库中
         match self.db.add_group_message(group_id, sender_id, msg).await {
@@ -237,7 +245,7 @@ impl Request {
                     Ok(data) => data,
                     Err(e) => {
                         error!("序列化消息为JSON失败: {:?}", e);
-                        return 0;
+                        return;
                     }
                 };
                 // let json =
@@ -247,11 +255,10 @@ impl Request {
                     Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
                 )
                 .await;
-                timestamp
             }
             Err(e) => {
                 error!("用户 {} 发送群消息给 {} 失败: {:?}", sender_id, group_id, e);
-                return 0; // 如果数据库操作失败，直接返回
+                return; // 如果数据库操作失败，直接返回
             }
         }
     }
