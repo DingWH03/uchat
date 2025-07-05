@@ -2,19 +2,21 @@ mod messages;
 mod user;
 
 use crate::api::error::RequestError;
-use uchat_protocol::{ContactList, RoleType, request::RequestResponse, UserStatus, GroupDetailedInfo, GroupSimpleInfo, MessageType, UserSimpleInfo,
-    UserSimpleInfoWithStatus, message::ServerMessage};
-use crate::session::SessionManagerTrait;
-use crate::session::SessionConfig;
 use crate::db::DB;
 use crate::db::error::DBError;
-use crate::storage::{ObjectStorage};
+use crate::session::SessionConfig;
+use crate::session::SessionManagerTrait;
+use crate::storage::ObjectStorage;
 use axum::extract::ws::Message;
-use bcrypt::{hash};
+use bcrypt::hash;
 use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
+use uchat_protocol::{
+    ContactList, GroupDetailedInfo, GroupSimpleInfo, MessageType, RoleType, UserSimpleInfo,
+    UserSimpleInfoWithStatus, UserStatus, message::ServerMessage, request::RequestResponse,
+};
 
 pub struct Request {
     db: Arc<dyn DB>,
@@ -23,8 +25,16 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new(db: Arc<dyn DB>, sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>, storage: Arc<dyn ObjectStorage + Send + Sync>) -> Self {
-        Self { db, sessions, storage }
+    pub fn new(
+        db: Arc<dyn DB>,
+        sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>,
+        storage: Arc<dyn ObjectStorage + Send + Sync>,
+    ) -> Self {
+        Self {
+            db,
+            sessions,
+            storage,
+        }
     }
 
     /// 获取该用户所有在线好友的信息
@@ -85,7 +95,12 @@ impl Request {
 
     /// 发送给用户所有的 WebSocket 连接（v2版）
     /// 发送给用户所有的 WebSocket 连接（v2版，支持二进制消息以提升效率）
-    pub async fn send_to_user_v2(&self, sender_session_id: &str, receiver_id: u32, msg: &str) -> i64 {
+    pub async fn send_to_user_v2(
+        &self,
+        sender_session_id: &str,
+        receiver_id: u32,
+        msg: &str,
+    ) -> i64 {
         let Some(sender_id) = self.get_user_id_by_session(&sender_session_id).await else {
             warn!(
                 "未能获取会话 {} 对应的用户ID，放弃处理此条消息",
@@ -94,18 +109,51 @@ impl Request {
             return 0;
         };
         // 存储到数据库中
-         let timestamp = match self
+        match self
             .db
             .add_message(sender_id, receiver_id, MessageType::Text, msg)
             .await
         {
             // 新增了消息类型枚举，先在这挖一个坑
-            Ok(message_id) => {
+            Ok((timestamp, message_id)) => {
                 debug!(
-                    "用户 {} 发送私聊消息给用户 {} 成功，消息timestamp: {}",
-                    sender_id, receiver_id, message_id
+                    "用户 {} 发送私聊消息给用户 {} 成功，消息message_id: {}, timestamp: {}",
+                    sender_id, receiver_id, message_id, timestamp
                 );
-                message_id
+                let server_message = ServerMessage::SendMessage {
+                    message_id,
+                    sender: sender_id,
+                    receiver: receiver_id,
+                    message: msg.to_string(),
+                    timestamp,
+                };
+                // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
+                // let bin = match serde_json::to_vec(&server_message) {
+                //     Ok(data) => data,
+                //     Err(e) => {
+                //         error!("序列化消息为二进制失败: {:?}", e);
+                //         return;
+                //     }
+                // };
+                // self
+                //     .send_to_user(
+                //         receiver_id,
+                //         Message::Binary(bin.into()),
+                //     )
+                //     .await;
+                let json = match serde_json::to_string(&server_message) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        error!("序列化消息为JSON失败: {:?}", e);
+                        return 0;
+                    }
+                };
+                self.send_to_user(
+                    receiver_id,
+                    Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
+                )
+                .await;
+                timestamp
             }
             Err(e) => {
                 error!(
@@ -114,39 +162,7 @@ impl Request {
                 );
                 return 0; // 如果数据库操作失败，直接返回
             }
-        };
-        let server_message = ServerMessage::SendMessage {
-            sender: sender_id,
-            message: msg.to_string(),
-            timestamp,
-        };
-        // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
-        // let bin = match serde_json::to_vec(&server_message) {
-        //     Ok(data) => data,
-        //     Err(e) => {
-        //         error!("序列化消息为二进制失败: {:?}", e);
-        //         return;
-        //     }
-        // };
-        // self
-        //     .send_to_user(
-        //         receiver_id,
-        //         Message::Binary(bin.into()),
-        //     )
-        //     .await;
-        let json = match serde_json::to_string(&server_message) {
-            Ok(data) => data,
-            Err(e) => {
-                error!("序列化消息为JSON失败: {:?}", e);
-                return 0;
-            }
-        };
-        self.send_to_user(
-            receiver_id,
-            Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
-        )
-        .await;
-        timestamp
+        }
     }
 
     /// 根据群号发送群消息
@@ -170,8 +186,7 @@ impl Request {
             let msg = Arc::clone(&msg); // 引用共享消息
             let sessions = Arc::clone(&sessions);
             tasks.push(tokio::spawn(async move {
-                sessions
-                    .send_to_user(member.user_id, (*msg).clone()).await;
+                sessions.send_to_user(member.user_id, (*msg).clone()).await;
             }));
         }
 
@@ -195,50 +210,50 @@ impl Request {
             return 0;
         };
         // 存储到数据库中
-        let timestamp = match self.db.add_group_message(group_id, sender_id, msg).await {
-            Ok(message_id) => {
+        match self.db.add_group_message(group_id, sender_id, msg).await {
+            Ok((timestamp, message_id)) => {
                 debug!(
-                    "用户 {} 发送群消息给 {} 成功，消息timestamp: {}",
-                    sender_id, group_id, message_id
+                    "用户 {} 发送群消息给 {} 成功，消息message_id: {}, timestamp: {}",
+                    sender_id, group_id, message_id, timestamp
                 );
-                message_id
+                let server_message = ServerMessage::SendGroupMessage {
+                    message_id,
+                    sender: sender_id,
+                    group_id,
+                    message: msg.to_string(),
+                    timestamp,
+                };
+                // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
+                // let bin = match serde_json::to_vec(&server_message) {
+                //     Ok(data) => data,
+                //     Err(e) => {
+                //         error!("序列化消息为二进制失败: {:?}", e);
+                //         return;
+                //     }
+                // };
+                // self.send_to_group(group_id, Message::Binary(bin.into()))
+                //     .await;
+                let json = match serde_json::to_string(&server_message) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        error!("序列化消息为JSON失败: {:?}", e);
+                        return 0;
+                    }
+                };
+                // let json =
+                //     serde_json::to_string(&server_message).unwrap_or_else(|_| String::from("{}"));
+                self.send_to_group(
+                    group_id,
+                    Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
+                )
+                .await;
+                timestamp
             }
             Err(e) => {
                 error!("用户 {} 发送群消息给 {} 失败: {:?}", sender_id, group_id, e);
                 return 0; // 如果数据库操作失败，直接返回
             }
-        };
-        let server_message = ServerMessage::SendGroupMessage {
-            sender: sender_id,
-            group_id,
-            message: msg.to_string(),
-            timestamp,
-        };
-        // // 使用二进制序列化（如 serde_json），比 JSON 文本更高效
-        // let bin = match serde_json::to_vec(&server_message) {
-        //     Ok(data) => data,
-        //     Err(e) => {
-        //         error!("序列化消息为二进制失败: {:?}", e);
-        //         return;
-        //     }
-        // };
-        // self.send_to_group(group_id, Message::Binary(bin.into()))
-        //     .await;
-        let json = match serde_json::to_string(&server_message) {
-            Ok(data) => data,
-            Err(e) => {
-                error!("序列化消息为JSON失败: {:?}", e);
-                return 0;
-            }
-        };
-        // let json =
-        //     serde_json::to_string(&server_message).unwrap_or_else(|_| String::from("{}"));
-        self.send_to_group(
-            group_id,
-            Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
-        )
-        .await;
-    timestamp
+        }
     }
 
     /// 通过session_id查询用户ID
@@ -393,7 +408,10 @@ impl Request {
     }
 
     /// 批量查询用户在线状态，返回 Vec<UserStatus>
-    pub async fn get_status_by_userids(&self, user_ids: &[u32]) -> RequestResponse<Vec<UserStatus>> {
+    pub async fn get_status_by_userids(
+        &self,
+        user_ids: &[u32],
+    ) -> RequestResponse<Vec<UserStatus>> {
         let session_manager = self.sessions.clone();
 
         // 生成异步任务，查询每个 user_id 是否在线，返回 UserStatus 结构体
@@ -414,10 +432,7 @@ impl Request {
     }
 
     /// 批量获取所有的用户和好友列表
-    pub async fn get_contact_list(
-        &self,
-        user_id: u32,
-    ) -> RequestResponse<ContactList> {
+    pub async fn get_contact_list(&self, user_id: u32) -> RequestResponse<ContactList> {
         let friends = match self.db.get_friends(user_id).await {
             Ok(friends) => friends,
             Err(e) => {
@@ -432,10 +447,7 @@ impl Request {
                 return RequestResponse::err(format!("服务器错误：{}", e));
             }
         };
-        RequestResponse::ok("获取成功", ContactList {
-            friends,
-            groups,
-        })
+        RequestResponse::ok("获取成功", ContactList { friends, groups })
     }
 
     /// 获取一个用户的所有群聊

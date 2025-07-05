@@ -17,11 +17,14 @@ pub enum ClientMessage {
 #[serde(tag = "type")]
 pub enum ServerMessage {
     SendMessage {
+        message_id: u64, // 消息ID
         sender: u32,
+        receiver: u32,
         message: String,
         timestamp: i64, // 使用 i64 存储时间戳，单位为秒
     },
     SendGroupMessage {
+        message_id: u64, // 消息ID
         sender: u32,
         group_id: u32,
         message: String,

@@ -14,17 +14,17 @@ impl MessageDB for MysqlDB {
     /// 注意：这里的时间戳是秒级别的，返回值是 u64 类型
     /// 发送者和接收者的 ID 都是 u32 类型
     /// 消息类型是 MessageType 枚举，消息内容是字符串
-    /// 该函数会将消息插入到 messages 表中，并返回当前的时间
+    /// 该函数会将消息插入到 messages 表中，并返回当前的时间和message_id
     async fn add_message(
         &self,
         sender: u32,
         receiver: u32,
         message_type: MessageType,
         message: &str,
-    ) -> Result<i64, DBError> {
+    ) -> Result<(i64, u64), DBError> {
         let now_ts = Utc::now().timestamp_millis(); // 毫秒级时间戳
 
-        sqlx::query!(
+        let result = sqlx::query!(
             r#"
         INSERT INTO messages (sender_id, receiver_id, message_type, message, timestamp)
         VALUES (?, ?, ?, ?, ?)
@@ -38,7 +38,7 @@ impl MessageDB for MysqlDB {
         .execute(&self.pool)
         .await?;
 
-        Ok(now_ts)
+        Ok((now_ts, result.last_insert_id()))
     }
 
     /// 添加群聊消息记录，返回消息的时间戳
@@ -49,10 +49,10 @@ impl MessageDB for MysqlDB {
         group_id: u32,
         sender: u32,
         message: &str,
-    ) -> Result<i64, DBError> {
+    ) -> Result<(i64, u64), DBError> {
         let timestamp = Utc::now().timestamp_millis(); // 毫秒级时间戳
 
-        sqlx::query!(
+        let result = sqlx::query!(
             r#"
         INSERT INTO ugroup_messages (group_id, sender_id, message, timestamp)
         VALUES (?, ?, ?, ?)
@@ -65,7 +65,7 @@ impl MessageDB for MysqlDB {
         .execute(&self.pool)
         .await?;
 
-        Ok(timestamp)
+        Ok((timestamp, result.last_insert_id()))
     }
 
     /// 获取私聊聊天记录

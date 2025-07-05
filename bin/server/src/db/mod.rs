@@ -98,21 +98,21 @@ pub trait GroupDB: Send + Sync {
 
 #[async_trait]
 pub trait MessageDB: Send + Sync {
-    /// 添加私聊信息聊天记录，返回消息的timestamp
+    /// 添加私聊信息聊天记录，返回消息的timestamp和message_id
     async fn add_message(
         &self,
         sender: u32,
         receiver: u32,
         message_type: MessageType,
         message: &str,
-    ) -> Result<i64, DBError>;
-    /// 添加群聊信息聊天记录，返回消息的timestamp
+    ) -> Result<(i64, u64), DBError>;
+    /// 添加群聊信息聊天记录，返回消息的timestamp和message_id
     async fn add_group_message(
         &self,
         group_id: u32,
         sender: u32,
         message: &str,
-    ) -> Result<i64, DBError>;
+    ) -> Result<(i64, u64), DBError>;
     /// 获取私聊聊天记录
     /// 返回值为元组，元组的第一个元素是发送者的id，第二个元素是timestap，第三个元素是消息内容
     /// offset是消息分组，一组消息30条，0代表最近的30条，1代表30-60条，以此类推
