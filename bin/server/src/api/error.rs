@@ -7,7 +7,7 @@ use crate::db::error::DBError;
 pub enum RequestError {
     #[error("数据库错误: {0}")]
     Database(#[from] DBError),
-    
+
     // #[error("用户不存在")]
     // UserNotFound,
 
@@ -19,7 +19,6 @@ pub enum RequestError {
 
     // #[error("Session找不到")]
     // SessionNotFound,
-
     #[error("Json序列化失败")]
     JsonError(#[from] serde_json::Error),
 }
@@ -28,7 +27,6 @@ pub enum RequestError {
 pub enum ManagerError {
     #[error("Database error: {0}")]
     DBError(#[from] DBError),
-
     // #[error("Unauthorized")]
     // Unauthorized,
 

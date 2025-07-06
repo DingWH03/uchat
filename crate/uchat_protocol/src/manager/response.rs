@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{Json, http::StatusCode, response::IntoResponse};
 use chrono::DateTime;
 use serde::Serialize;
+use std::collections::HashMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Debug, ToSchema)]
@@ -72,4 +72,3 @@ pub struct UserSessionInfo {
 pub struct OnlineUserTree {
     pub users: HashMap<u32, Vec<UserSessionInfo>>,
 }
-

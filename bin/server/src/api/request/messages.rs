@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 
 use super::Request;
-use uchat_protocol::{request::RequestResponse, IdMessagePair, SessionMessage};
 use log::error;
+use uchat_protocol::{IdMessagePair, SessionMessage, request::RequestResponse};
 
 impl Request {
     /// 获取群聊聊天记录

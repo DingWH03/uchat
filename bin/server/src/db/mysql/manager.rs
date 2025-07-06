@@ -1,10 +1,8 @@
 use super::MysqlDB;
-use crate::{
-    db::{error::DBError, ManagerDB}
-};
-use uchat_protocol::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType};
+use crate::db::{ManagerDB, error::DBError};
 use anyhow::Result;
 use async_trait::async_trait;
+use uchat_protocol::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType};
 
 #[async_trait]
 impl ManagerDB for MysqlDB {
@@ -116,10 +114,7 @@ impl ManagerDB for MysqlDB {
         Ok(result.rows_affected())
     }
     /// 获取一条私聊消息
-    async fn get_private_message(
-        &self,
-        message_id: u64,
-    ) -> Result<FullPrivateMessage, DBError> {
+    async fn get_private_message(&self, message_id: u64) -> Result<FullPrivateMessage, DBError> {
         let row = sqlx::query!(
             r#"
             SELECT 
@@ -143,7 +138,10 @@ impl ManagerDB for MysqlDB {
 
         match row {
             Some(row) => {
-                let message_type = row.message_type.parse().map_err(|_| DBError::Other("Invalid message_type".into()))?;
+                let message_type = row
+                    .message_type
+                    .parse()
+                    .map_err(|_| DBError::Other("Invalid message_type".into()))?;
                 let timestamp = row.timestamp;
                 Ok(FullPrivateMessage {
                     id: row.id,
@@ -159,5 +157,4 @@ impl ManagerDB for MysqlDB {
             None => Err(DBError::NotFound),
         }
     }
-
 }

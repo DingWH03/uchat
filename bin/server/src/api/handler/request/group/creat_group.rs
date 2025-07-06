@@ -9,7 +9,6 @@ use uchat_protocol::{
     request::{CreateGroupRequest, RequestResponse},
 };
 
-
 /// 创建群组
 #[utoipa::path(
     post,

@@ -1,9 +1,9 @@
+use crate::server::AppState;
 use axum::extract::ws::{Message, WebSocket};
 use futures::{sink::SinkExt, stream::StreamExt};
-use log::{error, debug, info, warn};
+use log::{debug, error, info, warn};
 use tokio::sync::mpsc; // tokio::sync::Mutex for Request
 use uchat_protocol::message::ClientMessage;
-use crate::server::AppState;
 /// 处理 WebSocket 连接的实际逻辑
 pub async fn handle_socket(socket: WebSocket, session_id: String, state: AppState) {
     info!("WebSocket 连接已建立，会话ID: {}", &session_id);
@@ -96,7 +96,7 @@ pub async fn handle_socket(socket: WebSocket, session_id: String, state: AppStat
 /// 具体详细的处理文本消息逻辑
 /// 完成各类信息的处理与转发，并记录数据库
 async fn socket_handle_text(session_id: &str, text: &str, state: AppState) {
-    match serde_json::from_str::<ClientMessage>(&text) {
+    match serde_json::from_str::<ClientMessage>(text) {
         Ok(ClientMessage::SendMessage { receiver, message }) => {
             debug!("私聊：发送给 {}, 内容: {}", receiver, message);
 

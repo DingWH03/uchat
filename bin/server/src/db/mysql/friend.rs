@@ -1,5 +1,5 @@
-use crate::db::error::DBError;
 use crate::db::FriendDB;
+use crate::db::error::DBError;
 use crate::db::mysql::MysqlDB;
 use uchat_protocol::UserSimpleInfo;
 

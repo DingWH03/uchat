@@ -1,12 +1,10 @@
 use super::MysqlDB;
-use crate::{
-    db::{MessageDB, error::DBError}
-};
-use uchat_protocol::{GroupSessionMessage, MessageType, SessionMessage, IdMessagePair};
+use crate::db::{MessageDB, error::DBError};
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
 use std::collections::HashMap;
+use uchat_protocol::{GroupSessionMessage, IdMessagePair, MessageType, SessionMessage};
 
 #[async_trait]
 impl MessageDB for MysqlDB {
@@ -151,10 +149,7 @@ impl MessageDB for MysqlDB {
         Ok(messages)
     }
     /// 获取某群聊最新一条消息时间戳
-    async fn get_latest_timestamp_of_group(
-        &self,
-        group_id: u32,
-    ) -> Result<Option<i64>, DBError> {
+    async fn get_latest_timestamp_of_group(&self, group_id: u32) -> Result<Option<i64>, DBError> {
         let ts: Option<i64> = sqlx::query_scalar!(
             r#"
             SELECT `timestamp`
@@ -423,7 +418,7 @@ impl MessageDB for MysqlDB {
 
         Ok(rows
             .into_iter()
-                .map(|r| IdMessagePair {
+            .map(|r| IdMessagePair {
                 id: r.peer_id,
                 message: SessionMessage {
                     message_id: r.message_id,

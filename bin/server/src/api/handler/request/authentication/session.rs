@@ -1,13 +1,10 @@
 use axum::{Extension, response::IntoResponse};
 use log::debug;
 
+use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use uchat_protocol::{Empty, ManagerResponse, RoleType, request::RequestResponse};
-use crate::{
-    
-    server::AppState,
-};
 
 /// 会话有效性检查接口
 ///

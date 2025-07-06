@@ -30,8 +30,7 @@ pub async fn handle_change_role(
 ) -> impl IntoResponse {
     debug!(
         "manager请求：修改用户 {} 的角色为 {}",
-        payload.user_id,
-        payload.new_role.to_string()
+        payload.user_id, payload.new_role
     );
 
     let session_id = if let Some(session_id_cookie) = cookies.get("session_id") {

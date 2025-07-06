@@ -1,13 +1,12 @@
-use axum::extract::ws::Message;
+use super::{SenderStore, SessionManagerTrait};
+use crate::session::SessionInfo;
 use async_trait::async_trait;
+use axum::extract::ws::Message;
 use dashmap::{DashMap, DashSet};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{mpsc::UnboundedSender};
-use crate::{protocol::RoleType, session::SessionInfo};
-use super::{SessionManagerTrait, SenderStore};
-
-
+use tokio::sync::mpsc::UnboundedSender;
+use uchat_protocol::RoleType;
 
 pub struct SessionConfig; // 空结构体，可扩展为带参数结构体
 
@@ -28,7 +27,13 @@ impl SessionManagerTrait for SessionManager {
             senders: SenderStore::new(),
         })
     }
-    async fn insert_session(&self, user_id: u32, session_id: String, ip: Option<String>, role: RoleType) {
+    async fn insert_session(
+        &self,
+        user_id: u32,
+        session_id: String,
+        ip: Option<String>,
+        role: RoleType,
+    ) {
         self.sessions.insert(
             session_id.clone(),
             SessionInfo {
@@ -54,7 +59,9 @@ impl SessionManagerTrait for SessionManager {
     }
 
     async fn get_sessions_by_user(&self, user_id: u32) -> Option<Vec<String>> {
-        self.user_index.get(&user_id).map(|set| set.iter().map(|r| r.key().clone()).collect())
+        self.user_index
+            .get(&user_id)
+            .map(|set| set.iter().map(|r| r.key().clone()).collect())
     }
 
     async fn register_sender(&self, session_id: &str, sender: UnboundedSender<Message>) {
@@ -69,13 +76,10 @@ impl SessionManagerTrait for SessionManager {
 
     async fn delete_session(&self, session_id: &str) {
         // 阶段一：尝试从 sessions 中移除会话，并记录相关 user_id
-        let user_id = self
-            .sessions
-            .remove(session_id)
-            .map(|(_, session)| {
-                self.senders.remove(session_id);
-                session.user_id
-            });
+        let user_id = self.sessions.remove(session_id).map(|(_, session)| {
+            self.senders.remove(session_id);
+            session.user_id
+        });
 
         // 阶段二：如果有 user_id，则从 user_index 中移除 session_id
         if let Some(user_id) = user_id {

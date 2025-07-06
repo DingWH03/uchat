@@ -1,6 +1,6 @@
 [package]
 name = "uchat-server"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 authors = ["DingVero <DingVero@outlook.com>"]
 build = "build.rs"

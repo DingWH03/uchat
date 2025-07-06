@@ -8,13 +8,11 @@ pub enum DBError {
     // 如果以后支持其他数据库，比如 diesel:
     // #[error("Diesel 错误: {0}")]
     // Diesel(#[from] diesel::result::Error),
-
     #[error("数据不存在")]
     NotFound,
 
     #[error("其他数据库错误")]
     Other(String),
-
     // #[error("违反约束条件: {0}")]
     // ConstraintViolation(String),
 

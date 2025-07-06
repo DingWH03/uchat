@@ -1,5 +1,5 @@
-use crate::db::error::DBError;
 use crate::db::GroupDB;
+use crate::db::error::DBError;
 use crate::db::mysql::MysqlDB;
 use uchat_protocol::{GroupDetailedInfo, GroupSimpleInfo, UserSimpleInfo};
 
@@ -87,7 +87,12 @@ impl GroupDB for MysqlDB {
             .collect())
     }
 
-    async fn create_group(&self, user_id: u32, group_name: &str, members: Vec<u32>) -> Result<u32, DBError> {
+    async fn create_group(
+        &self,
+        user_id: u32,
+        group_name: &str,
+        members: Vec<u32>,
+    ) -> Result<u32, DBError> {
         // 创建群组
         let result = sqlx::query!(
             "INSERT INTO ugroups (name, creator_id) VALUES (?, ?)",

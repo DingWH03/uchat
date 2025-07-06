@@ -1,14 +1,16 @@
 use std::collections::HashMap;
 
-use crate::{db::{error::DBError, MessageDB}, protocol::{MessageType, SessionMessage}};
 use super::PgSqlDB;
+use crate::{
+    db::{MessageDB, error::DBError},
+    protocol::{MessageType, SessionMessage},
+};
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 
 #[async_trait]
-impl MessageDB for PgSqlDB{
-
+impl MessageDB for PgSqlDB {
     /// 添加私聊信息聊天记录，返回消息的自增 ID
     async fn add_message(
         &self,
@@ -33,7 +35,6 @@ impl MessageDB for PgSqlDB{
 
         Ok(rec.id as u64)
     }
-
 
     /// 添加离线消息记录
     async fn add_offline_message(
@@ -306,14 +307,16 @@ impl MessageDB for PgSqlDB{
         Ok(rows
             .into_iter()
             .filter_map(|row| {
-                row.timestamp.map(|ts| (
-                    row.group_id as u32,
-                    SessionMessage {
-                        sender_id: row.sender_id as u32,
-                        timestamp: ts,
-                        message: row.message,
-                    }
-                ))
+                row.timestamp.map(|ts| {
+                    (
+                        row.group_id as u32,
+                        SessionMessage {
+                            sender_id: row.sender_id as u32,
+                            timestamp: ts,
+                            message: row.message,
+                        },
+                    )
+                })
             })
             .collect())
     }
@@ -367,11 +370,9 @@ impl MessageDB for PgSqlDB{
 
         Ok(rows
             .into_iter()
-            .filter_map(|row| {
-                match (row.peer_id, row.timestamp) {
-                    (Some(peer_id), Some(ts)) => Some((peer_id as u32, ts)),
-                    _ => None,
-                }
+            .filter_map(|row| match (row.peer_id, row.timestamp) {
+                (Some(peer_id), Some(ts)) => Some((peer_id as u32, ts)),
+                _ => None,
             })
             .collect())
     }
@@ -466,14 +467,16 @@ impl MessageDB for PgSqlDB{
         Ok(rows
             .into_iter()
             .filter_map(|r| {
-                r.peer_id.map(|peer_id| (
-                    peer_id as u32,
-                    SessionMessage {
-                        sender_id: r.sender_id as u32,
-                        timestamp: r.timestamp,
-                        message: r.message,
-                    },
-                ))
+                r.peer_id.map(|peer_id| {
+                    (
+                        peer_id as u32,
+                        SessionMessage {
+                            sender_id: r.sender_id as u32,
+                            timestamp: r.timestamp,
+                            message: r.message,
+                        },
+                    )
+                })
             })
             .collect())
     }

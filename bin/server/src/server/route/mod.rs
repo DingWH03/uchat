@@ -2,13 +2,12 @@
 mod authentication;
 mod friend;
 mod group;
-mod message;
 mod manager;
+mod message;
 mod user;
 
-use axum::{routing::get, Router};
 use crate::api::handler;
-
+use axum::{Router, routing::get};
 
 pub fn router() -> Router {
     Router::new()

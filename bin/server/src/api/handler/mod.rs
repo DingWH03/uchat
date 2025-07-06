@@ -1,12 +1,12 @@
+pub mod manager;
 pub mod request;
 pub mod ws;
-pub mod manager;
 
-use axum::response::IntoResponse;
-use axum::Extension;
-use uchat_protocol::{request::RequestResponse, Empty};
 use crate::server::AppState;
+use axum::Extension;
+use axum::response::IntoResponse;
 use log::debug;
+use uchat_protocol::{Empty, request::RequestResponse};
 
 #[utoipa::path(
     get,
@@ -35,5 +35,4 @@ pub async fn ping(Extension(state): Extension<AppState>) -> impl IntoResponse {
     debug!("响应ping请求");
     let request = state.request.lock().await;
     request.ping().await.into_response()
-    
 }

@@ -6,15 +6,15 @@ pub use crate::session::memory::SessionConfig;
 #[cfg(feature = "redis-support")]
 pub mod redis;
 #[cfg(feature = "redis-support")]
-pub use crate::session::redis::{SessionConfig};
+pub use crate::session::redis::SessionConfig;
 use async_trait::async_trait;
 use axum::extract::ws::Message;
+use chrono::DateTime;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc::UnboundedSender};
-use uchat_protocol::{manager::UserSessionInfo, RoleType};
 use std::{collections::HashMap, sync::Arc};
-use chrono::{DateTime};
+use tokio::sync::mpsc::UnboundedSender;
+use uchat_protocol::{RoleType, manager::UserSessionInfo};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SessionInfo {
@@ -33,7 +33,7 @@ impl SessionInfo {
     pub fn to_pub(&self, session_id: String) -> UserSessionInfo {
         UserSessionInfo {
             session_id,
-            user_id: self.user_id,                
+            user_id: self.user_id,
             created_at: self.created_at_datetime(),
             ip: self.ip.clone(),
         }
@@ -85,8 +85,6 @@ impl SenderStore {
     }
 }
 
-
-
 #[async_trait]
 pub trait SessionManagerTrait: Send + Sync {
     type Config: Send + Sync;
@@ -95,11 +93,21 @@ pub trait SessionManagerTrait: Send + Sync {
     where
         Self: Sized;
 
-    async fn insert_session(&self, user_id: u32, session_id: String, ip: Option<String>, role: RoleType);
+    async fn insert_session(
+        &self,
+        user_id: u32,
+        session_id: String,
+        ip: Option<String>,
+        role: RoleType,
+    );
     async fn check_session(&self, session_id: &str) -> Option<u32>;
     async fn check_session_role(&self, session_id: &str) -> Option<RoleType>;
     async fn get_sessions_by_user(&self, user_id: u32) -> Option<Vec<String>>;
-    async fn register_sender(&self, session_id: &str, sender: tokio::sync::mpsc::UnboundedSender<Message>);
+    async fn register_sender(
+        &self,
+        session_id: &str,
+        sender: tokio::sync::mpsc::UnboundedSender<Message>,
+    );
     async fn unregister_sender(&self, session_id: &str);
     async fn delete_session(&self, session_id: &str);
     async fn send_to_user(&self, user_id: u32, msg: Message);
@@ -110,17 +118,18 @@ pub trait SessionManagerTrait: Send + Sync {
 }
 
 /// 工厂函数，根据 feature 选择 SessionManager 实现
-pub async fn create_session_manager(config: SessionConfig) -> Arc<dyn SessionManagerTrait<Config = SessionConfig>> {
+pub async fn create_session_manager(
+    config: SessionConfig,
+) -> Arc<dyn SessionManagerTrait<Config = SessionConfig>> {
     #[cfg(not(feature = "redis-support"))]
     {
         let manager = memory::SessionManager::new_with_config(config).await;
         manager
     }
-    
+
     // redis-support 分支:
     #[cfg(feature = "redis-support")]
     {
-        let manager = redis::RedisSessionManager::new_with_config(config).await;
-        manager
+        redis::RedisSessionManager::new_with_config(config).await
     }
 }

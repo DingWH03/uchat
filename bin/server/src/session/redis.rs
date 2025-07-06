@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 use axum::extract::ws::Message;
-use chrono::{Utc};
+use chrono::Utc;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::UnboundedSender;
 
-use uchat_protocol::RoleType;
-use crate::session::{SenderStore, SessionInfo, SessionManagerTrait};
 use crate::redis::SharedRedis;
+use crate::session::{SenderStore, SessionInfo, SessionManagerTrait};
+use uchat_protocol::RoleType;
 
 pub struct SessionConfig {
     pub redis: SharedRedis,
@@ -31,7 +31,13 @@ impl SessionManagerTrait for RedisSessionManager {
         })
     }
 
-    async fn insert_session(&self, user_id: u32, session_id: String, ip: Option<String>, role: RoleType) {
+    async fn insert_session(
+        &self,
+        user_id: u32,
+        session_id: String,
+        ip: Option<String>,
+        role: RoleType,
+    ) {
         let session = SessionInfo {
             user_id,
             created_at_secs: Utc::now().timestamp(),
@@ -40,27 +46,54 @@ impl SessionManagerTrait for RedisSessionManager {
             role,
         };
         let session_json = serde_json::to_string(&session).unwrap();
-        let _ = self.redis.set_with_expire(&format!("session:{}", session_id), &session_json, self.expire_secs).await;
-        let _ = self.redis.sadd(&format!("user_sessions:{}", user_id), &session_id).await;
+        let _ = self
+            .redis
+            .set_with_expire(
+                &format!("session:{}", session_id),
+                &session_json,
+                self.expire_secs,
+            )
+            .await;
+        let _ = self
+            .redis
+            .sadd(&format!("user_sessions:{}", user_id), &session_id)
+            .await;
     }
 
     async fn check_session(&self, session_id: &str) -> Option<u32> {
         let key = format!("session:{}", session_id);
-        let result = self.redis.get_and_refresh(&key, self.expire_secs).await.ok().flatten()?;
+        let result = self
+            .redis
+            .get_and_refresh(&key, self.expire_secs)
+            .await
+            .ok()
+            .flatten()?;
         let session: SessionInfo = serde_json::from_str(&result).ok()?;
         Some(session.user_id)
     }
 
     async fn check_session_role(&self, session_id: &str) -> Option<RoleType> {
         let key = format!("session:{}", session_id);
-        let result = self.redis.get_and_refresh(&key, self.expire_secs).await.ok().flatten()?;
+        let result = self
+            .redis
+            .get_and_refresh(&key, self.expire_secs)
+            .await
+            .ok()
+            .flatten()?;
         let session: SessionInfo = serde_json::from_str(&result).ok()?;
         Some(session.role)
     }
 
     async fn get_sessions_by_user(&self, user_id: u32) -> Option<Vec<String>> {
-        let session_ids = self.redis.smembers(&format!("user_sessions:{}", user_id)).await.ok()?;
-        let session_keys: Vec<String> = session_ids.iter().map(|id| format!("session:{}", id)).collect();
+        let session_ids = self
+            .redis
+            .smembers(&format!("user_sessions:{}", user_id))
+            .await
+            .ok()?;
+        let session_keys: Vec<String> = session_ids
+            .iter()
+            .map(|id| format!("session:{}", id))
+            .collect();
 
         let values = self.redis.mget(&session_keys).await.ok()?;
 
@@ -68,13 +101,7 @@ impl SessionManagerTrait for RedisSessionManager {
         let valid_sessions: Vec<String> = session_ids
             .into_iter()
             .zip(values)
-            .filter_map(|(sid, val)| {
-                if val.is_some() {
-                    Some(sid)
-                } else {
-                    None
-                }
-            })
+            .filter_map(|(sid, val)| if val.is_some() { Some(sid) } else { None })
             .collect();
 
         if valid_sessions.is_empty() {
@@ -83,7 +110,6 @@ impl SessionManagerTrait for RedisSessionManager {
             Some(valid_sessions)
         }
     }
-
 
     async fn register_sender(&self, session_id: &str, sender: UnboundedSender<Message>) {
         self.sender_store.insert(session_id, sender);
@@ -96,16 +122,29 @@ impl SessionManagerTrait for RedisSessionManager {
     }
 
     async fn delete_session(&self, session_id: &str) {
-        if let Some(result) = self.redis.get(&format!("session:{}", session_id)).await.ok().flatten() {
+        if let Some(result) = self
+            .redis
+            .get(&format!("session:{}", session_id))
+            .await
+            .ok()
+            .flatten()
+        {
             let session: SessionInfo = serde_json::from_str(&result).unwrap();
             let _ = self.redis.del(&format!("session:{}", session_id)).await;
-            let _ = self.redis.srem(&format!("user_sessions:{}", session.user_id), session_id).await;
+            let _ = self
+                .redis
+                .srem(&format!("user_sessions:{}", session.user_id), session_id)
+                .await;
             self.sender_store.remove(session_id);
         }
     }
 
     async fn send_to_user(&self, user_id: u32, msg: Message) {
-        if let Ok(session_ids) = self.redis.smembers(&format!("user_sessions:{}", user_id)).await {
+        if let Ok(session_ids) = self
+            .redis
+            .smembers(&format!("user_sessions:{}", user_id))
+            .await
+        {
             self.sender_store.broadcast(&session_ids, msg);
         }
     }
@@ -139,7 +178,6 @@ impl SessionManagerTrait for RedisSessionManager {
         self.sender_store.clear_all();
     }
 
-
     async fn get_all_online_users_tree(&self) -> HashMap<u32, Vec<(String, SessionInfo)>> {
         let mut result: HashMap<u32, Vec<(String, SessionInfo)>> = HashMap::new();
 
@@ -148,17 +186,24 @@ impl SessionManagerTrait for RedisSessionManager {
                 if let Some(user_id_str) = key.strip_prefix("user_sessions:") {
                     if let Ok(user_id) = user_id_str.parse::<u32>() {
                         if let Ok(session_ids) = self.redis.smembers(&key).await {
-                            let full_keys: Vec<String> = session_ids.iter().map(|id| format!("session:{}", id)).collect();
+                            let full_keys: Vec<String> = session_ids
+                                .iter()
+                                .map(|id| format!("session:{}", id))
+                                .collect();
                             if let Ok(sessions_json) = self.redis.mget(&full_keys).await {
-                                for (session_id, json_opt) in session_ids.iter().zip(sessions_json) {
+                                for (session_id, json_opt) in session_ids.iter().zip(sessions_json)
+                                {
                                     if let Some(json) = json_opt {
-                                        if let Ok(info) = serde_json::from_str::<SessionInfo>(&json) {
-                                            result.entry(user_id).or_default().push((session_id.clone(), info));
+                                        if let Ok(info) = serde_json::from_str::<SessionInfo>(&json)
+                                        {
+                                            result
+                                                .entry(user_id)
+                                                .or_default()
+                                                .push((session_id.clone(), info));
                                         }
                                     }
                                 }
                             }
-
                         }
                     }
                 }
@@ -167,5 +212,4 @@ impl SessionManagerTrait for RedisSessionManager {
 
         result
     }
-
 }

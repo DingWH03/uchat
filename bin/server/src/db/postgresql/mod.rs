@@ -1,9 +1,9 @@
 // src/db/postgresql/mod.rs
 mod friend;
 mod group;
+mod manager;
 mod message;
 mod user;
-mod manager;
 
 use crate::db::InitDB;
 

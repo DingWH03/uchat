@@ -1,18 +1,20 @@
-use async_trait::async_trait;
 use super::MysqlDB;
+use crate::db::{UserDB, error::DBError};
 use anyhow::Result;
-use uchat_protocol::{RoleType, UpdateTimestamps, request::{PatchUserRequest, UpdateUserRequest}, UserDetailedInfo};
-use crate::db::{error::DBError, UserDB};
+use async_trait::async_trait;
 use sqlx::Arguments;
+use uchat_protocol::{
+    RoleType, UpdateTimestamps, UserDetailedInfo,
+    request::{PatchUserRequest, UpdateUserRequest},
+};
 
 #[async_trait]
 impl UserDB for MysqlDB {
-    /// 设置UserDetailedInfo用户信息，当前用户信息较少，以后会考虑单独设置某一部分，例如个性签名，头像等
-    // async fn set_userinfo(&self, id: u32, userinfo: UserDetailedInfo) -> Result<()> {
-
-    // }
     /// 查询用户密码和身份
-    async fn get_user_password_and_role(&self, user_id: u32) -> Result<(String, RoleType), DBError> {
+    async fn get_user_password_and_role(
+        &self,
+        user_id: u32,
+    ) -> Result<(String, RoleType), DBError> {
         let row = sqlx::query!(
             r#"
             SELECT password_hash, role as `role: RoleType`
@@ -41,18 +43,13 @@ impl UserDB for MysqlDB {
         if let Some(row) = row {
             let password = row.password_hash;
             Ok(password)
-        }
-        else {
+        } else {
             Err(DBError::NotFound)
         }
     }
 
     /// 更新用户密码
-    async fn update_password(
-        &self,
-        id: u32,
-        new_password_hash: &str,
-    ) -> Result<(), DBError> {
+    async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), DBError> {
         sqlx::query!(
             "UPDATE users SET password_hash = ? WHERE id = ?",
             new_password_hash,
@@ -74,14 +71,24 @@ impl UserDB for MysqlDB {
         .await?;
 
         if let Some(row) = row {
-            let friends_ts = row.friends_updated_at.ok_or(DBError::NotFound)?.and_utc().timestamp();
-            let groups_ts = row.groups_updated_at.ok_or(DBError::NotFound)?.and_utc().timestamp();
-            Ok(UpdateTimestamps { friends_updated_at: friends_ts, groups_updated_at: groups_ts })
+            let friends_ts = row
+                .friends_updated_at
+                .ok_or(DBError::NotFound)?
+                .and_utc()
+                .timestamp();
+            let groups_ts = row
+                .groups_updated_at
+                .ok_or(DBError::NotFound)?
+                .and_utc()
+                .timestamp();
+            Ok(UpdateTimestamps {
+                friends_updated_at: friends_ts,
+                groups_updated_at: groups_ts,
+            })
         } else {
             Err(DBError::NotFound)
         }
     }
-
 
     /// 创建新用户
     async fn new_user(&self, username: &str, password_hash: &str) -> Result<u32, DBError> {
@@ -155,11 +162,7 @@ impl UserDB for MysqlDB {
     }
 
     /// 更新用户头像
-    async fn update_user_avatar(
-        &self,
-        id: u32,
-        avatar_url: &str,
-    ) -> Result<(), DBError> {
+    async fn update_user_avatar(&self, id: u32, avatar_url: &str) -> Result<(), DBError> {
         sqlx::query!(
             "UPDATE users SET avatar_url = ? WHERE id = ?",
             avatar_url,
@@ -187,5 +190,4 @@ impl UserDB for MysqlDB {
 
         Ok(row)
     }
-
 }

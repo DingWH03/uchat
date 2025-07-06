@@ -22,7 +22,9 @@ impl RedisClient {
 
     /// 从连接池获取一个 Redis 连接
     async fn get_conn(&self) -> RedisResult<PooledConnection<'_, RedisConnectionManager>> {
-        self.pool.get().await.map_err(|e| redis::RedisError::from((redis::ErrorKind::IoError, "pool error", e.to_string())))
+        self.pool.get().await.map_err(|e| {
+            redis::RedisError::from((redis::ErrorKind::IoError, "pool error", e.to_string()))
+        })
     }
 
     /// 设置指定 key 的值
@@ -32,7 +34,12 @@ impl RedisClient {
     }
 
     /// 设置指定 key 的值，并设置过期时间（秒）
-    pub async fn set_with_expire(&self, key: &str, value: &str, ttl_seconds: i64) -> RedisResult<()> {
+    pub async fn set_with_expire(
+        &self,
+        key: &str,
+        value: &str,
+        ttl_seconds: i64,
+    ) -> RedisResult<()> {
         let mut conn = self.get_conn().await?;
         conn.set::<&str, &str, ()>(key, value).await?; // 先设置值
         conn.expire(key, ttl_seconds).await // 再设置过期时间
@@ -45,7 +52,11 @@ impl RedisClient {
     }
 
     /// 获取指定 key 的值，并刷新其过期时间
-    pub async fn get_and_refresh(&self, key: &str, ttl_seconds: i64) -> RedisResult<Option<String>> {
+    pub async fn get_and_refresh(
+        &self,
+        key: &str,
+        ttl_seconds: i64,
+    ) -> RedisResult<Option<String>> {
         let mut conn = self.get_conn().await?;
         let result: Option<String> = conn.get(key).await?; // 获取值
         if result.is_some() {
@@ -74,7 +85,7 @@ impl RedisClient {
         while let Some(res) = iter.next_item().await {
             match res {
                 Ok(key) => keys.push(key), // 收集 key
-                Err(e) => return Err(e),  // 出错则返回错误
+                Err(e) => return Err(e),   // 出错则返回错误
             }
         }
         Ok(keys)

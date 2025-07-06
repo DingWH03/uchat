@@ -1,9 +1,9 @@
 // src/db/mod.rs
 mod friend;
 mod group;
+mod manager;
 mod message;
 mod user;
-mod manager;
 
 use crate::db::InitDB;
 
@@ -24,7 +24,7 @@ impl InitDB for MysqlDB {
         // 创建连接池，设置最大连接数为 20
         let pool = MySqlPoolOptions::new()
             .max_connections(20)
-            .connect(&database_url)
+            .connect(database_url)
             .await?;
 
         Ok(Self { pool })

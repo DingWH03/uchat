@@ -18,7 +18,10 @@ pub enum StorageBackend {
     // Local,
 }
 
-pub async fn init_storage(backend: StorageBackend, config: &StorageConfig) -> Arc<dyn ObjectStorage> {
+pub async fn init_storage(
+    backend: StorageBackend,
+    config: &StorageConfig,
+) -> Arc<dyn ObjectStorage> {
     match backend {
         StorageBackend::Minio => {
             let storage = minio::MinioStorage::new(
@@ -30,18 +33,18 @@ pub async fn init_storage(backend: StorageBackend, config: &StorageConfig) -> Ar
             )
             .await
             .expect("Failed to init MinIO");
-            storage.test_connection().await.expect("Failed to connect to MinIO");
+            storage
+                .test_connection()
+                .await
+                .expect("Failed to connect to MinIO");
             info!("MinIO storage initialized successfully");
             Arc::new(storage)
-        }
-
-        // StorageBackend::Local => {
-        //     let storage = local::LocalStorage::new(&config.local_dir, &config.base_url);
-        //     Arc::new(storage)
-        // }
+        } // StorageBackend::Local => {
+          //     let storage = local::LocalStorage::new(&config.local_dir, &config.base_url);
+          //     Arc::new(storage)
+          // }
     }
 }
-
 
 #[async_trait]
 pub trait ObjectStorage: Send + Sync {

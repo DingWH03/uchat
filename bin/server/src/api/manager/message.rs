@@ -35,7 +35,10 @@ impl Manager {
             "响应manager获取用户{}最近message: count: {}, offset: {}",
             user_id, count, offset
         );
-        let result = self.db.get_user_recent_messages(count, offset, user_id).await;
+        let result = self
+            .db
+            .get_user_recent_messages(count, offset, user_id)
+            .await;
         match result {
             Ok(data) => ManagerResponse::ok("获取成功", data),
             Err(e) => {
@@ -45,14 +48,8 @@ impl Manager {
         }
     }
     /// 根据message id删除聊天记录
-    pub async fn delete_message(
-        &self,
-        message_id: u64,
-    ) -> ManagerResponse<u64> {
-        info!(
-            "响应manager删除message: {}",
-            message_id
-        );
+    pub async fn delete_message(&self, message_id: u64) -> ManagerResponse<u64> {
+        info!("响应manager删除message: {}", message_id);
         let result = self.db.delete_private_message(message_id).await;
         match result {
             Ok(index) => ManagerResponse::ok("删除成功", index),
@@ -63,14 +60,8 @@ impl Manager {
         }
     }
     /// 根据message id获取聊天记录
-    pub async fn get_message(
-        &self,
-        message_id: u64,
-    ) -> ManagerResponse<FullPrivateMessage> {
-        info!(
-            "响应manager获取message: {}",
-            message_id
-        );
+    pub async fn get_message(&self, message_id: u64) -> ManagerResponse<FullPrivateMessage> {
+        info!("响应manager获取message: {}", message_id);
         let result = self.db.get_private_message(message_id).await;
         match result {
             Ok(message) => ManagerResponse::ok("获取成功", message),

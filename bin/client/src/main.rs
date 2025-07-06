@@ -2,15 +2,13 @@ use futures_util::{SinkExt, StreamExt};
 use reqwest::Client;
 use std::net::ToSocketAddrs;
 use tokio::net::TcpStream;
-use tokio_tungstenite::tungstenite::handshake::client::{generate_key, Request};
-use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message};
-use tokio_tungstenite::{client_async, WebSocketStream};
+use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::{WebSocketStream, client_async};
 use url::Url;
 
 use crate::client::ClientMessage;
 
 mod client;
-
 
 fn main() {
     let rt = tokio::runtime::Runtime::new().unwrap();
@@ -22,10 +20,7 @@ async fn async_main() {
     let ws_url = "ws://127.0.0.1:8080/auth/ws";
 
     // 登录用户
-    let client = Client::builder()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let client = Client::builder().cookie_store(true).build().unwrap();
 
     let login_body = serde_json::json!({
         "userid": 5,
@@ -66,7 +61,10 @@ async fn async_main() {
     let stream = TcpStream::connect(&addr).await.unwrap();
 
     // 构建 WebSocket 请求，携带 Cookie
-    let mut req = tokio_tungstenite::tungstenite::client::IntoClientRequest::into_client_request(url.as_str()).unwrap();
+    let mut req = tokio_tungstenite::tungstenite::client::IntoClientRequest::into_client_request(
+        url.as_str(),
+    )
+    .unwrap();
     req.headers_mut().insert(
         "Cookie",
         format!("session_id={}", session_id)
@@ -75,16 +73,14 @@ async fn async_main() {
     );
 
     // 使用 client_async 进行 WebSocket 升级
-    let (ws_stream, _) = client_async(req, stream)
-        .await
-        .expect("WebSocket 连接失败");
+    let (ws_stream, _) = client_async(req, stream).await.expect("WebSocket 连接失败");
 
     println!("WebSocket 连接成功");
 
     handle_socket(ws_stream).await;
 }
 
-async fn handle_socket(mut ws_stream: WebSocketStream<TcpStream>) {
+async fn handle_socket(ws_stream: WebSocketStream<TcpStream>) {
     let (mut write, mut read) = ws_stream.split();
 
     // 发送测试消息
@@ -92,7 +88,6 @@ async fn handle_socket(mut ws_stream: WebSocketStream<TcpStream>) {
         .send(Message::Text("你好，服务器！".into()))
         .await
         .unwrap();
-
 
     // 构造 ClientMessage::SendMessage 消息
     let msg = ClientMessage::SendMessage {
@@ -107,10 +102,7 @@ async fn handle_socket(mut ws_stream: WebSocketStream<TcpStream>) {
     // 启动一个任务持续发送心跳包
     tokio::spawn(async move {
         loop {
-            if let Err(e) = write
-                .send(Message::Ping("ping".into()))
-                .await
-            {
+            if let Err(e) = write.send(Message::Ping("ping".into())).await {
                 eprintln!("心跳发送失败: {}", e);
                 break;
             }

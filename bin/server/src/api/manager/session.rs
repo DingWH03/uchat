@@ -1,18 +1,17 @@
-
 use std::collections::HashMap;
 
 use log::info;
 
-use uchat_protocol::{manager::OnlineUserTree, ManagerResponse, RoleType};
+use uchat_protocol::{ManagerResponse, RoleType, manager::OnlineUserTree};
 
 use super::Manager;
 
 impl Manager {
-     /// 移除一个指定 session
+    /// 移除一个指定 session
     pub async fn remove_session(&self, session_id: &str) -> ManagerResponse<()> {
         info!("响应manager移除session: {}", session_id);
         self.sessions.delete_session(session_id).await;
-        ManagerResponse::ok("移除成功",())
+        ManagerResponse::ok("移除成功", ())
     }
 
     /// 移除某个用户的所有 session
@@ -23,14 +22,14 @@ impl Manager {
                 self.sessions.delete_session(&session_id).await;
             }
         }
-        ManagerResponse::ok("移除成功",())
+        ManagerResponse::ok("移除成功", ())
     }
 
     /// 清除所有 session（慎用）
     pub async fn remove_all_sessions(&self) -> ManagerResponse<()> {
         info!("响应manager移除所有的session");
         self.sessions.clear_all_sessions().await;
-        ManagerResponse::ok("移除成功",())
+        ManagerResponse::ok("移除成功", ())
     }
 
     /// 获取session_id权限
@@ -63,5 +62,4 @@ impl Manager {
         // 构造 OnlineUserTree 并返回响应
         ManagerResponse::ok("获取成功", OnlineUserTree { users })
     }
-
 }

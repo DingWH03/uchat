@@ -51,11 +51,11 @@ impl ManagerDB for MysqlDB {
             FROM recent_private_messages_view
             ORDER BY timestamp DESC
             LIMIT $1 OFFSET $2
-            "#
+            "#,
         )
         .bind(count as i64)
         .bind(offset as i64)
-        .fetch_all(&self.pool)  // 假设你在 impl 中有 `self.pool: PgPool`
+        .fetch_all(&self.pool) // 假设你在 impl 中有 `self.pool: PgPool`
         .await?;
 
         Ok(messages)
@@ -82,7 +82,7 @@ impl ManagerDB for MysqlDB {
             WHERE sender_id = $1 OR receiver_id = $1
             ORDER BY timestamp DESC
             LIMIT $2 OFFSET $3
-            "#
+            "#,
         )
         .bind(user_id as i32)
         .bind(count as i64)
@@ -93,24 +93,15 @@ impl ManagerDB for MysqlDB {
         Ok(messages)
     }
     /// 根据message_id删除某条聊天记录
-    async fn delete_private_message(
-        &self,
-        message_id: i32
-    ) -> Result<u64, DBError> {
-        let result = sqlx::query!(
-            "DELETE FROM messages WHERE id = $1",
-            message_id
-        )
-        .execute(&self.pool)
-        .await?;
+    async fn delete_private_message(&self, message_id: i32) -> Result<u64, DBError> {
+        let result = sqlx::query!("DELETE FROM messages WHERE id = $1", message_id)
+            .execute(&self.pool)
+            .await?;
 
         Ok(result.rows_affected())
     }
     /// 获取一条私聊消息
-    async fn get_private_message(
-        &self,
-        message_id: u64,
-    ) -> Result<FullPrivateMessage, DBError> {
+    async fn get_private_message(&self, message_id: u64) -> Result<FullPrivateMessage, DBError> {
         let message = sqlx::query_as!(
             FullPrivateMessage,
             r#"

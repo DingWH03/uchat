@@ -1,13 +1,13 @@
+use crate::api::handler::ws::handle_socket;
+use crate::server::AppState;
 use axum::{
     extract::{Extension, ws::WebSocketUpgrade},
     response::{IntoResponse, Response},
 };
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use log::{debug};
+use log::debug;
 use uchat_protocol::request::RequestResponse;
-use crate::{api::handler::ws::handle_socket};
-use crate::server::AppState;
 /// 处理WebSocket升级请求
 /// 签名已调整为标准的WebSocket升级处理器，并从 Cookie 中提取 session_id
 #[utoipa::path(

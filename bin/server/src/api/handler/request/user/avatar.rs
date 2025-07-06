@@ -1,10 +1,10 @@
-use axum::response::IntoResponse;
-use axum::Extension;
-use axum_extra::TypedHeader;
-use axum::extract::multipart::Multipart;
-use headers::Cookie;
-use uchat_protocol::{request::RequestResponse, Empty};
 use crate::server::AppState;
+use axum::Extension;
+use axum::extract::multipart::Multipart;
+use axum::response::IntoResponse;
+use axum_extra::TypedHeader;
+use headers::Cookie;
+use uchat_protocol::{Empty, request::RequestResponse};
 
 /// 上传头像（multipart 文件）
 /// 返回上传后的头像 URL
@@ -75,4 +75,3 @@ pub async fn handle_upload_avatar(
         RequestResponse::<()>::err("未找到有效的文件字段").into_response()
     }
 }
-

@@ -82,7 +82,8 @@ impl ObjectStorage for MinioStorage {
     /// 删除指定 prefix 下除 except_keys 之外的对象
     async fn delete_prefix_except(&self, prefix: &str, except_keys: &[&str]) -> anyhow::Result<()> {
         // 列举指定前缀下所有对象
-        let resp = self.client
+        let resp = self
+            .client
             .list_objects_v2()
             .bucket(&self.bucket)
             .prefix(prefix)

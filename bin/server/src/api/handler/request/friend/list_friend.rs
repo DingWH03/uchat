@@ -1,10 +1,10 @@
-use axum::{response::IntoResponse, Extension};
-use log::{debug};
+use axum::{Extension, response::IntoResponse};
+use log::debug;
 
+use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{request::{RequestResponse}, Empty, UserSimpleInfo, UserSimpleInfoWithStatus};
-use crate::{server::AppState};
+use uchat_protocol::{Empty, UserSimpleInfo, UserSimpleInfoWithStatus, request::RequestResponse};
 
 /// 获取好友列表
 #[utoipa::path(
@@ -22,7 +22,7 @@ pub async fn handle_list_friend(
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
     debug!("处理获取好友列表请求");
-    
+
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -57,7 +57,7 @@ pub async fn handle_list_friend_with_status(
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
     debug!("处理获取好友列表请求");
-    
+
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -73,5 +73,8 @@ pub async fn handle_list_friend_with_status(
         }
     };
 
-    request_lock.get_friends_with_status(user_id).await.into_response()
+    request_lock
+        .get_friends_with_status(user_id)
+        .await
+        .into_response()
 }

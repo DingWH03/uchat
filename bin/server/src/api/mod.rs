@@ -1,6 +1,6 @@
-pub mod request;
+#[cfg(feature = "swagger")]
+pub mod doc;
 pub mod error;
 pub mod handler;
 pub mod manager;
-#[cfg(feature = "swagger")]
-pub mod doc;
+pub mod request;

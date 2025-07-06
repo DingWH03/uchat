@@ -1,5 +1,5 @@
-use crate::db::error::DBError;
 use crate::db::FriendDB;
+use crate::db::error::DBError;
 use crate::db::postgresql::PgSqlDB;
 use crate::protocol::UserSimpleInfo;
 

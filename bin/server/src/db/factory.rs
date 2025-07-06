@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
-use anyhow::{anyhow, Ok, Result};
-use crate::db::{InitDB, DB};
-#[cfg(feature = "postgres")]
-use crate::db::postgresql::PgSqlDB;
 #[cfg(feature = "mysql")]
 use crate::db::mysql::MysqlDB;
+#[cfg(feature = "postgres")]
+use crate::db::postgresql::PgSqlDB;
+use crate::db::{DB, InitDB};
+use anyhow::{Ok, Result, anyhow};
 
 pub enum DbType {
     #[cfg(feature = "mysql")]
     MySQL,
     #[cfg(feature = "postgres")]
-    Postgres
+    Postgres,
 }
 
 impl std::str::FromStr for DbType {
@@ -41,10 +41,9 @@ pub async fn create_database(db_type: DbType, database_url: &str) -> Result<Arc<
         DbType::Postgres => {
             let db = PgSqlDB::init(database_url).await?;
             Ok(Arc::new(db))
-        }
-        // DbType::MariaDB => {
-        //     let db = MariaDbDatabase::init(database_url).await?;
-        //     Ok(Box::new(db))
-        // }
+        } // DbType::MariaDB => {
+          //     let db = MariaDbDatabase::init(database_url).await?;
+          //     Ok(Box::new(db))
+          // }
     }
 }

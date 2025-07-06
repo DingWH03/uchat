@@ -1,7 +1,10 @@
-use async_trait::async_trait;
 use super::PgSqlDB;
+use crate::{
+    db::{UserDB, error::DBError},
+    protocol::{PatchUserRequest, UpdateUserRequest, UserDetailedInfo},
+};
 use anyhow::Result;
-use crate::{db::{error::DBError, UserDB}, protocol::{PatchUserRequest, UpdateUserRequest, UserDetailedInfo}};
+use async_trait::async_trait;
 use sqlx::Arguments;
 
 #[async_trait]
@@ -20,11 +23,7 @@ impl UserDB for PgSqlDB {
     }
 
     /// 更新用户密码
-    async fn update_password(
-        &self,
-        id: u32,
-        new_password_hash: &str,
-    ) -> Result<(), DBError> {
+    async fn update_password(&self, id: u32, new_password_hash: &str) -> Result<(), DBError> {
         sqlx::query!(
             "UPDATE users SET password_hash = $1 WHERE id = $2",
             new_password_hash,
@@ -111,9 +110,12 @@ impl UserDB for PgSqlDB {
 
     /// 根据id查找用户详细信息
     async fn get_userinfo(&self, id: u32) -> Result<Option<UserDetailedInfo>, DBError> {
-        let row = sqlx::query!("SELECT id AS user_id, username FROM users WHERE id = $1", id as i32)
-            .fetch_optional(&self.pool)
-            .await?;
+        let row = sqlx::query!(
+            "SELECT id AS user_id, username FROM users WHERE id = $1",
+            id as i32
+        )
+        .fetch_optional(&self.pool)
+        .await?;
 
         Ok(row.map(|r| UserDetailedInfo {
             user_id: r.user_id as u32,

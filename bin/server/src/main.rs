@@ -1,15 +1,15 @@
-mod db;
-mod server;
 mod api;
+mod db;
 mod error;
-mod session;
-mod storage;
 #[cfg(feature = "redis-support")]
 mod redis;
+mod server;
+mod session;
+mod storage;
 
-use std::{env, net::SocketAddr};
-use log::error;
 use dotenv::dotenv;
+use log::error;
+use std::{env, net::SocketAddr};
 
 #[tokio::main]
 async fn main() {
@@ -23,7 +23,6 @@ async fn main() {
         error!("服务启动失败: {}", e);
     }
 }
-
 
 async fn start() -> Result<(), Box<dyn std::error::Error>> {
     // 从环境变量中获取服务端监听字符串

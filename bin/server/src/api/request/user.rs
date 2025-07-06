@@ -6,7 +6,7 @@ use log::{error, info, warn};
 use uchat_protocol::{
     UpdateTimestamps, UserDetailedInfo,
     message::ServerMessage,
-    request::{PatchUserRequest, RequestResponse, UpdateUserRequest}
+    request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
 };
 use uuid::Uuid;
 
@@ -44,7 +44,7 @@ impl Request {
             self.sessions
                 .get_sessions_by_user(id)
                 .await
-                .map_or(true, |set| set.is_empty())
+                .is_none_or(|set| set.is_empty())
         };
         // 插入会话
         self.sessions
@@ -88,7 +88,7 @@ impl Request {
                 .sessions
                 .get_sessions_by_user(user_id)
                 .await
-                .map_or(false, |s| !s.is_empty());
+                .is_some_and(|s| !s.is_empty());
 
             if !still_online {
                 // 如果该用户彻底下线，则广播 OfflineMessage

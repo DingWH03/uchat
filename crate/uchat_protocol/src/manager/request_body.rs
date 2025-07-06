@@ -1,11 +1,11 @@
+use crate::RoleType;
 use serde::Deserialize;
 use utoipa::{IntoParams, ToSchema};
-use crate::RoleType;
 
 #[derive(Deserialize, Debug, ToSchema)]
 pub struct ChangeRoleRequest {
     pub user_id: u32,
-    pub new_role: RoleType, 
+    pub new_role: RoleType,
 }
 
 /// 获取用户详细信息

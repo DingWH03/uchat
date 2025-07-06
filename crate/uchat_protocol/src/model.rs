@@ -1,7 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use sqlx::Type;
+use std::{
+    fmt::{self},
+    str::FromStr,
+};
 use utoipa::ToSchema;
-use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserSimpleInfo {
@@ -28,7 +31,7 @@ pub struct UserDetailedInfo {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserSimpleInfoWithStatus {
     pub base: UserSimpleInfo,
-    pub online: bool
+    pub online: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -52,7 +55,7 @@ pub struct SessionMessage {
     pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
 }
 
- #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
+#[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct GroupSessionMessage {
     pub message_id: u32,
     pub message_type: MessageType, // enum 类型更安全
@@ -70,9 +73,9 @@ pub struct PreviewPrivateMessage {
     pub sender_username: String,
     pub receiver_id: u32,
     pub receiver_username: String,
-    pub message_type: MessageType,        // 可改为 enum 类型（如 MessageType 枚举）更安全
-    pub message_preview: String,     // message 前 100 字符
-    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
+    pub message_type: MessageType, // 可改为 enum 类型（如 MessageType 枚举）更安全
+    pub message_preview: String,   // message 前 100 字符
+    pub timestamp: i64,            // 使用 i64 存储时间戳，单位为秒
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
@@ -84,9 +87,8 @@ pub struct FullPrivateMessage {
     pub receiver_username: String,
     pub message_type: MessageType,
     pub message: String, // 完整消息内容
-    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
+    pub timestamp: i64,  // 使用 i64 存储时间戳，单位为秒
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize, ToSchema)]
 #[sqlx(type_name = "ENUM", rename_all = "lowercase")]
@@ -113,13 +115,14 @@ impl FromStr for RoleType {
     }
 }
 
-impl ToString for RoleType {
-    fn to_string(&self) -> String {
-        match self {
-            RoleType::Admin => "admin".to_string(),
-            RoleType::User => "user".to_string(),
-            RoleType::Invalid => "invalid".to_string(),
-        }
+impl fmt::Display for RoleType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            RoleType::Admin => "admin",
+            RoleType::User => "user",
+            RoleType::Invalid => "invalid",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -128,7 +131,6 @@ impl RoleType {
         matches!(self, RoleType::Admin)
     }
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize, ToSchema)]
 #[cfg_attr(feature = "mysql", sqlx(type_name = "text"))]
@@ -167,15 +169,16 @@ impl FromStr for MessageType {
     }
 }
 
-impl ToString for MessageType {
-    fn to_string(&self) -> String {
-        match self {
-            MessageType::Text => "text".to_string(),
-            MessageType::Image => "image".to_string(),
-            MessageType::File => "file".to_string(),
-            MessageType::Video => "video".to_string(),
-            MessageType::Audio => "audio".to_string(),
-        }
+impl fmt::Display for MessageType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            MessageType::Text => "text",
+            MessageType::Image => "image",
+            MessageType::File => "file",
+            MessageType::Video => "video",
+            MessageType::Audio => "audio",
+        };
+        write!(f, "{}", s)
     }
 }
 

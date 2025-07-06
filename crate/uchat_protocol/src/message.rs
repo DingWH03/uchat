@@ -3,14 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
-    SendMessage {
-        receiver: u32,
-        message: String,
-    },
-    SendGroupMessage {
-        group_id: u32,
-        message: String,
-    },
+    SendMessage { receiver: u32, message: String },
+    SendGroupMessage { group_id: u32, message: String },
 }
 
 #[derive(Serialize, Debug)]
@@ -31,9 +25,9 @@ pub enum ServerMessage {
         timestamp: i64, // 使用 i64 存储时间戳，单位为秒
     },
     OnlineMessage {
-        friend_id: u32
+        friend_id: u32,
     },
     OfflineMessage {
-        friend_id: u32
-    }
+        friend_id: u32,
+    },
 }

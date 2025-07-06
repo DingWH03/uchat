@@ -1,5 +1,5 @@
-use crate::db::error::DBError;
 use crate::db::GroupDB;
+use crate::db::error::DBError;
 use crate::db::postgresql::PgSqlDB;
 use crate::protocol::{GroupDetailedInfo, GroupSimpleInfo, UserSimpleInfo};
 
@@ -85,7 +85,12 @@ impl GroupDB for PgSqlDB {
             .collect())
     }
 
-    async fn create_group(&self, user_id: u32, group_name: &str, members: Vec<u32>) -> Result<u32, DBError> {
+    async fn create_group(
+        &self,
+        user_id: u32,
+        group_name: &str,
+        members: Vec<u32>,
+    ) -> Result<u32, DBError> {
         // 创建群组
         let rec = sqlx::query!(
             "INSERT INTO ugroups (name, creator_id) VALUES ($1, $2) RETURNING id",
@@ -110,8 +115,9 @@ impl GroupDB for PgSqlDB {
         let members_to_add: Vec<u32> = members.into_iter().filter(|&id| id != user_id).collect();
 
         if !members_to_add.is_empty() {
-            let mut builder =
-                sqlx::QueryBuilder::<sqlx::Postgres>::new("INSERT INTO group_members (group_id, user_id)");
+            let mut builder = sqlx::QueryBuilder::<sqlx::Postgres>::new(
+                "INSERT INTO group_members (group_id, user_id)",
+            );
 
             builder.push_values(members_to_add.iter(), |mut b, member_id| {
                 b.push_bind(group_id as i32).push_bind(*member_id as i32);

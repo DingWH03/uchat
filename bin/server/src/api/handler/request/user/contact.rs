@@ -1,10 +1,9 @@
-use axum::response::IntoResponse;
+use crate::server::AppState;
 use axum::Extension;
+use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{request::RequestResponse, Empty, ContactList, UpdateTimestamps};
-use crate::server::AppState;
-
+use uchat_protocol::{ContactList, Empty, UpdateTimestamps, request::RequestResponse};
 
 /// 查询用户的好友和群组更新时间戳(单位：秒)
 #[utoipa::path(
@@ -20,7 +19,6 @@ pub async fn handle_get_contact_timestamps(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
-
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -36,7 +34,10 @@ pub async fn handle_get_contact_timestamps(
         }
     };
 
-    request_lock.get_update_timestamps(user_id).await.into_response()
+    request_lock
+        .get_update_timestamps(user_id)
+        .await
+        .into_response()
 }
 
 /// 查询用户的好友和群组列表，相当于同时调用list_friend和list_group
@@ -53,7 +54,6 @@ pub async fn handle_get_contact_list(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
-
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();

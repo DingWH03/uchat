@@ -1,10 +1,13 @@
-use axum::response::IntoResponse;
+use crate::server::AppState;
 use axum::Extension;
 use axum::Json;
+use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{request::{RequestResponse, UpdateUserRequest, PatchUserRequest}, Empty, UserDetailedInfo};
-use crate::server::AppState;
+use uchat_protocol::{
+    Empty, UserDetailedInfo,
+    request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
+};
 
 /// 获取个人信息
 #[utoipa::path(
@@ -20,7 +23,6 @@ pub async fn handle_get_me(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
-
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -55,7 +57,6 @@ pub async fn handle_put_me(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> impl IntoResponse {
-
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -71,7 +72,10 @@ pub async fn handle_put_me(
         }
     };
 
-    request_lock.update_user_info_full(user_id, payload).await.into_response()
+    request_lock
+        .update_user_info_full(user_id, payload)
+        .await
+        .into_response()
 }
 
 /// 部分修改个人资料
@@ -90,7 +94,6 @@ pub async fn handle_patch_me(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(payload): Json<PatchUserRequest>,
 ) -> impl IntoResponse {
-
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -106,7 +109,10 @@ pub async fn handle_patch_me(
         }
     };
 
-    request_lock.update_user_info_partial(user_id, payload).await.into_response()
+    request_lock
+        .update_user_info_partial(user_id, payload)
+        .await
+        .into_response()
 }
 
 /// 删除自己账号
@@ -123,7 +129,6 @@ pub async fn handle_delete_me(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
-
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -140,4 +145,3 @@ pub async fn handle_delete_me(
     };
     request_lock.delete_user(user_id).await.into_response()
 }
-

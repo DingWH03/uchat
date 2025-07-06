@@ -9,7 +9,6 @@ pub enum PayloadType {
     // etc.
 }
 
-
 #[derive(Debug)]
 pub struct Frame {
     pub payload_type: PayloadType,
@@ -20,7 +19,7 @@ impl Frame {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&[0xAB, 0xCD]); // magic
-        bytes.push(self.payload_type as u8);    // type
+        bytes.push(self.payload_type as u8); // type
         bytes.extend_from_slice(&(self.payload.len() as u32).to_be_bytes()); // length
         bytes.extend_from_slice(&self.payload); // payload
         bytes
