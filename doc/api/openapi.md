@@ -1,0 +1,1652 @@
+# uchat-server
+
+## 版本: 1.0.0
+
+### /
+
+- **方法**: GET
+- **标签**: 测试接口
+- **摘要**: 
+- **描述**: 
+- **响应**:
+  - **200**: 成功响应
+    - **返回类型**: `text/plain`
+    - **返回结构**:
+
+### /auth/check_session
+
+- **方法**: GET
+- **标签**: request/auth
+- **摘要**: 会话有效性检查接口
+- **描述**: 检查客户端当前 Cookie 中的 `session_id` 是否有效，并返回用户的身份角色。
+通常用于客户端启动后自动判断是否已登录或会话是否过期。
+
+### 用法示例
+- 请求方式：`GET /check_session`
+- 请求头中需携带 Cookie：`session_id=...`
+- 返回：
+  - `status: true` 表示登录状态有效
+  - `data`: 用户的角色（如 User、Admin、Invalid）
+
+若未携带 Cookie 或会话已失效，将返回 `status: false` 和 `data: null`。
+- **响应**:
+  - **200**: 会话有效
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 会话无效
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /auth/login
+
+- **方法**: POST
+- **标签**: request/auth
+- **摘要**: 登陆处理函数
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `password`: string
+    - `userid`: integer
+- **响应**:
+  - **200**: 登陆成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器内部错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /auth/logout
+
+- **方法**: POST
+- **标签**: request/auth
+- **摘要**: 处理退出登录
+- **描述**: 
+- **响应**:
+  - **200**: 退出登录成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器内部错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /auth/password
+
+- **方法**: POST
+- **标签**: request/auth
+- **摘要**: 修改密码处理函数
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `new_password`: string
+    - `old_password`: string
+    - `user_id`: integer
+- **响应**:
+  - **200**: 修改密码成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **400**: 密码格式错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 原密码错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器内部错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /auth/register
+
+- **方法**: POST
+- **标签**: request/auth
+- **摘要**: 注册处理函数
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `password`: string
+    - `username`: string
+- **响应**:
+  - **200**: 注册成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: integer
+    - `message`: string
+    - `status`: boolean
+  - **400**: 用户名或密码格式错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器内部错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /auth/ws
+
+- **方法**: GET
+- **标签**: request/auth
+- **摘要**: 处理WebSocket升级请求
+签名已调整为标准的WebSocket升级处理器，并从 Cookie 中提取 session_id
+- **描述**: 
+- **响应**:
+  - **101**: WebSocket 协议升级成功
+  - **401**: 认证失败，缺少或非法 session_id Cookie
+
+### /friend/add
+
+- **方法**: POST
+- **标签**: request/friend
+- **摘要**: 添加好友
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `id`: integer
+- **响应**:
+  - **200**: 添加成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **400**: 目标用户不存在
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /friend/info
+
+- **方法**: GET
+- **标签**: request/friend
+- **摘要**: 查看friend详细信息
+- **描述**: 
+- **参数**:
+  - **id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取个人信息
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `avatar_url`: ['string', 'null']
+    - `role`: object
+    - `user_id`: integer
+    - `username`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /friend/list
+
+- **方法**: GET
+- **标签**: request/friend
+- **摘要**: 获取好友列表
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /friend/listv2
+
+- **方法**: GET
+- **标签**: request/friend
+- **摘要**: 获取好友列表(带状态信息)
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /friend/status
+
+- **方法**: POST
+- **标签**: request/friend
+- **摘要**: 使用好友id批量查询好友在线情况
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `user_ids`: array
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /group/info
+
+- **方法**: GET
+- **标签**: request/group
+- **摘要**: 获取群组信息
+- **描述**: 
+- **参数**:
+  - **id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `group_id`: integer
+    - `title`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **404**: 找不到群组
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /group/join
+
+- **方法**: POST
+- **标签**: request/group
+- **摘要**: 加入群组
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `id`: integer
+- **响应**:
+  - **200**: 加入成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **400**: 找不到群组
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /group/leave
+
+- **方法**: POST
+- **标签**: request/group
+- **摘要**: 离开群组
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `id`: integer
+- **响应**:
+  - **200**: 离开成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **400**: 错误请求
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /group/list
+
+- **方法**: GET
+- **标签**: request/group
+- **摘要**: 获取群组列表
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /group/members
+
+- **方法**: GET
+- **标签**: request/group
+- **摘要**: 获取群组成员
+- **描述**: 
+- **参数**:
+  - **id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `avatar_url`: string
+    - `user_id`: integer
+    - `username`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **404**: 找不到群组
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /group/new
+
+- **方法**: POST
+- **标签**: request/group
+- **摘要**: 创建群组
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `group_name`: string
+    - `members`: array
+- **响应**:
+  - **200**: 创建成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: integer
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/message/privite
+
+- **方法**: GET
+- **标签**: manager/message
+- **摘要**: 依据message_id获取某消息
+- **描述**: 
+- **参数**:
+  - **message_id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `id`: integer
+    - `message`: string
+    - `message_type`: object
+    - `receiver_id`: integer
+    - `receiver_username`: string
+    - `sender_id`: integer
+    - `sender_username`: string
+    - `timestamp`: integer
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/message/privite
+
+- **方法**: DELETE
+- **标签**: manager/message
+- **摘要**: 依据message_id删除某消息
+- **描述**: 
+- **参数**:
+  - **message_id** (query, integer, required): 
+- **响应**:
+  - **200**: 删除成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: integer
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/message/privite/recent
+
+- **方法**: GET
+- **标签**: manager/message
+- **摘要**: 查看服务器近期消息
+- **描述**: 
+- **参数**:
+  - **count** (query, integer, required): 
+  - **offset** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/message/privite/user
+
+- **方法**: GET
+- **标签**: manager/message
+- **摘要**: 查看某用户近期消息
+- **描述**: 
+- **参数**:
+  - **count** (query, integer, required): 
+  - **offset** (query, integer, required): 
+  - **user_id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/online/session
+
+- **方法**: DELETE
+- **标签**: manager/online
+- **摘要**: 删除某session_id
+- **描述**: 
+- **参数**:
+  - **session_id** (query, string, required): 
+- **响应**:
+  - **200**: 删除成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/online/tree
+
+- **方法**: GET
+- **标签**: manager/online
+- **摘要**: 
+- **描述**: 
+- **响应**:
+  - **200**: 返回在线用户树
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `users`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 未登陆
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足(需管理员权限)
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user
+
+- **方法**: DELETE
+- **标签**: manager/user
+- **摘要**: 指定删除某用户
+- **描述**: 
+- **参数**:
+  - **user_id** (query, integer, required): 
+- **响应**:
+  - **200**: 删除成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user/count
+
+- **方法**: GET
+- **标签**: manager/user
+- **摘要**: 获取注册总用户数量
+- **描述**: 
+- **响应**:
+  - **200**: 返回用户总数
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: integer
+    - `message`: string
+    - `status`: boolean
+  - **401**: 未登陆
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足(需管理员权限)
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user/detail
+
+- **方法**: GET
+- **标签**: manager/user
+- **摘要**: 查看某用户详细个人信息
+- **描述**: 
+- **参数**:
+  - **user_id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `avatar_url`: ['string', 'null']
+    - `role`: object
+    - `user_id`: integer
+    - `username`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user/friend
+
+- **方法**: GET
+- **标签**: manager/user
+- **摘要**: 查看某用户所有好友
+- **描述**: 
+- **参数**:
+  - **user_id** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user/friend
+
+- **方法**: DELETE
+- **标签**: manager/user
+- **摘要**: 指定删除某好友关系
+- **描述**: 
+- **参数**:
+  - **user_id** (query, integer, required): 
+  - **friend_id** (query, integer, required): 
+- **响应**:
+  - **200**: 删除成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user/list
+
+- **方法**: GET
+- **标签**: manager/user
+- **摘要**: 获取注册总用户列表
+- **描述**: 
+- **响应**:
+  - **200**: 返回用户列表
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 未登陆
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **403**: 权限不足(需管理员权限)
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /manager/user/role
+
+- **方法**: POST
+- **标签**: manager/user
+- **摘要**: 更改用户身份
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `new_role`: object
+    - `user_id`: integer
+- **响应**:
+  - **200**: 更改身份成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **400**: 目标身份不存在
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器内部错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/group
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取群聊聊天记录
+- **描述**: 
+- **参数**:
+  - **id** (query, integer, required): 
+  - **offset** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **404**: 找不到群组
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/group/after
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取当前用户所有群中某时间之后的消息（带群 ID）
+- **描述**: 
+- **参数**:
+  - **timestamp** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/group/latest
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取当前用户所在所有群的最后一条消息时间戳（Map）
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/group/max
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取当前用户所有群聊中最新的一条消息时间戳（全局最大）
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/group/{group_id}/after
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取某个群某时间之后的消息
+- **描述**: 
+- **参数**:
+  - **group_id** (path, integer, required): 群组ID
+  - **timestamp** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **404**: 群组不存在
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/group/{group_id}/latest
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取某个群聊的最后一条消息时间戳
+- **描述**: 
+- **参数**:
+  - **group_id** (path, integer, required): 群组ID
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **404**: 群组不存在
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/user
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取私聊聊天记录
+- **描述**: 
+- **参数**:
+  - **id** (query, integer, required): 
+  - **offset** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **404**: 找不到群组
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/user/after
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取所有私聊中某时间之后的所有聊天记录（带对方 ID）
+- **描述**: 
+- **参数**:
+  - **timestamp** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/user/latest
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取当前用户所有私聊的最后一条消息时间戳（按好友ID映射）
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/user/max
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取当前用户所有私聊中全局最新的一条消息时间戳
+- **描述**: 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/user/{friend_id}/after
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取与某个用户某时间之后的聊天记录（时间递增）
+- **描述**: 
+- **参数**:
+  - **friend_id** (path, integer, required): 好友ID
+  - **timestamp** (query, integer, required): 
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /message/user/{friend_id}/latest
+
+- **方法**: GET
+- **标签**: request/message
+- **摘要**: 获取与某个用户的最后一条私聊消息时间戳
+- **描述**: 
+- **参数**:
+  - **friend_id** (path, integer, required): 好友ID
+- **响应**:
+  - **200**: 获取成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **500**: 服务器错误
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /ping
+
+- **方法**: GET
+- **标签**: 测试接口
+- **摘要**: 
+- **描述**: 
+- **响应**:
+  - **200**: 成功响应
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/avatar
+
+- **方法**: POST
+- **标签**: request/user
+- **摘要**: 上传头像（multipart 文件）
+返回上传后的头像 URL
+- **描述**: 
+- **请求体**:
+  - **multipart/form-data**:
+    - **字段**: {}
+- **响应**:
+  - **200**: 头像上传成功
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: string
+    - `message`: string
+    - `status`: boolean
+  - **400**: 上传失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 未认证
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/contact/list
+
+- **方法**: GET
+- **标签**: request/user
+- **摘要**: 查询用户的好友和群组列表，相当于同时调用list_friend和list_group
+- **描述**: 
+- **响应**:
+  - **200**: 获取完整好友列表，不支持状态信息
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `friends`: array
+    - `groups`: array
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/contact/timestamps
+
+- **方法**: GET
+- **标签**: request/user
+- **摘要**: 查询用户的好友和群组更新时间戳(单位：秒)
+- **描述**: 
+- **响应**:
+  - **200**: 获取好友和群组列表最新时间戳
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `friends_updated_at`: integer
+    - `groups_updated_at`: integer
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/me
+
+- **方法**: GET
+- **标签**: request/user
+- **摘要**: 获取个人信息
+- **描述**: 
+- **响应**:
+  - **200**: 获取个人信息
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `avatar_url`: ['string', 'null']
+    - `role`: object
+    - `user_id`: integer
+    - `username`: string
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/me
+
+- **方法**: PUT
+- **标签**: request/user
+- **摘要**: 完整更新个人资料
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `username`: string
+- **响应**:
+  - **200**: 完整更新个人资料
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/me
+
+- **方法**: DELETE
+- **标签**: request/user
+- **摘要**: 删除自己账号
+- **描述**: 
+- **响应**:
+  - **200**: 删除自己的账号(依据session_id)
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
+### /user/me
+
+- **方法**: PATCH
+- **标签**: request/user
+- **摘要**: 部分修改个人资料
+- **描述**: 
+- **请求体**:
+  - **application/json**:
+    - **字段**:
+    - `username`: ['string', 'null']
+- **响应**:
+  - **200**: 部分修改个人资料
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+  - **401**: 认证失败
+    - **返回类型**: `application/json`
+    - **返回结构**:
+    - `code`: integer
+    - `data`: object
+    - `message`: string
+    - `status`: boolean
+
