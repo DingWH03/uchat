@@ -3,6 +3,7 @@ use axum::Extension;
 use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use headers::Cookie;
+use log::debug;
 use uchat_protocol::{ContactList, Empty, UpdateTimestamps, request::RequestResponse};
 
 /// 查询用户的好友和群组更新时间戳(单位：秒)
@@ -19,6 +20,7 @@ pub async fn handle_get_contact_timestamps(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
+    debug!("处理查询用户的好友和群组更新时间戳请求");
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -54,6 +56,7 @@ pub async fn handle_get_contact_list(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
+    debug!("处理查询用户的好友和群组列表");
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();

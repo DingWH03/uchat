@@ -4,6 +4,7 @@ use axum::Json;
 use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use headers::Cookie;
+use log::debug;
 use uchat_protocol::{
     Empty, UserDetailedInfo,
     request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
@@ -23,6 +24,7 @@ pub async fn handle_get_me(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
+    debug!("处理获取个人信息请求");
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -57,6 +59,7 @@ pub async fn handle_put_me(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> impl IntoResponse {
+    debug!("处理完整更新个人信息请求{:?}", payload);
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -94,6 +97,7 @@ pub async fn handle_patch_me(
     TypedHeader(cookies): TypedHeader<Cookie>,
     Json(payload): Json<PatchUserRequest>,
 ) -> impl IntoResponse {
+    debug!("处理部分更新个人信息请求{:?}", payload);
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();
@@ -129,6 +133,7 @@ pub async fn handle_delete_me(
     Extension(state): Extension<AppState>,
     TypedHeader(cookies): TypedHeader<Cookie>,
 ) -> impl IntoResponse {
+    debug!("处理删除用户账号请求");
     let session_id = cookies.get("session_id").map(str::to_string);
     if session_id.is_none() {
         return RequestResponse::<()>::unauthorized().into_response();

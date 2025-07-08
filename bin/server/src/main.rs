@@ -6,6 +6,7 @@ mod redis;
 mod server;
 mod session;
 mod storage;
+mod utils;
 
 use dotenv::dotenv;
 use log::error;

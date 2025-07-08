@@ -76,7 +76,7 @@ impl ObjectStorage for MinioStorage {
     }
 
     fn get_url(&self, object_path: &str) -> String {
-        format!("{}/{}", self.base_url, object_path)
+        format!("{}/{}/{}", self.base_url, self.bucket, object_path)
     }
 
     /// 删除指定 prefix 下除 except_keys 之外的对象

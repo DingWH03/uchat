@@ -1,9 +1,11 @@
-use crate::server::AppState;
+use crate::{server::AppState, utils::detect_image_type};
 use axum::Extension;
 use axum::extract::multipart::Multipart;
 use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
+use axum::body::Bytes;
 use headers::Cookie;
+use log::debug;
 use uchat_protocol::{Empty, request::RequestResponse};
 
 /// 上传头像（multipart 文件）
@@ -27,7 +29,7 @@ pub async fn handle_upload_avatar(
     TypedHeader(cookies): TypedHeader<Cookie>,
     mut multipart: Multipart,
 ) -> impl IntoResponse {
-    use axum::body::Bytes;
+    debug!("处理更新用户头像请求");
 
     // 提取 session_id
     let session_id = cookies.get("session_id").map(str::to_string);
@@ -60,14 +62,30 @@ pub async fn handle_upload_avatar(
         }
     }
 
-    let allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-    if !allowed_types.contains(&content_type.as_str()) {
-        return RequestResponse::<()>::err("仅支持上传 PNG/JPEG/WebP 格式图片").into_response();
-    }
+    debug!("上传文件 content_type: {}", content_type);
 
-    if let Some(bytes) = file_bytes {
+    if let Some(bytes) = &file_bytes {
+        // 检查 MIME 类型前缀（更宽松）
+        let allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+        if !allowed_types.iter().any(|t| content_type.starts_with(t)) {
+            return RequestResponse::<()>::err("仅支持上传 PNG/JPEG/WebP 格式图片").into_response();
+        }
+
+        // 魔数校验
+        let valid = match detect_image_type(bytes) {
+            Some(kind) => {
+                debug!("识别的文件类型: {}", kind);
+                allowed_types.contains(&kind)
+            }
+            None => false,
+        };
+
+        if !valid {
+            return RequestResponse::<()>::err("文件内容格式不合法").into_response();
+        }
+
         let response = request_lock
-            .update_avatar(user_id, &bytes, &file_name, &content_type)
+            .update_avatar(user_id, bytes, &file_name, &content_type)
             .await;
 
         response.into_response()

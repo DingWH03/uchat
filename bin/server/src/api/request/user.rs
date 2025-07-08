@@ -211,10 +211,12 @@ impl Request {
             }
         };
 
+        let object_path = format!("{}{}", object_dir, new_file_name);
+
         // 删除该用户头像文件夹下除当前头像之外的其他文件
         if let Err(e) = self
             .storage
-            .delete_prefix_except(&object_dir, &[&new_file_name])
+            .delete_prefix_except(&object_dir, &[&object_path])
             .await
         {
             error!("删除旧头像失败: {}", e);
