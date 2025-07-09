@@ -2,6 +2,8 @@ mod messages;
 mod user;
 
 use crate::api::error::RequestError;
+use crate::cache::CacheConfig;
+use crate::cache::CacheManagerTrait;
 use crate::db::DB;
 use crate::db::error::DBError;
 use crate::session::SessionConfig;
@@ -22,6 +24,7 @@ pub struct Request {
     db: Arc<dyn DB>,
     sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>,
     storage: Arc<dyn ObjectStorage + Send + Sync>,
+    cache: Arc<dyn CacheManagerTrait<Config = CacheConfig>>, // 添加缓存管理器
 }
 
 impl Request {
@@ -29,11 +32,13 @@ impl Request {
         db: Arc<dyn DB>,
         sessions: Arc<dyn SessionManagerTrait<Config = SessionConfig>>,
         storage: Arc<dyn ObjectStorage + Send + Sync>,
+        cache: Arc<dyn CacheManagerTrait<Config = CacheConfig>>,
     ) -> Self {
         Self {
             db,
             sessions,
             storage,
+            cache,
         }
     }
 
@@ -163,24 +168,37 @@ impl Request {
     /// 如果群组不存在或发送失败，返回 false
     /// 先读取群聊成员列表，然后发送消息给每个成员
     pub async fn send_to_group(&self, group_id: u32, msg: Message) {
-        // 获取群成员列表
-        let members = match self.db.get_group_members(group_id).await {
-            Err(e) => {
-                error!("获取群组 {} 成员失败: {:?}", group_id, e);
-                return;
+        // 1. 先查cache
+        let member_ids = if let Some(ids) = self.cache.get_group_members(group_id as u64).await {
+            debug!(
+                "从缓存中获取群组 {} 成员列表: {:?}",
+                group_id, ids
+            );
+            ids
+        } else {
+            // 2. cache未命中，查数据库并写入cache
+            match self.db.get_group_members(group_id).await {
+                Err(e) => {
+                    error!("获取群组 {} 成员失败: {:?}", group_id, e);
+                    return;
+                }
+                Ok(members) => {
+                    let ids: Vec<u64> = members.iter().map(|m| m.user_id as u64).collect();
+                    self.cache.set_group_members(group_id as u64, ids.clone()).await;
+                    ids
+                }
             }
-            Ok(members) => members,
         };
 
         let sessions = self.sessions.clone();
         let msg = Arc::new(msg); // 共享消息，避免多次 clone
         let mut tasks = FuturesUnordered::new();
 
-        for member in members {
+        for member_id in member_ids {
             let msg = Arc::clone(&msg); // 引用共享消息
             let sessions = Arc::clone(&sessions);
             tasks.push(tokio::spawn(async move {
-                sessions.send_to_user(member.user_id, (*msg).clone()).await;
+                sessions.send_to_user(member_id as u32, (*msg).clone()).await;
             }));
         }
 

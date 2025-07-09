@@ -8,6 +8,7 @@ mod server;
 mod session;
 mod storage;
 mod utils;
+mod cache;
 // mod event;
 
 use crate::config::init_config;

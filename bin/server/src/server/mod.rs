@@ -10,6 +10,8 @@ use crate::db::factory::{DbType, create_database};
 use crate::redis::RedisClient;
 use crate::session::SessionConfig;
 use crate::session::create_session_manager;
+
+use crate::cache::{create_cache_manager, CacheConfig};
 use crate::storage::{StorageBackend, StorageConfig, init_storage};
 use axum::{Extension, Router};
 use log::{error, info};
@@ -53,28 +55,53 @@ impl Server {
 
         // 初始化redis连接池
         #[cfg(feature = "redis-support")]
-        let redis_client = {
+        let redis_client_session = {
             let redis_url = config.redis.sessions.url.clone();
             let redis_client = RedisClient::new(&redis_url).await;
             match redis_client {
                 Err(e) => {
-                    error!("Redis连接失败: {}", e);
-                    panic!("Redis连接失败: {}", e);
+                    error!("[Session] Redis连接失败: {}", e);
+                    panic!("[Session] Redis连接失败: {}", e);
                 }
                 Ok(client) => {
-                    info!("Redis连接成功");
+                    info!("[Session] Redis连接成功");
                     client
                 }
             }
         };
-        /// 选择会话存储配置
+        #[cfg(feature = "redis-support")]
+        let redis_client_cache = {
+            let redis_url = config.redis.cache.url.clone();
+            let redis_client = RedisClient::new(&redis_url).await;
+            match redis_client {
+                Err(e) => {
+                    error!("[Cache] Redis连接失败: {}", e);
+                    panic!("[Cache] Redis连接失败: {}", e);
+                }
+                Ok(client) => {
+                    info!("[Cache] Redis连接成功");
+                    client
+                }
+            }
+        };
+        // 选择会话存储配置
         #[cfg(not(feature = "redis-support"))]
         let session_config = { SessionConfig {} };
         #[cfg(feature = "redis-support")]
         let session_config = {
             SessionConfig {
-                redis: Arc::new(redis_client),
+                redis: Arc::new(redis_client_session),
                 session_expire_secs: 7200, // 默认会话过期时间为2小时
+            }
+        };
+        // 选择缓存存储配置
+        #[cfg(not(feature = "redis-support"))]
+        let cache_config = { CacheConfig {}};
+        #[cfg(feature = "redis-support")]
+        let cache_config = {
+            CacheConfig {
+                redis: Arc::new(redis_client_cache),
+                expire_secs: Some(7200), // 默认会话过期时间为2小时
             }
         };
         // 从环境变量读取 MinIO（或其他存储）配置
@@ -91,10 +118,12 @@ impl Server {
         // 初始化存储
         let storage = init_storage(storage_backend, &storage_config).await;
         let sessions = create_session_manager(session_config).await;
+        let cache = create_cache_manager(cache_config).await;
         let request = Arc::new(Mutex::new(Request::new(
             db.clone(),
             sessions.clone(),
             storage.clone(),
+            cache
         )));
         let manager = Arc::new(Mutex::new(Manager::new(db, sessions, storage)));
         let state = AppState { request, manager };

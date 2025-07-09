@@ -20,6 +20,7 @@ pub struct DatabaseConfig {
 pub struct RedisConfig {
     pub sessions: RedisInstance,
     pub events: RedisInstance,
+    pub cache: RedisInstance,
 }
 
 #[derive(Debug, Deserialize, Clone)]

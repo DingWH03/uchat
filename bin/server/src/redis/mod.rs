@@ -103,6 +103,15 @@ impl RedisClient {
         conn.sadd(key, member).await
     }
 
+    /// 向集合 key 批量添加多个成员
+    pub async fn sadd_multiple(&self, key: &str, members: &[String]) -> RedisResult<()> {
+        let mut conn = self.get_conn().await?;
+        if members.is_empty() {
+            return Ok(());
+        }
+        conn.sadd(key, members).await
+    }
+
     /// 从集合 key 移除一个成员
     pub async fn srem(&self, key: &str, member: &str) -> RedisResult<()> {
         let mut conn = self.get_conn().await?;
