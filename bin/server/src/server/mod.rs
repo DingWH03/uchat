@@ -4,6 +4,7 @@ mod route;
 
 use crate::api::manager::Manager;
 use crate::api::request::Request;
+use crate::config::get_config;
 use crate::db::factory::{DbType, create_database};
 #[cfg(feature = "redis-support")]
 use crate::redis::RedisClient;
@@ -13,7 +14,6 @@ use crate::storage::{StorageBackend, StorageConfig, init_storage};
 use axum::{Extension, Router};
 use log::{error, info};
 use route::router;
-use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -31,10 +31,10 @@ pub struct Server {
 
 impl Server {
     pub async fn new(addr: SocketAddr) -> Self {
-        // 从环境变量中获取数据库连接字符串，完成初始化数据库操作
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL 环境变量未设置");
-        let db_type = match env::var("DB_TYPE")
-            .unwrap_or_else(|_| "mysql".to_string())
+        // 从全局配置文件中获取数据库连接字符串，完成初始化数据库操作
+        let config= get_config();
+        let database_url = config.database.url.clone();
+        let db_type = match config.database.db_type
             .parse::<DbType>()
         {
             Ok(db_type) => db_type,
@@ -54,7 +54,7 @@ impl Server {
         // 初始化redis连接池
         #[cfg(feature = "redis-support")]
         let redis_client = {
-            let redis_url = env::var("REDIS_URL").expect("REDIS_URL 环境变量未设置");
+            let redis_url = config.redis.url.clone();
             let redis_client = RedisClient::new(&redis_url).await;
             match redis_client {
                 Err(e) => {
@@ -69,9 +69,9 @@ impl Server {
         };
         /// 选择会话存储配置
         #[cfg(not(feature = "redis-support"))]
-        let config = { SessionConfig {} };
+        let session_config = { SessionConfig {} };
         #[cfg(feature = "redis-support")]
-        let config = {
+        let session_config = {
             SessionConfig {
                 redis: Arc::new(redis_client),
                 session_expire_secs: 7200, // 默认会话过期时间为2小时
@@ -79,18 +79,18 @@ impl Server {
         };
         // 从环境变量读取 MinIO（或其他存储）配置
         let storage_config = StorageConfig {
-            endpoint: env::var("MINIO_ENDPOINT").expect("环境变量 MINIO_ENDPOINT 未设置"),
-            access_key: env::var("MINIO_ACCESS_KEY").expect("环境变量 MINIO_ACCESS_KEY 未设置"),
-            secret_key: env::var("MINIO_SECRET_KEY").expect("环境变量 MINIO_SECRET_KEY 未设置"),
-            bucket: env::var("MINIO_BUCKET").expect("环境变量 MINIO_BUCKET 未设置"),
-            base_url: env::var("MINIO_BASE_URL").expect("环境变量 MINIO_BASE_URL 未设置"),
-            local_dir: env::var("LOCAL_STORAGE_DIR").unwrap_or_else(|_| "./data".to_string()), // 这个你可以选用默认
+            endpoint: config.minio.endpoint.clone(),
+            access_key: config.minio.access_key.clone(),
+            secret_key: config.minio.secret_key.clone(),
+            bucket: config.minio.bucket.clone(),
+            base_url: config.minio.base_url.clone(),
+            local_dir: config.local.storage_dir.clone(), // 这个你可以选用默认
         };
         // 选用 MinIO 作为存储后端（以后可用环境变量或配置动态切换）
         let storage_backend = StorageBackend::Minio;
         // 初始化存储
         let storage = init_storage(storage_backend, &storage_config).await;
-        let sessions = create_session_manager(config).await;
+        let sessions = create_session_manager(session_config).await;
         let request = Arc::new(Mutex::new(Request::new(
             db.clone(),
             sessions.clone(),
@@ -115,13 +115,13 @@ impl Server {
 
     pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
         let banner = r#"
-            _    _          _               _   
-            | |  | |        | |             | |  
-            | |  | |   ___  | |__     __ _  | |_ 
+            _    _          _               _
+            | |  | |        | |             | |
+            | |  | |   ___  | |__     __ _  | |_
             | |  | |  / __| | '_ \   / _` | | __|
-            | |__| | | (__  | | | | | (_| | | |_ 
+            | |__| | | (__  | | | | | (_| | | |_
              \____/   \___| |_| |_|  \__,_|  \__|
-                                                
+
         "#;
 
         println!("{}", banner);

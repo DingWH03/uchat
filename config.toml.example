@@ -1,0 +1,24 @@
+[database]
+# 数据库连接 URL（支持 MySQL 或 PostgreSQL）
+url = "mysql://username:password@host:port/dbname"
+type = "mysql"
+
+[server]
+# 服务监听地址与端口
+address = "0.0.0.0:25597"
+
+[redis]
+# Redis 连接地址（支持密码认证）
+url = "redis://:your_password@host:port/0"
+
+[minio]
+# MinIO 对象存储配置
+endpoint = "http://minio-host:port"
+access_key = "your_minio_access_key"
+secret_key = "your_minio_secret_key"
+bucket = "your_bucket_name"
+base_url = "http://public-access-url:port"
+
+[local]
+# 本地存储目录（用于开发环境或调试）
+storage_dir = "./data"
