@@ -18,6 +18,12 @@ pub struct DatabaseConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct RedisConfig {
+    pub sessions: RedisInstance,
+    pub events: RedisInstance,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RedisInstance {
     pub url: String,
 }
 

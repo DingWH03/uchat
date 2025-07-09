@@ -54,7 +54,7 @@ impl Server {
         // 初始化redis连接池
         #[cfg(feature = "redis-support")]
         let redis_client = {
-            let redis_url = config.redis.url.clone();
+            let redis_url = config.redis.sessions.url.clone();
             let redis_client = RedisClient::new(&redis_url).await;
             match redis_client {
                 Err(e) => {
