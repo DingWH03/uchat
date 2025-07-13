@@ -20,14 +20,14 @@ pub trait CacheManagerTrait: Send + Sync {
         Self: Sized;
 
     // 群成员缓存
-    async fn get_group_members(&self, group_id: u64) -> Option<Vec<u64>>;
-    async fn set_group_members(&self, group_id: u64, members: Vec<u64>);
-    async fn invalidate_group_members(&self, group_id: u64);
+    async fn get_group_members(&self, group_id: u32) -> Option<Vec<u32>>;
+    async fn set_group_members(&self, group_id: u32, members: Vec<u32>);
+    async fn invalidate_group_members(&self, group_id: u32);
 
     // 好友缓存
-    async fn get_friends(&self, user_id: u64) -> Option<Vec<u64>>;
-    async fn set_friends(&self, user_id: u64, friends: Vec<u64>);
-    async fn invalidate_friends(&self, user_id: u64);
+    async fn get_friends(&self, user_id: u32) -> Option<Vec<u32>>;
+    async fn set_friends(&self, user_id: u32, friends: Vec<u32>);
+    async fn invalidate_friends(&self, user_id: u32);
 }
 
 /// 工厂函数，根据 feature 选择 CacheManager 实现
@@ -43,4 +43,4 @@ pub async fn create_cache_manager(
     {
         redis::RedisCacheManager::new_with_config(config).await
     }
-} 
+}

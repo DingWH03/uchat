@@ -111,10 +111,6 @@ impl SessionManagerTrait for SessionManager {
         self.senders.send(session_id, msg);
     }
 
-    async fn get_user_id_by_session(&self, session_id: &str) -> Option<u32> {
-        self.sessions.get(session_id).map(|s| s.user_id)
-    }
-
     async fn clear_all_sessions(&self) {
         self.senders.clear_all();
         self.sessions.clear();

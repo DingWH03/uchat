@@ -2,6 +2,7 @@
 use super::Request;
 use crate::db::error::DBError;
 use axum::extract::ws::Message;
+use bcrypt::hash;
 use log::{error, info, warn};
 use uchat_protocol::{
     UpdateTimestamps, UserDetailedInfo,
@@ -11,6 +12,90 @@ use uchat_protocol::{
 use uuid::Uuid;
 
 impl Request {
+    /// 处理用户注册请求
+    /// 用户名允许重复，会自动生成唯一的userid
+    /// 用户名和密码不可为空
+    /// 返回 'Ok(Some(user_id))' 如果注册成功
+    pub async fn register(&self, username: &str, password: &str) -> RequestResponse<u32> {
+        // 检查用户名和密码是否为空
+        if username.is_empty() || password.is_empty() {
+            warn!("用户名或密码不能为空");
+            return RequestResponse::bad_request("用户名密码不得为空");
+        }
+        // Hash the password
+        let hashed_password = match hash(password, 4) {
+            Ok(hashed) => hashed,
+            Err(e) => {
+                error!("加密密码处理失败！错误: {}", e);
+                return RequestResponse::err(format!("服务器错误：{}", e));
+            }
+        };
+        let user_id = self.db.new_user(username, &hashed_password).await;
+        match user_id {
+            Ok(id) => {
+                info!("用户 {} 注册成功", id);
+                RequestResponse::ok("注册成功", id)
+            }
+            Err(e) => {
+                error!("数据库用户注册失败: {:?}", e);
+                RequestResponse::err(format!("数据库错误：{}", e))
+            }
+        }
+    }
+
+    /// 更改用户的密码(需验证原密码)
+    pub async fn change_user_password(
+        &self,
+        user_id: u32,
+        old_password_hashed: &str,
+        new_password: &str,
+    ) -> RequestResponse<()> {
+        // 检查用户名和密码是否为空
+        if new_password.is_empty() {
+            warn!("密码不能为空");
+            return RequestResponse::bad_request("密码不得为空");
+        }
+        let password_hash = match self.db.get_password_hash(user_id).await {
+            Ok(password) => password,
+            Err(e) => {
+                // 区分用户不存在和数据库错误
+                match e {
+                    DBError::NotFound => return RequestResponse::not_found(),
+                    _ => return RequestResponse::err(format!("数据库错误：{}", e)),
+                }
+            }
+        };
+
+        match bcrypt::verify(old_password_hashed, &password_hash) {
+            Ok(true) => {
+                let new_hashed_password = match hash(new_password, 4) {
+                    Ok(hashed) => hashed,
+                    Err(e) => {
+                        error!("新密码加密失败: {}", e);
+                        return RequestResponse::err(format!("服务器错误：{}", e));
+                    }
+                };
+                match self.db.update_password(user_id, &new_hashed_password).await {
+                    Ok(_) => {
+                        info!("用户 {} 密码更改成功", user_id);
+                        RequestResponse::ok("密码更改成功", ())
+                    }
+                    Err(e) => {
+                        error!("更新密码数据库操作失败: {:?}", e);
+                        RequestResponse::err(format!("数据库错误：{}", e))
+                    }
+                }
+            }
+            Ok(false) => {
+                warn!("用户 {} 原密码不正确", user_id);
+                RequestResponse::unauthorized()
+            }
+            Err(e) => {
+                error!("密码验证失败: {}", e);
+                RequestResponse::err(format!("服务器错误：{}", e))
+            }
+        }
+    }
     /// 处理用户通过http请求登录
     /// 返回 'Ok(Some(session_cookie))' 如果登陆成功
     /// 返回 'Ok(None)' 如果用户不存在或密码错误
@@ -55,7 +140,7 @@ impl Request {
 
         // 仅首次登录广播上线消息
         if is_first_login {
-            let online_friends = self.get_online_friends(id).await.unwrap_or_default();
+            let online_friends = self.get_friends_ids(id).await;
             let server_message = ServerMessage::OnlineMessage { friend_id: id };
             let json = match serde_json::to_string(&server_message) {
                 Ok(j) => j,
@@ -67,7 +152,7 @@ impl Request {
 
             for friend in online_friends {
                 self.send_to_user(
-                    friend.user_id,
+                    friend,
                     Message::Text(axum::extract::ws::Utf8Bytes::from(&json)),
                 )
                 .await;
@@ -79,7 +164,7 @@ impl Request {
     /// 退出该会话
     pub async fn logout(&self, session_id: &str) -> RequestResponse<()> {
         // 获取当前用户 ID（用于广播）
-        if let Some(user_id) = self.sessions.get_user_id_by_session(session_id).await {
+        if let Some(user_id) = self.sessions.check_session(session_id).await {
             // 删除会话
             self.sessions.delete_session(session_id).await;
 

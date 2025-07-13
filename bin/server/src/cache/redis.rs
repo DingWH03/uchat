@@ -24,7 +24,7 @@ impl CacheManagerTrait for RedisCacheManager {
         })
     }
 
-    async fn get_group_members(&self, group_id: u64) -> Option<Vec<u64>> {
+    async fn get_group_members(&self, group_id: u32) -> Option<Vec<u32>> {
         let key = format!("group:{}:members", group_id);
         match self.redis.smembers(&key).await {
             Ok(values) if !values.is_empty() => {
@@ -38,7 +38,7 @@ impl CacheManagerTrait for RedisCacheManager {
     }
 
 
-    async fn set_group_members(&self, group_id: u64, members: Vec<u64>) {
+    async fn set_group_members(&self, group_id: u32, members: Vec<u32>) {
         let key = format!("group:{}:members", group_id);
         let _ = self.redis.del(&key).await;
         if !members.is_empty() {
@@ -50,12 +50,12 @@ impl CacheManagerTrait for RedisCacheManager {
         }
     }
 
-    async fn invalidate_group_members(&self, group_id: u64) {
+    async fn invalidate_group_members(&self, group_id: u32) {
         let key = format!("group:{}:members", group_id);
         let _ = self.redis.del(&key).await;
     }
 
-    async fn get_friends(&self, user_id: u64) -> Option<Vec<u64>> {
+    async fn get_friends(&self, user_id: u32) -> Option<Vec<u32>> {
         let key = format!("user:{}:friends", user_id);
         match self.redis.smembers(&key).await {
             Ok(values) if !values.is_empty() => {
@@ -69,7 +69,7 @@ impl CacheManagerTrait for RedisCacheManager {
     }
 
 
-    async fn set_friends(&self, user_id: u64, friends: Vec<u64>) {
+    async fn set_friends(&self, user_id: u32, friends: Vec<u32>) {
         let key = format!("user:{}:friends", user_id);
         let _ = self.redis.del(&key).await;
         if !friends.is_empty() {
@@ -81,7 +81,7 @@ impl CacheManagerTrait for RedisCacheManager {
         }
     }
 
-    async fn invalidate_friends(&self, user_id: u64) {
+    async fn invalidate_friends(&self, user_id: u32) {
         let key = format!("user:{}:friends", user_id);
         let _ = self.redis.del(&key).await;
     }

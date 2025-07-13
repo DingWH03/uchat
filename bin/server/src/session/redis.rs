@@ -153,10 +153,6 @@ impl SessionManagerTrait for RedisSessionManager {
         self.sender_store.send(session_id, msg);
     }
 
-    async fn get_user_id_by_session(&self, session_id: &str) -> Option<u32> {
-        self.check_session(session_id).await
-    }
-
     async fn clear_all_sessions(&self) {
         // 获取所有 session_id（遍历所有用户的 user_sessions）
         if let Ok(keys) = self.redis.scan_keys("user_sessions:*").await {

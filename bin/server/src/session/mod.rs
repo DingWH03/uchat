@@ -112,7 +112,6 @@ pub trait SessionManagerTrait: Send + Sync {
     async fn delete_session(&self, session_id: &str);
     async fn send_to_user(&self, user_id: u32, msg: Message);
     async fn send_to_session(&self, session_id: &str, msg: Message);
-    async fn get_user_id_by_session(&self, session_id: &str) -> Option<u32>;
     async fn get_all_online_users_tree(&self) -> HashMap<u32, Vec<(String, SessionInfo)>>;
     async fn clear_all_sessions(&self);
 }
