@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use axum::extract::ws::Message;
 use dashmap::{DashMap, DashSet};
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;
 use uchat_protocol::RoleType;
@@ -31,7 +32,7 @@ impl SessionManagerTrait for SessionManager {
         &self,
         user_id: u32,
         session_id: String,
-        ip: Option<String>,
+        ip: Option<IpAddr>,
         role: RoleType,
     ) {
         self.sessions.insert(
