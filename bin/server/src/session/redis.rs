@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use axum::extract::ws::Message;
 use chrono::Utc;
+use std::net::IpAddr;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -35,7 +36,7 @@ impl SessionManagerTrait for RedisSessionManager {
         &self,
         user_id: u32,
         session_id: String,
-        ip: Option<String>,
+        ip: Option<IpAddr>,
         role: RoleType,
     ) {
         let session = SessionInfo {

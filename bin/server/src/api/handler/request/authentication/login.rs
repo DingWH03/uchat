@@ -1,5 +1,6 @@
+use std::net::SocketAddr;
 use crate::server::AppState;
-use axum::{Extension, extract::Json, response::IntoResponse};
+use axum::{extract::{ConnectInfo, Json}, response::IntoResponse, Extension};
 use log::debug;
 use uchat_protocol::{
     Empty,
@@ -19,13 +20,15 @@ use uchat_protocol::{
     tag = "request/auth"
 )]
 pub async fn handle_login(
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Extension(state): Extension<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
-    debug!("处理登录请求: {:?}", payload);
+    debug!("处理登录请求: {:?} 来自 IP: {}", payload, addr.ip());
+
     let mut request = state.request.lock().await;
     request
-        .login(payload.userid, &payload.password)
+        .login(payload.userid, &payload.password, addr.ip())
         .await
         .into_response()
 }

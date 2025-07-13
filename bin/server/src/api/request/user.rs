@@ -3,6 +3,7 @@ use super::Request;
 use crate::db::error::DBError;
 use axum::extract::ws::Message;
 use bcrypt::hash;
+use std::net::IpAddr;
 use log::{error, info, warn};
 use uchat_protocol::{
     UpdateTimestamps, UserDetailedInfo,
@@ -100,7 +101,7 @@ impl Request {
     /// 返回 'Ok(Some(session_cookie))' 如果登陆成功
     /// 返回 'Ok(None)' 如果用户不存在或密码错误
     /// 可以重复登陆，会分发不同的cookie
-    pub async fn login(&mut self, id: u32, password: &str) -> RequestResponse<String> {
+    pub async fn login(&mut self, id: u32, password: &str, ip: IpAddr) -> RequestResponse<String> {
         let (password_hash, role) = match self.db.get_user_password_and_role(id).await {
             Ok(tuple) => tuple,
             Err(e) => {
@@ -133,7 +134,7 @@ impl Request {
         };
         // 插入会话
         self.sessions
-            .insert_session(id, session_cookie.clone(), None, role)
+            .insert_session(id, session_cookie.clone(), Some(ip), role)
             .await;
 
         info!("用户 {} 登录成功", id);

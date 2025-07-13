@@ -163,7 +163,7 @@ impl Server {
         println!("启动时间     : {}\n", now.format("%Y-%m-%d %H:%M:%S"));
 
         let listener = tokio::net::TcpListener::bind(self.addr).await?;
-        axum::serve(listener, self.app.into_make_service()).await?;
+        axum::serve(listener, self.app.into_make_service_with_connect_info::<SocketAddr>()).await?;
         Ok(())
     }
 }

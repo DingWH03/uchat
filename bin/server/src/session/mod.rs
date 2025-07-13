@@ -12,7 +12,7 @@ use axum::extract::ws::Message;
 use chrono::DateTime;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, net::{IpAddr}, sync::Arc};
 use tokio::sync::mpsc::UnboundedSender;
 use uchat_protocol::{RoleType, manager::UserSessionInfo};
 
@@ -21,7 +21,7 @@ pub struct SessionInfo {
     user_id: u32,
     pub created_at_secs: i64,
     pub created_at_nsecs: u32, // 用于存储创建时间的秒数
-    pub ip: Option<String>,
+    pub ip: Option<IpAddr>,
     role: RoleType,
 }
 impl SessionInfo {
@@ -35,7 +35,7 @@ impl SessionInfo {
             session_id,
             user_id: self.user_id,
             created_at: self.created_at_datetime(),
-            ip: self.ip.clone(),
+            ip: self.ip.map(|ip| ip.to_string()),
         }
     }
 }
@@ -97,7 +97,7 @@ pub trait SessionManagerTrait: Send + Sync {
         &self,
         user_id: u32,
         session_id: String,
-        ip: Option<String>,
+        ip: Option<IpAddr>,
         role: RoleType,
     );
     async fn check_session(&self, session_id: &str) -> Option<u32>;
