@@ -1,11 +1,11 @@
 // src/cache/mod.rs
-#[cfg(not(feature = "redis-support"))]
+#[cfg(not(feature = "cache-redis"))]
 pub mod memory;
-#[cfg(not(feature = "redis-support"))]
+#[cfg(not(feature = "cache-redis"))]
 pub use crate::cache::memory::CacheConfig;
-#[cfg(feature = "redis-support")]
+#[cfg(feature = "cache-redis")]
 pub mod redis;
-#[cfg(feature = "redis-support")]
+#[cfg(feature = "cache-redis")]
 pub use crate::cache::redis::CacheConfig;
 
 use async_trait::async_trait;
@@ -34,12 +34,12 @@ pub trait CacheManagerTrait: Send + Sync {
 pub async fn create_cache_manager(
     config: CacheConfig,
 ) -> Arc<dyn CacheManagerTrait<Config = CacheConfig>> {
-    #[cfg(not(feature = "redis-support"))]
+    #[cfg(not(feature = "cache-redis"))]
     {
         let manager = memory::MemoryCacheManager::new_with_config(config).await;
         manager
     }
-    #[cfg(feature = "redis-support")]
+    #[cfg(feature = "cache-redis")]
     {
         redis::RedisCacheManager::new_with_config(config).await
     }

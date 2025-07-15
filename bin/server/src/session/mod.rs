@@ -1,11 +1,11 @@
 // src/session/mod.rs
-#[cfg(not(feature = "redis-support"))]
+#[cfg(not(feature = "session-redis"))]
 pub mod memory;
-#[cfg(not(feature = "redis-support"))]
+#[cfg(not(feature = "session-redis"))]
 pub use crate::session::memory::SessionConfig;
-#[cfg(feature = "redis-support")]
+#[cfg(feature = "session-redis")]
 pub mod redis;
-#[cfg(feature = "redis-support")]
+#[cfg(feature = "session-redis")]
 pub use crate::session::redis::SessionConfig;
 use async_trait::async_trait;
 use axum::extract::ws::Message;
@@ -120,14 +120,14 @@ pub trait SessionManagerTrait: Send + Sync {
 pub async fn create_session_manager(
     config: SessionConfig,
 ) -> Arc<dyn SessionManagerTrait<Config = SessionConfig>> {
-    #[cfg(not(feature = "redis-support"))]
+    #[cfg(not(feature = "session-redis"))]
     {
         let manager = memory::SessionManager::new_with_config(config).await;
         manager
     }
 
-    // redis-support 分支:
-    #[cfg(feature = "redis-support")]
+    // session-redis 分支:
+    #[cfg(feature = "session-redis")]
     {
         redis::RedisSessionManager::new_with_config(config).await
     }

@@ -47,8 +47,10 @@ config = "0.15.12"
 once_cell = "1.21.3"
 
 [features]
-default = ["mysql", "swagger", "redis-support"]
+default = ["mysql", "swagger", "session-redis", "cache-redis"]
 mysql = ["sqlx/mysql"]
 postgres = ["sqlx/postgres"]
+session-redis = ["redis-support"]
+cache-redis = ["redis-support"]
 redis-support = ["redis", "bb8-redis", "bb8"]
 swagger = ["utoipa-swagger-ui"]

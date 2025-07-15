@@ -54,7 +54,7 @@ impl Server {
         };
 
         // 初始化redis连接池
-        #[cfg(feature = "redis-support")]
+        #[cfg(feature = "session-redis")]
         let redis_client_session = {
             let redis_url = config.redis.sessions.url.clone();
             let redis_client = RedisClient::new(&redis_url).await;
@@ -69,7 +69,7 @@ impl Server {
                 }
             }
         };
-        #[cfg(feature = "redis-support")]
+        #[cfg(feature = "cache-redis")]
         let redis_client_cache = {
             let redis_url = config.redis.cache.url.clone();
             let redis_client = RedisClient::new(&redis_url).await;
@@ -85,9 +85,9 @@ impl Server {
             }
         };
         // 选择会话存储配置
-        #[cfg(not(feature = "redis-support"))]
+        #[cfg(not(feature = "session-redis"))]
         let session_config = { SessionConfig {} };
-        #[cfg(feature = "redis-support")]
+        #[cfg(feature = "session-redis")]
         let session_config = {
             SessionConfig {
                 redis: Arc::new(redis_client_session),
@@ -95,9 +95,9 @@ impl Server {
             }
         };
         // 选择缓存存储配置
-        #[cfg(not(feature = "redis-support"))]
+        #[cfg(not(feature = "cache-redis"))]
         let cache_config = { CacheConfig {}};
-        #[cfg(feature = "redis-support")]
+        #[cfg(feature = "cache-redis")]
         let cache_config = {
             CacheConfig {
                 redis: Arc::new(redis_client_cache),
