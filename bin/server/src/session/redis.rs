@@ -7,7 +7,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::redis::SharedRedis;
 use crate::session::{SenderStore, SessionInfo, SessionManagerTrait};
-use uchat_protocol::RoleType;
+use uchat_model::RoleType;
 
 pub struct SessionConfig {
     pub redis: SharedRedis,

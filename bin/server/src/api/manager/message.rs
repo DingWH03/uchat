@@ -1,6 +1,6 @@
 use log::{error, info};
 
-use uchat_protocol::{FullPrivateMessage, ManagerResponse, PreviewPrivateMessage};
+use uchat_model::{FullPrivateMessage, ManagerResponse, PreviewPrivateMessage};
 
 use super::Manager;
 

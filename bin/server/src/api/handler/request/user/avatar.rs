@@ -6,7 +6,7 @@ use axum_extra::TypedHeader;
 use axum::body::Bytes;
 use headers::Cookie;
 use log::debug;
-use uchat_protocol::{Empty, request::RequestResponse};
+use uchat_model::{Empty, request::RequestResponse};
 
 /// 上传头像（multipart 文件）
 /// 返回上传后的头像 URL

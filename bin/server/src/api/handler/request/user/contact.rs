@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use headers::Cookie;
 use log::debug;
-use uchat_protocol::{ContactList, Empty, UpdateTimestamps, request::RequestResponse};
+use uchat_model::{ContactList, Empty, UpdateTimestamps, request::RequestResponse};
 
 /// 查询用户的好友和群组更新时间戳(单位：秒)
 #[utoipa::path(

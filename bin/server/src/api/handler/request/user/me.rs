@@ -5,7 +5,7 @@ use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use headers::Cookie;
 use log::debug;
-use uchat_protocol::{
+use uchat_model::{
     Empty, UserDetailedInfo,
     request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
 };

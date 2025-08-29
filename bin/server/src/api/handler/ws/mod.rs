@@ -3,7 +3,7 @@ use axum::extract::ws::{Message, WebSocket};
 use futures::{sink::SinkExt, stream::StreamExt};
 use log::{debug, error, info, warn};
 use tokio::sync::mpsc; // tokio::sync::Mutex for Request
-use uchat_protocol::message::ClientMessage;
+use uchat_model::message::ClientMessage;
 /// 处理 WebSocket 连接的实际逻辑
 pub async fn handle_socket(socket: WebSocket, session_id: String, state: AppState) {
     info!("WebSocket 连接已建立，会话ID: {}", &session_id);

@@ -1,6 +1,6 @@
 use log::{error, info};
 
-use uchat_protocol::{
+use uchat_model::{
     ManagerResponse, ManagerUserSimpleInfo, RoleType, UserDetailedInfo, UserSimpleInfo,
 };
 

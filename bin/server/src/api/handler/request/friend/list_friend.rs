@@ -4,7 +4,7 @@ use log::debug;
 use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{Empty, UserSimpleInfo, UserSimpleInfoWithStatus, request::RequestResponse};
+use uchat_model::{Empty, UserSimpleInfo, UserSimpleInfoWithStatus, request::RequestResponse};
 
 /// 获取好友列表
 #[utoipa::path(

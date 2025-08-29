@@ -14,7 +14,7 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, net::{IpAddr}, sync::Arc};
 use tokio::sync::mpsc::UnboundedSender;
-use uchat_protocol::{RoleType, manager::UserSessionInfo};
+use uchat_model::{RoleType, manager::UserSessionInfo};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SessionInfo {

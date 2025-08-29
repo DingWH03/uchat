@@ -1,5 +1,5 @@
 [package]
-name = "uchat_protocol"
+name = "uchat_model"
 version = "0.1.0"
 edition = "2024"
 

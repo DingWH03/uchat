@@ -4,7 +4,7 @@ use log::debug;
 use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{Empty, ManagerResponse, RoleType, request::RequestResponse};
+use uchat_model::{Empty, ManagerResponse, RoleType, request::RequestResponse};
 
 /// 会话有效性检查接口
 ///

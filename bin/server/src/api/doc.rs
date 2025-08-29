@@ -51,11 +51,11 @@ use crate::api::handler::request::user::me::__path_handle_delete_me;
 use crate::api::handler::request::user::me::__path_handle_get_me;
 use crate::api::handler::request::user::me::__path_handle_patch_me;
 use crate::api::handler::request::user::me::__path_handle_put_me;
-use uchat_protocol::Empty;
-use uchat_protocol::RoleType;
-use uchat_protocol::UserDetailedInfo;
-use uchat_protocol::UserSimpleInfo;
-use uchat_protocol::request::RequestResponse;
+use uchat_model::Empty;
+use uchat_model::RoleType;
+use uchat_model::UserDetailedInfo;
+use uchat_model::UserSimpleInfo;
+use uchat_model::request::RequestResponse;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]

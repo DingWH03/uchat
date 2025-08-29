@@ -2,7 +2,7 @@ use super::MysqlDB;
 use crate::db::{ManagerDB, error::DBError};
 use anyhow::Result;
 use async_trait::async_trait;
-use uchat_protocol::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType};
+use uchat_model::{FullPrivateMessage, ManagerUserSimpleInfo, PreviewPrivateMessage, RoleType};
 
 #[async_trait]
 impl ManagerDB for MysqlDB {

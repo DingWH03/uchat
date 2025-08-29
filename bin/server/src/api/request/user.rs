@@ -5,7 +5,7 @@ use axum::extract::ws::Message;
 use bcrypt::hash;
 use std::net::IpAddr;
 use log::{error, info, warn};
-use uchat_protocol::{
+use uchat_model::{
     UpdateTimestamps, UserDetailedInfo,
     message::ServerMessage,
     request::{PatchUserRequest, RequestResponse, UpdateUserRequest},

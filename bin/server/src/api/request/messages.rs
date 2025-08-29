@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use super::Request;
 use log::error;
-use uchat_protocol::{IdMessagePair, SessionMessage, request::RequestResponse};
+use uchat_model::{IdMessagePair, SessionMessage, request::RequestResponse};
 
 impl Request {
     /// 获取群聊聊天记录

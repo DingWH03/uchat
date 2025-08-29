@@ -3,7 +3,7 @@ use axum::{Extension, extract::Query, response::IntoResponse};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::{debug, warn};
-use uchat_protocol::{Empty, ManagerResponse, manager::DeleteSessionRequest};
+use uchat_model::{Empty, ManagerResponse, manager::DeleteSessionRequest};
 
 /// 删除某session_id
 #[utoipa::path(

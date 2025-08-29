@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use log::info;
 
-use uchat_protocol::{ManagerResponse, RoleType, manager::OnlineUserTree};
+use uchat_model::{ManagerResponse, RoleType, manager::OnlineUserTree};
 
 use super::Manager;
 

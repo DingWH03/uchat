@@ -1,7 +1,7 @@
 use crate::server::AppState;
 use axum::{Extension, Json, response::IntoResponse};
 use log::debug;
-use uchat_protocol::{
+use uchat_model::{
     Empty,
     request::{RegisterRequest, RequestResponse},
 };

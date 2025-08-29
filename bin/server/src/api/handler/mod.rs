@@ -6,7 +6,7 @@ use crate::server::AppState;
 use axum::Extension;
 use axum::response::IntoResponse;
 use log::debug;
-use uchat_protocol::{Empty, request::RequestResponse};
+use uchat_model::{Empty, request::RequestResponse};
 
 #[utoipa::path(
     get,

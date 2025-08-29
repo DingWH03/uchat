@@ -3,7 +3,7 @@ use axum::{Extension, extract::Query, response::IntoResponse};
 use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{
+use uchat_model::{
     Empty, UserDetailedInfo,
     request::{FriendRequest, RequestResponse},
 };

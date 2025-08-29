@@ -4,7 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
 use std::collections::HashMap;
-use uchat_protocol::{GroupSessionMessage, IdMessagePair, MessageType, SessionMessage};
+use uchat_model::{GroupSessionMessage, IdMessagePair, MessageType, SessionMessage};
 
 #[async_trait]
 impl MessageDB for MysqlDB {

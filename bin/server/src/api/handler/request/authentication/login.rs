@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use crate::server::AppState;
 use axum::{extract::{ConnectInfo, Json}, response::IntoResponse, Extension};
 use log::debug;
-use uchat_protocol::{
+use uchat_model::{
     Empty,
     request::{LoginRequest, RequestResponse},
 };

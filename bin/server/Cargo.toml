@@ -16,7 +16,7 @@ chrono = { version = "0.4.41", features = ["serde"] }
 toml="0.8.23"
 
 [dependencies]
-uchat_protocol = { path="../../crate/uchat_protocol" }
+uchat_model = { path="../../crate/uchat_model" }
 anyhow = "1.0.98"
 async-trait = "0.1.88"
 axum = { version = "0.8.4", features = ["form", "http1", "json", "matched-path", "original-uri", "query", "tokio", "tower-log", "tracing", "macros", "ws", "multipart"] }

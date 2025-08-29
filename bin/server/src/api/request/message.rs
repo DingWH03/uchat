@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::extract::ws::Message;
 use futures::{stream::FuturesUnordered, StreamExt};
 use log::{debug, error, warn};
-use uchat_protocol::{message::ServerMessage, MessageType};
+use uchat_model::{message::ServerMessage, MessageType};
 
 use super::Request;
 

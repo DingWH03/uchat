@@ -6,7 +6,7 @@ use axum::{
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::debug;
-use uchat_protocol::{
+use uchat_model::{
     Empty, ManagerResponse, UserSimpleInfo,
     manager::{DeleteFriendshipRequest, GetFriendsRequest},
 };

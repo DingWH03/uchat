@@ -1,6 +1,6 @@
 use super::Request;
 use axum::extract::ws::Message;
-use uchat_protocol::{request::RequestResponse, RoleType};
+use uchat_model::{request::RequestResponse, RoleType};
 
 impl Request {
     /// 检查session_id是否存在，返回user_id

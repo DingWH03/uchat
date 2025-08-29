@@ -6,7 +6,7 @@ use axum::{
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::debug;
-use uchat_protocol::{Empty, ManagerResponse, manager::DeleteUserRequest};
+use uchat_model::{Empty, ManagerResponse, manager::DeleteUserRequest};
 
 /// 指定删除某用户
 #[utoipa::path(

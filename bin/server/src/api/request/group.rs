@@ -1,4 +1,4 @@
-use uchat_protocol::{request::RequestResponse, GroupDetailedInfo, GroupSimpleInfo, UserSimpleInfo};
+use uchat_model::{request::RequestResponse, GroupDetailedInfo, GroupSimpleInfo, UserSimpleInfo};
 use log::{error, warn};
 
 use super::Request;

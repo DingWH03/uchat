@@ -5,7 +5,7 @@ use axum::{Extension, response::IntoResponse};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::{debug, warn};
-use uchat_protocol::{Empty, ManagerResponse, ManagerUserSimpleInfo};
+use uchat_model::{Empty, ManagerResponse, ManagerUserSimpleInfo};
 
 /// 获取注册总用户列表
 #[utoipa::path(

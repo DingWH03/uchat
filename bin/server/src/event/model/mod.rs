@@ -6,9 +6,9 @@ use serde_json::{json, Value};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EventType {
-    UserProfileUpdated,
     UserLogined,
     UserLoggedOut,
+    UserProfileUpdated,
     GroupCreated,
     GroupUpdated,
     GroupDeleted,

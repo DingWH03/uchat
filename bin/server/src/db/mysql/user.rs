@@ -3,7 +3,7 @@ use crate::db::{UserDB, error::DBError};
 use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::Arguments;
-use uchat_protocol::{
+use uchat_model::{
     RoleType, UpdateTimestamps, UserDetailedInfo,
     request::{PatchUserRequest, UpdateUserRequest},
 };

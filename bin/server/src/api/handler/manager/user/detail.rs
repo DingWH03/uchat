@@ -6,7 +6,7 @@ use axum::{
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::debug;
-use uchat_protocol::{Empty, ManagerResponse, UserDetailedInfo, manager::CheckUserDetailRequest};
+use uchat_model::{Empty, ManagerResponse, UserDetailedInfo, manager::CheckUserDetailRequest};
 
 /// 查看某用户详细个人信息
 #[utoipa::path(

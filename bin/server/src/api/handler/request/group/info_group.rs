@@ -4,7 +4,7 @@ use log::debug;
 use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{
+use uchat_model::{
     Empty, GroupDetailedInfo,
     request::{GroupRequest, RequestResponse},
 };

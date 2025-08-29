@@ -1,7 +1,7 @@
 use crate::db::GroupDB;
 use crate::db::error::DBError;
 use crate::db::mysql::MysqlDB;
-use uchat_protocol::{GroupDetailedInfo, GroupSimpleInfo, UserSimpleInfo};
+use uchat_model::{GroupDetailedInfo, GroupSimpleInfo, UserSimpleInfo};
 
 use anyhow::Result;
 use async_trait::async_trait;

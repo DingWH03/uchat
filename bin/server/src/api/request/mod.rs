@@ -14,7 +14,7 @@ use crate::session::SessionManagerTrait;
 use crate::storage::ObjectStorage;
 use log::{error};
 use std::sync::Arc;
-use uchat_protocol::{
+use uchat_model::{
     ContactList, request::RequestResponse,
 };
 

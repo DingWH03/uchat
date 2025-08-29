@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;
-use uchat_protocol::RoleType;
+use uchat_model::RoleType;
 
 pub struct SessionConfig; // 空结构体，可扩展为带参数结构体
 

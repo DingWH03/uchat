@@ -1,4 +1,4 @@
-use uchat_protocol::{request::RequestResponse, UserSimpleInfo, UserSimpleInfoWithStatus, UserStatus};
+use uchat_model::{request::RequestResponse, UserSimpleInfo, UserSimpleInfoWithStatus, UserStatus};
 use log::error;
 use crate::api::error::RequestError;
 

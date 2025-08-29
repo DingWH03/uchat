@@ -4,7 +4,7 @@ use log::debug;
 use crate::server::AppState;
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
-use uchat_protocol::{Empty, request::RequestResponse};
+use uchat_model::{Empty, request::RequestResponse};
 
 /// 处理退出登录
 #[utoipa::path(

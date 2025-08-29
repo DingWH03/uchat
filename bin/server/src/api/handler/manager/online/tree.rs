@@ -3,7 +3,7 @@ use axum::{Extension, response::IntoResponse};
 use axum_extra::extract::TypedHeader;
 use headers::Cookie;
 use log::{debug, warn};
-use uchat_protocol::{Empty, ManagerResponse, manager::OnlineUserTree};
+use uchat_model::{Empty, ManagerResponse, manager::OnlineUserTree};
 
 #[utoipa::path(
     get,

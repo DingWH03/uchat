@@ -4167,14 +4167,14 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml 0.8.23",
- "uchat_protocol",
+ "uchat_model",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
 ]
 
 [[package]]
-name = "uchat_protocol"
+name = "uchat_model"
 version = "0.1.0"
 dependencies = [
  "axum",

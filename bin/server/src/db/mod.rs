@@ -11,7 +11,7 @@ use async_trait::async_trait;
 
 use crate::db::error::DBError;
 
-use uchat_protocol::{
+use uchat_model::{
     FullPrivateMessage, GroupDetailedInfo, GroupSimpleInfo, IdMessagePair, ManagerUserSimpleInfo,
     MessageType, PreviewPrivateMessage, RoleType, SessionMessage, UpdateTimestamps,
     UserDetailedInfo, UserSimpleInfo,
