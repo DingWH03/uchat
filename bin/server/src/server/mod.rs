@@ -13,6 +13,7 @@ use crate::session::create_session_manager;
 
 use crate::cache::{create_cache_manager, CacheConfig};
 use crate::storage::{StorageBackend, StorageConfig, init_storage};
+use crate::utils::build_info::{PKG_NAME, PKG_AUTHORS, VERSION, BUILD_TIME, VERSION_CODE};
 use axum::{Extension, Router};
 use log::{error, info};
 use route::router;
@@ -154,10 +155,11 @@ impl Server {
         "#;
 
         println!("{}", banner);
-        println!("项目名称     : {}", env!("PKG_NAME"));
-        println!("版本号       : {}", env!("PKG_VERSION"));
-        println!("作者         : {}", env!("PKG_AUTHORS"));
-        println!("构建时间     : {}", env!("BUILD_TIME"));
+        println!("项目名称     : {}", PKG_NAME);
+        println!("版本号       : {}", VERSION);
+        println!("版本代号     : {}", VERSION_CODE);
+        println!("作者         : {}", PKG_AUTHORS);
+        println!("构建时间     : {}", BUILD_TIME);
         println!("监听地址     : http://{}", self.addr);
         let now = chrono::Local::now();
         println!("启动时间     : {}\n", now.format("%Y-%m-%d %H:%M:%S"));

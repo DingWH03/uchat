@@ -6,9 +6,15 @@ use std::{
 };
 use utoipa::ToSchema;
 
+pub type UserId = u32;
+pub type GroupId = u32;
+pub type MessageId = u64;
+pub type Ver = u32;
+pub type Timestamp = i64;
+
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserSimpleInfo {
-    pub user_id: u32,
+    pub user_id: UserId,
     pub username: String,
     pub avatar_url: String,
 }
