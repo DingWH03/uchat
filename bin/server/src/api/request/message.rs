@@ -62,15 +62,15 @@ impl Request {
                 //         Message::Binary(bin.into()),
                 //     )
                 //     .await;
-                let json = match serde_json::to_string(&server_message) {
-                    Ok(data) => data,
-                    Err(e) => {
-                        error!("序列化消息为JSON失败: {:?}", e);
-                        return;
-                    }
-                };
+                // let json = match serde_json::to_string(&server_message) {
+                //     Ok(data) => data,
+                //     Err(e) => {
+                //         error!("序列化消息为JSON失败: {:?}", e);
+                //         return;
+                //     }
+                // };
                 // 暂时序列化为text消息
-                let msg = Message::Text(axum::extract::ws::Utf8Bytes::from(json));
+                let msg = Message::Binary(server_message.to_bytes().into());
                 // 发送给接受用户所有的在线会话
                 self.send_to_user(receiver_id, msg.clone()).await;
                 // 发送给发送用户所有的在线会话，也便于多会话登陆消息同步
@@ -151,18 +151,18 @@ impl Request {
                 // };
                 // self.send_to_group(group_id, Message::Binary(bin.into()))
                 //     .await;
-                let json = match serde_json::to_string(&server_message) {
-                    Ok(data) => data,
-                    Err(e) => {
-                        error!("序列化消息为JSON失败: {:?}", e);
-                        return;
-                    }
-                };
+                // let json = match serde_json::to_string(&server_message) {
+                //     Ok(data) => data,
+                //     Err(e) => {
+                //         error!("序列化消息为JSON失败: {:?}", e);
+                //         return;
+                //     }
+                // };
                 // let json =
                 //     serde_json::to_string(&server_message).unwrap_or_else(|_| String::from("{}"));
                 self.send_to_group(
                     group_id,
-                    Message::Text(axum::extract::ws::Utf8Bytes::from(json)),
+                    Message::Binary(server_message.to_bytes().into()),
                 )
                 .await;
             }
