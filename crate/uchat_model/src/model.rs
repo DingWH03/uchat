@@ -9,6 +9,7 @@ use utoipa::ToSchema;
 pub type UserId = u32;
 pub type GroupId = u32;
 pub type MessageId = u64;
+pub type EventId = u64;
 pub type Ver = u32;
 pub type Timestamp = i64;
 
