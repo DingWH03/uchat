@@ -1,6 +1,7 @@
-use serde::{Deserialize, Serialize};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read};
+use serde::{Deserialize, Serialize};
+use crate::frame::{FrameCodec, FrameError, Direction};
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -34,31 +35,88 @@ pub enum ServerMessage {
     },
 }
 
-#[repr(u8)]
-enum Kind {
-    SendMessage = 0,
-    SendGroupMessage = 1,
-    OnlineMessage = 2,
-    OfflineMessage = 3,
+/* ---------------- ClientMessage: C2S ---------------- */
+
+impl ClientMessage {
+    #[inline]
+    fn kind_u8(&self) -> u8 {
+        match self {
+            ClientMessage::SendMessage { .. } => 0,
+            ClientMessage::SendGroupMessage { .. } => 1,
+        }
+    }
+
+    fn encode_payload(&self, out: &mut Vec<u8>) {
+        match self {
+            ClientMessage::SendMessage { receiver, message } => {
+                out.write_u32::<BigEndian>(*receiver).unwrap();
+                let m = message.as_bytes();
+                out.write_u32::<BigEndian>(m.len() as u32).unwrap();
+                out.extend_from_slice(m);
+            }
+            ClientMessage::SendGroupMessage { group_id, message } => {
+                out.write_u32::<BigEndian>(*group_id).unwrap();
+                let m = message.as_bytes();
+                out.write_u32::<BigEndian>(m.len() as u32).unwrap();
+                out.extend_from_slice(m);
+            }
+        }
+    }
+
+    fn decode_payload(kind: u8, mut c: Cursor<&[u8]>) -> Result<Self, FrameError> {
+        match kind {
+            0 => {
+                let receiver = c.read_u32::<BigEndian>()?;
+                let len = c.read_u32::<BigEndian>()? as usize;
+                let mut buf = vec![0u8; len];
+                c.read_exact(&mut buf)?;
+                let message = String::from_utf8(buf)?;
+                Ok(ClientMessage::SendMessage { receiver, message })
+            }
+            1 => {
+                let group_id = c.read_u32::<BigEndian>()?;
+                let len = c.read_u32::<BigEndian>()? as usize;
+                let mut buf = vec![0u8; len];
+                c.read_exact(&mut buf)?;
+                let message = String::from_utf8(buf)?;
+                Ok(ClientMessage::SendGroupMessage { group_id, message })
+            }
+            x => Err(FrameError::InvalidKind(x)),
+        }
+    }
 }
 
-#[derive(Debug)]
-pub enum DecodeError {
-    UnexpectedEof,
-    InvalidDiscriminant(u8),
-    Utf8(std::string::FromUtf8Error),
-    Io(std::io::Error),
+impl FrameCodec for ClientMessage {
+    const DIR: Direction = Direction::C2S;
+    fn kind(&self) -> u8 { self.kind_u8() }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(64);
+        self.encode_payload(&mut out);
+        out
+    }
+
+    fn from_bytes(kind: u8, payload: &[u8]) -> Result<Self, FrameError> {
+        Self::decode_payload(kind, Cursor::new(payload))
+    }
 }
-impl From<std::io::Error> for DecodeError { fn from(e: std::io::Error) -> Self { Self::Io(e) } }
-impl From<std::string::FromUtf8Error> for DecodeError { fn from(e: std::string::FromUtf8Error) -> Self { Self::Utf8(e) } }
+
+/* ---------------- ServerMessage: S2C ---------------- */
 
 impl ServerMessage {
-    /// 新增：高效二进制编码方法（用于 WebSocket 二进制帧）
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(64);
+    #[inline]
+    fn kind_u8(&self) -> u8 {
+        match self {
+            ServerMessage::SendMessage { .. } => 0,
+            ServerMessage::SendGroupMessage { .. } => 1,
+            ServerMessage::OnlineMessage { .. } => 2,
+            ServerMessage::OfflineMessage { .. } => 3,
+        }
+    }
+
+    fn encode_payload(&self, out: &mut Vec<u8>) {
         match self {
             ServerMessage::SendMessage { message_id, sender, receiver, message, timestamp } => {
-                out.push(Kind::SendMessage as u8);
                 out.write_u64::<BigEndian>(*message_id).unwrap();
                 out.write_u32::<BigEndian>(*sender).unwrap();
                 out.write_u32::<BigEndian>(*receiver).unwrap();
@@ -68,7 +126,6 @@ impl ServerMessage {
                 out.extend_from_slice(m);
             }
             ServerMessage::SendGroupMessage { message_id, sender, group_id, message, timestamp } => {
-                out.push(Kind::SendGroupMessage as u8);
                 out.write_u64::<BigEndian>(*message_id).unwrap();
                 out.write_u32::<BigEndian>(*sender).unwrap();
                 out.write_u32::<BigEndian>(*group_id).unwrap();
@@ -78,23 +135,17 @@ impl ServerMessage {
                 out.extend_from_slice(m);
             }
             ServerMessage::OnlineMessage { friend_id } => {
-                out.push(Kind::OnlineMessage as u8);
                 out.write_u32::<BigEndian>(*friend_id).unwrap();
             }
             ServerMessage::OfflineMessage { friend_id } => {
-                out.push(Kind::OfflineMessage as u8);
                 out.write_u32::<BigEndian>(*friend_id).unwrap();
             }
         }
-        out
     }
 
-    /// 可选：解码，便于测试/服务内部环路使用
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        let mut c = Cursor::new(bytes);
-        let tag = c.read_u8()?;
-        match tag {
-            x if x == Kind::SendMessage as u8 => {
+    fn decode_payload(kind: u8, mut c: Cursor<&[u8]>) -> Result<Self, FrameError> {
+        match kind {
+            0 => {
                 let message_id = c.read_u64::<BigEndian>()?;
                 let sender = c.read_u32::<BigEndian>()?;
                 let receiver = c.read_u32::<BigEndian>()?;
@@ -105,7 +156,7 @@ impl ServerMessage {
                 let message = String::from_utf8(buf)?;
                 Ok(ServerMessage::SendMessage { message_id, sender, receiver, message, timestamp })
             }
-            x if x == Kind::SendGroupMessage as u8 => {
+            1 => {
                 let message_id = c.read_u64::<BigEndian>()?;
                 let sender = c.read_u32::<BigEndian>()?;
                 let group_id = c.read_u32::<BigEndian>()?;
@@ -116,15 +167,30 @@ impl ServerMessage {
                 let message = String::from_utf8(buf)?;
                 Ok(ServerMessage::SendGroupMessage { message_id, sender, group_id, message, timestamp })
             }
-            x if x == Kind::OnlineMessage as u8 => {
+            2 => {
                 let friend_id = c.read_u32::<BigEndian>()?;
                 Ok(ServerMessage::OnlineMessage { friend_id })
             }
-            x if x == Kind::OfflineMessage as u8 => {
+            3 => {
                 let friend_id = c.read_u32::<BigEndian>()?;
                 Ok(ServerMessage::OfflineMessage { friend_id })
             }
-            other => Err(DecodeError::InvalidDiscriminant(other)),
+            x => Err(FrameError::InvalidKind(x)),
         }
+    }
+}
+
+impl FrameCodec for ServerMessage {
+    const DIR: Direction = Direction::S2C;
+    fn kind(&self) -> u8 { self.kind_u8() }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(64);
+        self.encode_payload(&mut out);
+        out
+    }
+
+    fn from_bytes(kind: u8, payload: &[u8]) -> Result<Self, FrameError> {
+        Self::decode_payload(kind, Cursor::new(payload))
     }
 }

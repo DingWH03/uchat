@@ -1,4 +1,4 @@
-// pub mod frame;
+pub mod frame;
 pub mod manager;
 pub mod message;
 pub mod model;
