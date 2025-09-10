@@ -1,7 +1,10 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read};
 use serde::{Deserialize, Serialize};
-use crate::frame::{FrameCodec, FrameError, Direction};
+use crate::{
+    frame::{FrameCodec, FrameError, Direction},
+    event::content::public::PublicEvent,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -27,12 +30,7 @@ pub enum ServerMessage {
         message: String,
         timestamp: i64, // 使用 i64 存储时间戳，单位为秒
     },
-    OnlineMessage {
-        friend_id: u32,
-    },
-    OfflineMessage {
-        friend_id: u32,
-    },
+    Event(PublicEvent),
 }
 
 /* ---------------- ClientMessage: C2S ---------------- */
@@ -109,8 +107,7 @@ impl ServerMessage {
         match self {
             ServerMessage::SendMessage { .. } => 0,
             ServerMessage::SendGroupMessage { .. } => 1,
-            ServerMessage::OnlineMessage { .. } => 2,
-            ServerMessage::OfflineMessage { .. } => 3,
+            ServerMessage::Event(_) => 2,
         }
     }
 
@@ -134,11 +131,9 @@ impl ServerMessage {
                 out.write_u32::<BigEndian>(m.len() as u32).unwrap();
                 out.extend_from_slice(m);
             }
-            ServerMessage::OnlineMessage { friend_id } => {
-                out.write_u32::<BigEndian>(*friend_id).unwrap();
-            }
-            ServerMessage::OfflineMessage { friend_id } => {
-                out.write_u32::<BigEndian>(*friend_id).unwrap();
+            ServerMessage::Event(ev) => {
+                let bytes = ev.to_bytes();
+                out.extend_from_slice(&bytes);
             }
         }
     }
@@ -168,12 +163,13 @@ impl ServerMessage {
                 Ok(ServerMessage::SendGroupMessage { message_id, sender, group_id, message, timestamp })
             }
             2 => {
-                let friend_id = c.read_u32::<BigEndian>()?;
-                Ok(ServerMessage::OnlineMessage { friend_id })
-            }
-            3 => {
-                let friend_id = c.read_u32::<BigEndian>()?;
-                Ok(ServerMessage::OfflineMessage { friend_id })
+                // 剩余 payload 全部属于 PublicEvent
+                let remaining = {
+                    let start = c.position() as usize;
+                    &c.get_ref()[start..]
+                };
+                let ev = PublicEvent::from_bytes(remaining)?;
+                Ok(ServerMessage::Event(ev))
             }
             x => Err(FrameError::InvalidKind(x)),
         }
@@ -185,7 +181,7 @@ impl FrameCodec for ServerMessage {
     fn kind(&self) -> u8 { self.kind_u8() }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(64);
+        let mut out = Vec::with_capacity(96);
         self.encode_payload(&mut out);
         out
     }

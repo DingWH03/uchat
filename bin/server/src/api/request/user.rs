@@ -3,10 +3,11 @@ use super::Request;
 use crate::db::error::DBError;
 use axum::extract::ws::Message;
 use bcrypt::hash;
-use std::net::IpAddr;
 use log::{error, info, warn};
+use std::net::IpAddr;
 use uchat_model::{
     UpdateTimestamps, UserDetailedInfo,
+    event::{ActorKind, Event, EventKind},
     message::ServerMessage,
     request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
 };
@@ -142,7 +143,22 @@ impl Request {
         // 仅首次登录广播上线消息
         if is_first_login {
             let online_friends = self.get_friends_ids(id).await;
-            let server_message = ServerMessage::OnlineMessage { friend_id: id };
+            let ev = Event {
+                event_id: 0, // 事件ID需要按序生成，当前未完成
+                timestamp: chrono::Utc::now().timestamp(),
+                actor_kind: ActorKind::User,
+                content: Some(uchat_model::event::EventContent::LoginIn(
+                    uchat_model::event::content::private::LoginInfo {
+                        user_id: id,
+                        status: uchat_model::event::content::private::LoginStatus::Success,
+                        ip,
+                    },
+                )),
+                actor_user_id: Some(id),
+                actor_group_id: None,
+                event_kind: EventKind::LoginIn,
+            };
+            let server_message = ServerMessage::Event(ev.to_public());
             let json = match serde_json::to_string(&server_message) {
                 Ok(j) => j,
                 Err(e) => {
@@ -180,7 +196,16 @@ impl Request {
                 // 如果该用户彻底下线，则广播 OfflineMessage
 
                 let online_friends = self.get_online_friends(user_id).await.unwrap_or_default();
-                let server_message = ServerMessage::OfflineMessage { friend_id: user_id };
+                let ev = Event {
+                    event_id: 0, // 事件ID需要按序生成，当前未完成
+                    timestamp: chrono::Utc::now().timestamp(),
+                    actor_kind: ActorKind::User,
+                    content: Some(uchat_model::event::EventContent::LoginOut),
+                    actor_user_id: Some(user_id),
+                    actor_group_id: None,
+                    event_kind: EventKind::LoginIn,
+                };
+                let server_message = ServerMessage::Event(ev.to_public());
                 let json = match serde_json::to_string(&server_message) {
                     Ok(j) => j,
                     Err(e) => {

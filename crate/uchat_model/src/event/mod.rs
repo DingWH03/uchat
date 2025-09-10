@@ -2,7 +2,7 @@ pub mod content;
 
 use serde::{Serialize, Deserialize};
 use super::model::{UserId, GroupId, Timestamp, EventId};
-use content::{EventContent};
+pub use content::{EventContent};
 
 // ---------- 精简后的事件结构 ----------
 
