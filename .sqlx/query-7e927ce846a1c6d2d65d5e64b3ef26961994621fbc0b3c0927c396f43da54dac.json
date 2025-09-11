@@ -1,15 +1,15 @@
 {
   "db_name": "MySQL",
-  "query": "\n            SELECT \n                id as `message_id!`,\n                sender_id AS `sender_id!`,\n                `timestamp`,\n                message_type as `message_type: MessageType`,\n                message AS `message!`\n            FROM messages\n            WHERE \n                (sender_id = ? AND receiver_id = ?)\n                OR \n                (sender_id = ? AND receiver_id = ?)\n            ORDER BY `timestamp` ASC\n            LIMIT ?\n            OFFSET ?\n            ",
+  "query": "\n            SELECT\n                id as `message_id!`,\n                sender_id AS `sender_id!`,\n                `timestamp`,\n                message_type as `message_type: MessageType`,\n                message AS `message!`\n            FROM messages\n            WHERE\n                (sender_id = ? AND receiver_id = ?)\n                OR\n                (sender_id = ? AND receiver_id = ?)\n            ORDER BY `timestamp` ASC\n            LIMIT ?\n            OFFSET ?\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
         "name": "message_id!",
         "type_info": {
-          "type": "Long",
+          "type": "LongLong",
           "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
-          "max_size": 10
+          "max_size": 20
         }
       },
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "6f376d6e546c2a2dce2f5ffb039ccbe0b8832bd4e02b2ad0718c3fcb1def3467"
+  "hash": "7e927ce846a1c6d2d65d5e64b3ef26961994621fbc0b3c0927c396f43da54dac"
 }

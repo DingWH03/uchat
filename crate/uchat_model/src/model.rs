@@ -22,14 +22,14 @@ pub struct UserSimpleInfo {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ManagerUserSimpleInfo {
-    pub user_id: u32,
+    pub user_id: UserId,
     pub username: String,
     pub role: RoleType,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserDetailedInfo {
-    pub user_id: u32,
+    pub user_id: UserId,
     pub username: String,
     pub role: RoleType,
     pub avatar_url: Option<String>,
@@ -43,58 +43,58 @@ pub struct UserSimpleInfoWithStatus {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GroupSimpleInfo {
-    pub group_id: u32,
+    pub group_id: GroupId,
     pub title: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GroupDetailedInfo {
-    pub group_id: u32,
+    pub group_id: GroupId,
     pub title: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct SessionMessage {
-    pub message_id: u32,
+    pub message_id: MessageId,
     pub message_type: MessageType, // enum 类型更安全
-    pub sender_id: u32,
+    pub sender_id: UserId,
     pub message: String,
-    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
+    pub timestamp: Timestamp,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct GroupSessionMessage {
-    pub message_id: u32,
+    pub message_id: MessageId,
     pub message_type: MessageType, // enum 类型更安全
-    pub group_id: u32,
-    pub sender_id: u32,
-    pub timestamp: i64, // 使用 i64 存储时间戳，单位为秒
+    pub group_id: GroupId,
+    pub sender_id: UserId,
+    pub timestamp: Timestamp,
     pub message: String,
 }
 
 /// 用于manager后台获取消息
 #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct PreviewPrivateMessage {
-    pub id: u32,
-    pub sender_id: u32,
+    pub id: MessageId,
+    pub sender_id: UserId,
     pub sender_username: String,
-    pub receiver_id: u32,
+    pub receiver_id: UserId,
     pub receiver_username: String,
     pub message_type: MessageType, // 可改为 enum 类型（如 MessageType 枚举）更安全
     pub message_preview: String,   // message 前 100 字符
-    pub timestamp: i64,            // 使用 i64 存储时间戳，单位为秒
+    pub timestamp: Timestamp,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow, ToSchema)]
 pub struct FullPrivateMessage {
-    pub id: u32,
-    pub sender_id: u32,
+    pub id: MessageId,
+    pub sender_id: UserId,
     pub sender_username: String,
-    pub receiver_id: u32,
+    pub receiver_id: UserId,
     pub receiver_username: String,
     pub message_type: MessageType,
     pub message: String, // 完整消息内容
-    pub timestamp: i64,  // 使用 i64 存储时间戳，单位为秒
+    pub timestamp: Timestamp,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize, ToSchema)]
@@ -194,8 +194,8 @@ pub struct Empty;
 
 #[derive(Serialize, ToSchema)]
 pub struct UpdateTimestamps {
-    pub friends_updated_at: i64,
-    pub groups_updated_at: i64,
+    pub friends_updated_at: Timestamp,
+    pub groups_updated_at: Timestamp,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -206,7 +206,7 @@ pub struct ContactList {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserStatus {
-    pub user_id: u32,
+    pub user_id: UserId,
     pub online: bool,
 }
 

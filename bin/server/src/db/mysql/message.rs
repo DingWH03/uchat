@@ -84,16 +84,16 @@ impl MessageDB for MysqlDB {
         let messages = sqlx::query_as!(
             SessionMessage,
             r#"
-            SELECT 
+            SELECT
                 id as `message_id!`,
                 sender_id AS `sender_id!`,
                 `timestamp`,
                 message_type as `message_type: MessageType`,
                 message AS `message!`
             FROM messages
-            WHERE 
+            WHERE
                 (sender_id = ? AND receiver_id = ?)
-                OR 
+                OR
                 (sender_id = ? AND receiver_id = ?)
             ORDER BY `timestamp` ASC
             LIMIT ?

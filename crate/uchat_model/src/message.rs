@@ -2,33 +2,32 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read};
 use serde::{Deserialize, Serialize};
 use crate::{
-    frame::{FrameCodec, FrameError, Direction},
-    event::content::public::PublicEvent,
+    event::content::public::PublicEvent, frame::{Direction, FrameCodec, FrameError}, MessageId, Timestamp, UserId
 };
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
-    SendMessage { receiver: u32, message: String },
-    SendGroupMessage { group_id: u32, message: String },
+    SendMessage { receiver: UserId, message: String },
+    SendGroupMessage { group_id: UserId, message: String },
 }
 
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum ServerMessage {
     SendMessage {
-        message_id: u64, // 消息ID
-        sender: u32,
-        receiver: u32,
+        message_id: MessageId, // 消息ID
+        sender: UserId,
+        receiver: UserId,
         message: String,
-        timestamp: i64, // 使用 i64 存储时间戳，单位为秒
+        timestamp: Timestamp, // 使用 i64 存储时间戳，单位为秒
     },
     SendGroupMessage {
-        message_id: u64, // 消息ID
-        sender: u32,
-        group_id: u32,
+        message_id: MessageId, // 消息ID
+        sender: UserId,
+        group_id: UserId,
         message: String,
-        timestamp: i64, // 使用 i64 存储时间戳，单位为秒
+        timestamp: Timestamp, // 使用 i64 存储时间戳，单位为秒
     },
     Event(PublicEvent),
 }
