@@ -1,15 +1,11 @@
 // api/request/user
 use super::Request;
 use crate::db::error::DBError;
-use axum::extract::ws::Message;
 use bcrypt::hash;
 use log::{error, info, warn};
 use std::net::IpAddr;
 use uchat_model::{
-    UpdateTimestamps, UserDetailedInfo,
-    event::{ActorKind, Event, EventKind},
-    message::ServerMessage,
-    request::{PatchUserRequest, RequestResponse, UpdateUserRequest},
+    event::{ActorKind, Event, EventKind}, request::{PatchUserRequest, RequestResponse, UpdateUserRequest}, UpdateTimestamps, UserDetailedInfo
 };
 use uuid::Uuid;
 
@@ -126,55 +122,33 @@ impl Request {
         }
 
         let session_cookie = Uuid::now_v7().to_string();
-        // 检查是否是首次登录（无任何活跃 session）
-        let is_first_login = {
-            self.sessions
-                .get_sessions_by_user(id)
-                .await
-                .is_none_or(|set| set.is_empty())
-        };
+
         // 插入会话
         self.sessions
             .insert_session(id, session_cookie.clone(), Some(ip), role)
             .await;
 
         info!("用户 {} 登录成功", id);
-
-        // 仅首次登录广播上线消息
-        if is_first_login {
-            let online_friends = self.get_friends_ids(id).await;
-            let ev = Event {
-                event_id: 0, // 事件ID需要按序生成，当前未完成
-                timestamp: chrono::Utc::now().timestamp(),
-                actor_kind: ActorKind::User,
-                content: Some(uchat_model::event::EventContent::LoginIn(
-                    uchat_model::event::content::private::LoginInfo {
-                        user_id: id,
-                        status: uchat_model::event::content::private::LoginStatus::Success,
-                        ip,
-                    },
-                )),
-                actor_user_id: Some(id),
-                actor_group_id: None,
-                event_kind: EventKind::LoginIn,
-            };
-            let server_message = ServerMessage::Event(ev.to_public());
-            let json = match serde_json::to_string(&server_message) {
-                Ok(j) => j,
-                Err(e) => {
-                    error!("序列化上线消息失败: {}", e);
-                    return RequestResponse::err(format!("序列化上线消息失败: {}", e));
-                }
-            };
-
-            for friend in online_friends {
-                self.send_to_user(
-                    friend,
-                    Message::Text(axum::extract::ws::Utf8Bytes::from(&json)),
-                )
-                .await;
-            }
-        }
+        // 广播用户上线事件
+        let ev = Event {
+            event_id: 0, // 事件ID需要按序生成，当前未完成
+            timestamp: chrono::Utc::now().timestamp(),
+            actor_kind: ActorKind::User,
+            content: Some(uchat_model::event::EventContent::LoginIn(
+                uchat_model::event::content::private::LoginInfo {
+                    user_id: id,
+                    status: uchat_model::event::content::private::LoginStatus::Success,
+                    ip,
+                },
+            )),
+            actor_user_id: Some(id),
+            actor_group_id: None,
+            event_kind: EventKind::LoginIn,
+        };
+        match self.event_broadcast(id, ev.to_public()).await{
+            Ok(_) => (),
+            Err(e) => error!("广播用户 {} 上线事件失败: {}", id, e),
+        };
 
         RequestResponse::ok("登陆成功", session_cookie)
     }
@@ -184,43 +158,20 @@ impl Request {
         if let Some(user_id) = self.sessions.check_session(session_id).await {
             // 删除会话
             self.sessions.delete_session(session_id).await;
-
-            // 判断是否是该用户的最后一个 session
-            let still_online = self
-                .sessions
-                .get_sessions_by_user(user_id)
-                .await
-                .is_some_and(|s| !s.is_empty());
-
-            if !still_online {
-                // 如果该用户彻底下线，则广播 OfflineMessage
-
-                let online_friends = self.get_online_friends(user_id).await.unwrap_or_default();
-                let ev = Event {
-                    event_id: 0, // 事件ID需要按序生成，当前未完成
-                    timestamp: chrono::Utc::now().timestamp(),
-                    actor_kind: ActorKind::User,
-                    content: Some(uchat_model::event::EventContent::LoginOut),
-                    actor_user_id: Some(user_id),
-                    actor_group_id: None,
-                    event_kind: EventKind::LoginIn,
-                };
-                let server_message = ServerMessage::Event(ev.to_public());
-                let json = match serde_json::to_string(&server_message) {
-                    Ok(j) => j,
-                    Err(e) => {
-                        error!("序列化上线消息失败: {}", e);
-                        return RequestResponse::err(format!("序列化上线消息失败: {}", e));
-                    }
-                };
-                for friend in online_friends {
-                    self.send_to_user(
-                        friend.user_id,
-                        Message::Text(axum::extract::ws::Utf8Bytes::from(&json)),
-                    )
-                    .await;
-                }
-            }
+            // 广播用户下线事件
+            let ev = Event {
+                event_id: 0, // 事件ID需要按序生成，当前未完成
+                timestamp: chrono::Utc::now().timestamp(),
+                actor_kind: ActorKind::User,
+                content: Some(uchat_model::event::EventContent::LoginOut),
+                actor_user_id: Some(user_id),
+                actor_group_id: None,
+                event_kind: EventKind::LoginIn,
+            };
+            match self.event_broadcast(user_id, ev.to_public()).await{
+                Ok(_) => (),
+                Err(e) => error!("广播用户 {} 下线事件失败: {}", user_id, e),
+            };
 
             info!("会话 {} 已注销", session_id);
             RequestResponse::ok("注销成功", ())

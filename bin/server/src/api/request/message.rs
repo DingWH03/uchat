@@ -91,10 +91,13 @@ impl Request {
     pub async fn send_to_group(&self, group_id: u32, msg: Message) {
         // 1. 先查cache
         let member_ids = self.get_group_member_ids(group_id).await;
-        if member_ids.is_empty() {
-            warn!("群组 {} 成员列表为空，无法发送消息", group_id);
-            return;
-        }
+        let member_ids = match member_ids {
+            Ok(ids) => ids,
+            Err(e) => {
+                error!("在发送群组消息时，获取群组 {} 成员失败: {:?}", group_id, e);
+                return;
+            }
+        };
 
         let sessions = self.sessions.clone();
         let msg = Arc::new(msg); // 共享消息，避免多次 clone

@@ -181,7 +181,7 @@ impl FrameCodec for ServerMessage {
     fn kind(&self) -> u8 { self.kind_u8() }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(96);
+        let mut out = Vec::with_capacity(96);   // 预估容量
         self.encode_payload(&mut out);
         out
     }
